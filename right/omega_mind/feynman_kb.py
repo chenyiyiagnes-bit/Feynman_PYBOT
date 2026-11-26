@@ -1156,6 +1156,55 @@ class FeynmanKB:
         line, key = hit
         return line, f"analogy:{key}"
 
+    def rethink(self, card_id: str, language: str = "zh",
+                spoken: Iterable[str] = ()) -> Optional[Tuple[str, str]]:
+        """Look at the same card from a face that has not been said yet.
+
+        Reflection, not retrieval: the card stays the same, only the angle
+        changes. Faces come from confirmed edges (see ``AssocGraph.facets``)
+        and ``spoken`` names the ones already used, so a second reflection
+        never repeats the first. Returns ``(line, facet key)`` or None when
+        the card has nothing new to show — the caller then says the card
+        again rather than inventing an angle.
+        """
+        if (not card_id or card_id.startswith("learned-")
+                or card_id == "no_match"):
+            return None
+        graph = self._assoc_graph()
+        if graph is None or not graph.edges:
+            return None
+        docs = self.docs_en if language == "en" else self.docs
+        titles = {doc.id: doc.title for doc in docs}
+        used = {str(key) for key in spoken}
+        for key, line in graph.facets(card_id, language=language,
+                                      titles=titles):
+            if key in used:
+                continue
+            return line, key
+        return None
+
+    def card_body(self, card_id: str, language: str = "zh",
+                  detail: str = "normal") -> Optional[str]:
+        """The card's own answer, for saying it again plainly.
+
+        Used when a reflection has no unused face: repeating the card is
+        better than manufacturing a new angle. None means the card does not
+        exist in this language (or is Chinese-only in English mode), so the
+        caller must not speak it.
+        """
+        if not card_id or card_id == "no_match":
+            return None
+        docs = self.docs_en if language == "en" else self.docs
+        doc = next((d for d in docs if d.id == card_id), None)
+        if doc is None:
+            return None
+        body = doc.answer_for(detail)
+        if not body:
+            return None
+        if language == "en" and _CJK.search(body):
+            return None
+        return body
+
     def _association_for(self, found: Lookup, language: str,
                          previous_card: Optional[str] = None
                          ) -> Optional[str]:

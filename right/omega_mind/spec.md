@@ -96,13 +96,22 @@ prefixes/endings 正常时照旧使用。directness 与 tempo 只作为下游提
   返回抑制（`lookup(inhibit=...)`）：最近 3 轮说过的卡在排序时乘 `INHIBIT_FACTOR=0.94`，
   只用于打破近似平票；降权前先检查降完仍过门槛，所以不会把有把握的回答降成未命中，
   单候选时不动。原样重复同一问题不抑制。被降权卡写入 `Lookup.inhibited` 审计。
+  反思重问（`engine._is_reflection` + `feynman_kb.rethink`）：短、无主语的“再想想 / 换个角度 /
+  还有呢”（≤16 字）不重新检索，锁定上一张卡，按“前提 → 边界 → 张力 → 退化极限 → 类比 →
+  量级锚点”的顺序取一个未说过的面（`AssocGraph.facets`，只含 `origin=human` 的边或卡片自己的
+  锚点）。说过的面记在 `spoken_facets`，随存档保存；同一张卡连续最多 `REFLECT_CAP=2` 个新面，
+  之后或没有新面时用 `card_body` 原样重复卡片正文，不编角度。带新主语的改写按新问题检索，
+  不用相似度判定。换卡或转为非卡片回答时反思计数清零；审计字段 `retrieval["reflection"]`
+  记面 key，重复时为 `"repeat"`。
   数量级锚点（`scales.py` + `data/assoc/scales.jsonl`）：按卡片存费曼给过的特征数字，每条带讲义
   出处，英文行只用费曼英文；只有问题在问大小/快慢/多少/数量级时才追加，`brief` 略过，和联想句
   共用位置且优先。锚点可带人工问法（`asks`/`asks_en`），命中后直接落到该卡——这一步**会**改变
   命中卡，是刻意的检索补充，不属于"不改来源"的联想规则。
-  `tests/test_assoc.py`、`tests/test_scales.py`、`tests/test_analogy.py`、`tests/test_curiosity.py` 钉住：
+  `tests/test_assoc.py`、`tests/test_scales.py`、`tests/test_analogy.py`、`tests/test_curiosity.py`、
+  `tests/test_reflection.py` 钉住：
   边合法性、候选隔离、单句上限、来源不变、引擎真的追加、跨轮接续、为什么走一层、锚点只在问数量级时出声、
-  换写只用确认过的类比且带失效点、同一张卡不重复换写、提问只用真标题且姿态/冷却/单一尾位生效。
+  换写只用确认过的类比且带失效点、同一张卡不重复换写、提问只用真标题且姿态/冷却/单一尾位生效、
+  反思同卡换面不重复、有上限、无新面说原文、带主语的问题不进入反思、已说面随存档保存。
 - 费曼「数学与计算」卡包（`knowledge/feynman_math_comp.jsonl` + `data/kb_en/feynman_math_comp_en.jsonl`）：
   路径积分小箭头、微积分直觉、自制记号、可逆计算与发热、量子模拟、纳米空间、车牌概率、心算立方根，
   八张三语对齐卡。字段只用加载器真正读取的 `title`/`text`/`tags`/`aliases`，不用

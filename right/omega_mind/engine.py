@@ -130,6 +130,11 @@ INHIBIT_TURNS = 3
 # instead of spinning.
 REFRAME_COOLDOWN = 3
 
+# Reflection has to stop somewhere or it becomes rumination: the same card
+# may show at most this many new faces in a row, after which the nudge is
+# answered with the card again, plainly.
+REFLECT_CAP = 2
+
 # A curious mind may ask one question, and then has to listen for a while.
 # Three turns is long enough that a question reads as interest rather than
 # as an interview.
@@ -155,6 +160,21 @@ _CONFUSION_EN = re.compile(
     r"what do you mean|explain (?:that )?(?:again|simpler)|"
     r"in plain (?:english|words)|put it another way)[?.! ]*$",
     re.IGNORECASE)
+
+# A bare nudge to go round the last answer once more. It carries no subject
+# of its own, so it asks for a *different face of the same card*, never a
+# new lookup: a paraphrase with a subject ("为什么天空是蓝的") is a new
+# question and must not be forced onto the previous card.
+_REFLECT_ZH = re.compile(
+    r"^(?:再想想|再想一次|再想一遍|重新想想|再琢磨(?:一下)?|"
+    r"往深里想|再深入(?:一点|些)?|深入(?:一点|些)|"
+    r"换个角度(?:想)?|换个方向(?:想)?|从另一个角度(?:想)?|"
+    r"还有呢|还有吗|再多说(?:一)?点|再展开(?:说说|讲讲)?)"
+    r"[？?。！!~～\s]*$")
+_REFLECT_EN = re.compile(
+    r"^(?:think (?:about it )?again|think (?:it )?through again|"
+    r"what else|go deeper|dig deeper|another angle|"
+    r"from another angle|keep going)[?.! ]*$", re.IGNORECASE)
 
 # Questions the semantic tier can answer directly. These are the only paths
 # by which stored facts reach a reply; the KB still owns everything else.
@@ -293,6 +313,13 @@ class MindEngine:
         self._last_hedge_turn: int = -10 ** 9
         # When the cube was last reframed (a recast turns the whole cube).
         self._last_reframe_turn: int = -10 ** 9
+        # Faces of a card already shown by reflection, so a second
+        # "think again" moves on instead of repeating the first. Also the
+        # card and count of the running run of reflections, capped by
+        # ``REFLECT_CAP`` so it cannot become rumination.
+        self._spoken_facets: Dict[str, set] = {}
+        self._reflect_card: Optional[str] = None
+        self._reflect_streak: int = 0
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -467,6 +494,10 @@ class MindEngine:
         else:
             self._last_card = None
         self._last_card_turn = self.turn_index
+        # A different card (or no card) ends a run of reflections: the cap
+        # counts consecutive returns to one subject, not lifetime visits.
+        if self._reflect_card is not None and self._last_card != self._reflect_card:
+            self._reflect_streak = 0
         self.turn_index += 1
         self.last_interaction = now
         self.state.last_ts = now
@@ -556,6 +587,19 @@ class MindEngine:
         pattern = _CONFUSION_EN if self.language == "en" else _CONFUSION_ZH
         return bool(pattern.match(stripped))
 
+    def _is_reflection(self, text: str) -> bool:
+        """A short, subject-free nudge to think the last answer again.
+
+        Only the phrase itself triggers this: similarity between questions
+        is too blunt to tell "same subject, new question" from "say that
+        again", and a wrong guess here answers the wrong question.
+        """
+        stripped = text.strip()
+        if not stripped or len(stripped) > 16:
+            return False
+        pattern = _REFLECT_EN if self.language == "en" else _REFLECT_ZH
+        return bool(pattern.match(stripped))
+
     def _inhibit_set(self, text: str = "") -> set:
         """Cards answered so recently that repeating them would circle.
 
@@ -609,6 +653,43 @@ class MindEngine:
                     return again[0], again[1]
         else:
             self._recast_seen.clear()
+        # A bare nudge ("think again") is reflection: the same card, one
+        # face it has not shown yet — a confirmed premise, boundary, limit
+        # or analogy, never an invented angle. The card is fixed; only the
+        # angle moves. Past the cap, or with no face left, the card is said
+        # again plainly: silence about having nothing new is worse.
+        if self._is_reflection(text):
+            previous = self._continuity_card()
+            if previous:
+                prefix = ("feynman_kb_en" if self.language == "en"
+                          else "feynman_kb")
+                source = f"{prefix}:{previous}"
+                streak = (self._reflect_streak + 1
+                          if self._reflect_card == previous else 1)
+                hit = None
+                if streak <= REFLECT_CAP:
+                    hit = self.kb.rethink(
+                        previous, language=self.language,
+                        spoken=self._spoken_facets.get(previous, ()))
+                if hit is not None:
+                    line, key = hit
+                    self._spoken_facets.setdefault(previous, set()).add(key)
+                    self._reflect_card = previous
+                    self._reflect_streak = streak
+                    self.last_retrieval = {"source": source,
+                                           "reflection": key}
+                    self._note_card(source)
+                    return line, source
+                body = self.kb.card_body(previous,
+                                         language=self.language,
+                                         detail=policy.detail)
+                if body:
+                    self._reflect_card = previous
+                    self._reflect_streak = streak
+                    self.last_retrieval = {"source": source,
+                                           "reflection": "repeat"}
+                    self._note_card(source)
+                    return body, source
         # A bare "why?" is not a new query: it asks the previous answer to go
         # one premise deeper. Only a confirmed premise edge counts, so this
         # never invents a reason; with no edge the ordinary lookup runs.
@@ -914,6 +995,10 @@ class MindEngine:
             "recent_cards": dict(self._recent_cards),
             "last_hedge_turn": self._last_hedge_turn,
             "last_reframe_turn": self._last_reframe_turn,
+            "spoken_facets": {cid: sorted(facets)
+                              for cid, facets in self._spoken_facets.items()},
+            "reflect_card": self._reflect_card,
+            "reflect_streak": self._reflect_streak,
             "challenge": (self.challenge_session.snapshot()
                           if self.challenge_session is not None else {}),
             "pybot": self._pybot_snapshot(),
@@ -1055,6 +1140,13 @@ class MindEngine:
                                 (data.get("recent_cards") or {}).items()}
         engine._last_hedge_turn = int(data.get("last_hedge_turn", -10 ** 9))
         engine._last_reframe_turn = int(data.get("last_reframe_turn", -10 ** 9))
+        engine._spoken_facets = {
+            str(cid): {str(key) for key in keys}
+            for cid, keys in (data.get("spoken_facets") or {}).items()
+        }
+        reflect_card = data.get("reflect_card")
+        engine._reflect_card = str(reflect_card) if reflect_card else None
+        engine._reflect_streak = int(data.get("reflect_streak", 0))
         challenge = data.get("challenge") or {}
         if challenge:
             engine.challenge().restore(challenge)

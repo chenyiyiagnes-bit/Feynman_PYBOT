@@ -39,6 +39,12 @@ ORIGINS = ("human", "cooccur")
 # purpose: premise/boundary/limit_of are written from the card they explain.
 SYMMETRIC = ("same_mechanism", "same_equation")
 
+# The order a person rethinking a subject would take its faces in: the
+# ground it stands on, what it is not, where it stops, then the analogy.
+# Reflection walks this order and skips what has already been said.
+FACET_ORDER = ("premise", "boundary", "tension", "limit_of",
+               "same_equation", "same_mechanism")
+
 # One sentence per answer. A long line stops being a remark and becomes a
 # link dump. English keeps the same rule but English titles are longer, so
 # the character budget differs; the branches never share a budget.
@@ -312,6 +318,36 @@ class AssocGraph:
                 if line and len(line) <= cap:
                     return line
         return None
+
+    def facets(self, card_id: str, language: str = "zh",
+               titles: Optional[Mapping[str, str]] = None
+               ) -> List[Tuple[str, str]]:
+        """Every confirmed face this card can be looked at from again.
+
+        Reflection needs a *different* angle on the same card, so this lists
+        them all rather than the one a fresh answer would show: premise
+        first, then what it is not, where it stops, and the analogy last.
+        Each entry is ``(edge key, line)``; file order decides ties, so the
+        list is deterministic. Never invents an edge to fill a gap.
+        """
+        titles = titles or {}
+        cap = (MAX_SENTENCE_CHARS_EN if language == "en"
+               else MAX_SENTENCE_CHARS)
+        out: List[Tuple[str, str]] = []
+        for kind in FACET_ORDER:
+            for edge in self.confirmed(card_id):
+                if edge.kind != kind:
+                    continue
+                other = edge.b if edge.a == card_id else edge.a
+                if other == card_id:
+                    continue
+                if kind not in SYMMETRIC and edge.a != card_id:
+                    continue  # premise/boundary/limit_of point one way
+                line = _render(edge, card_id, other, kind, language, titles)
+                if not line or len(line) > cap:
+                    continue
+                out.append((edge.key, line))
+        return out
 
     def _continuation(self, card_id: str, previous: str, language: str,
                       titles: Mapping[str, str], cap: int) -> Optional[str]:
