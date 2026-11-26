@@ -121,11 +121,13 @@ def build(target: Union[str, Path] = "feynman-zh",
             f"it cannot answer in {language!r}. Build the other package.")
     cfg = to_config(persona)
     kb_dir = knowledge_dir(persona)
+    lexicon_dir = persona.root / "data" / "lexicon"
     kb = (FeynmanKB(knowledge_dir=str(kb_dir),
                     learned_dir=str(learned_dir_for(persona)),
                     assoc_path=str(assoc_path_for(persona)),
                     language=package_language,
                     profile=persona.language_profile,
+                    lexicon_dir=(str(lexicon_dir) if persona.recall_expansion else None),
                     source_prefix=persona.id)
           if kb_dir is not None else FeynmanKB.disabled())
     responder = None

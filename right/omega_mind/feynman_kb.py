@@ -273,6 +273,10 @@ def _answer_for(kind: str, row: dict, language: str = "zh",
     return row.get("text", "") or row.get("move", "")
 
 
+RECALL_TOP = 3          # neighbours offered per question token
+RECALL_WEIGHT = 0.35    # share of a real query token's weight a neighbour gets
+
+
 class FeynmanKB:
     # A query must clear this normalised score to be answered from the cards.
     MIN_SCORE = 0.30
@@ -288,6 +292,7 @@ class FeynmanKB:
                  assoc_path: Optional[str] = None,
                  language: Optional[str] = None,
                  profile: Optional[str] = None,
+                 lexicon_dir: Optional[str] = None,
                  source_prefix: Optional[str] = None,
                  spreading: Optional[bool] = None):
         self.docs: List[Doc] = []
@@ -320,6 +325,11 @@ class FeynmanKB:
         self.profile = profile or "default"
         self.core_zh = lang.load("zh", self.profile)
         self.core_en = _EN
+        # Optional derived term graph (tools/build_lexicon.py). Off unless a
+        # caller names the directory: the file is rebuilt data, not shipped
+        # source, so its absence must not change any answer.
+        self.lexicon_dir: Optional[Path] = Path(lexicon_dir) if lexicon_dir else None
+        self._edge_cache: Dict[str, Dict[str, List[Tuple[str, float]]]] = {}
         self.source_prefix = source_prefix or "feynman_kb"
         self.learned: Optional[LearnedStore] = None
         self.aliases: Dict[str, List[str]] = {}
@@ -748,6 +758,46 @@ class FeynmanKB:
         n = max(1, len(docs))
         return {tok: math.log(1.0 + n / d) for tok, d in df.items()}
 
+    def _recall_neighbours(self, query: Iterable[str]) -> Dict[str, float]:
+        """Terms this question's terms are attested with, and how strongly.
+
+        Returns nothing when no lexicon was named or its edges file is absent,
+        which is the normal case on a fresh clone.
+        """
+        edges = self._edges()
+        if not edges:
+            return {}
+        out: Dict[str, float] = {}
+        for tok in query:
+            for neighbour, npmi in edges.get(tok, ())[:RECALL_TOP]:
+                if neighbour == tok:
+                    continue
+                weight = RECALL_WEIGHT * max(0.0, min(1.0, npmi))
+                if weight > out.get(neighbour, 0.0):
+                    out[neighbour] = weight
+        return out
+
+    def _edges(self) -> Dict[str, List[Tuple[str, float]]]:
+        if self.lexicon_dir is None:
+            return {}
+        key = str(self.lexicon_dir)
+        if key in self._edge_cache:
+            return self._edge_cache[key]
+        path = self.lexicon_dir / "edges.jsonl"
+        table: Dict[str, List[Tuple[str, float]]] = {}
+        if path.exists():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                for source, target in ((row["source"], row["target"]),
+                                       (row["target"], row["source"])):
+                    table.setdefault(source, []).append((target, float(row["npmi"])))
+            for source in table:
+                table[source].sort(key=lambda pair: (-pair[1], pair[0]))
+        self._edge_cache[key] = table
+        return table
+
     def search(self, text: str, limit: int = 3,
                language: str = "zh",
                min_score: Optional[float] = None,
@@ -778,7 +828,24 @@ class FeynmanKB:
         # subject information ("energy" in a physics corpus, "father" in a bio).
         idf_cut = math.log(1.0 + len(docs) / max(1.0, 0.25 * len(docs)))
         qweight = {t: w for t, w in qweight.items() if idf.get(t, 0.0) >= idf_cut}
-        total = sum(qweight.values())
+        # Recall expansion from the derived term graph: a question that names
+        # one half of a well-attested pair ("超导" -> "库珀对") reaches the card
+        # that talks about the other half. Only tokens the corpus holds can be
+        # added, at a damped weight so a neighbour can lift a card but never
+        # outvote what was actually asked; the precision gate below still
+        # requires the card to match a token of the *question*.
+        if language != "en":
+            for tok, factor in self._recall_neighbours(query).items():
+                if tok in qweight or tok not in idf or idf[tok] < idf_cut:
+                    continue
+                qweight[tok] = factor * idf[tok] ** 2
+        # The tokens the question itself supplied; neighbours are not among
+        # them, so evidence for a neighbour is not evidence for the question.
+        subject = set(qweight) & set(query)
+        # Neighbours add evidence; they must not dilute how much of the
+        # question a card accounts for, or a lookup that used to reach its card
+        # would lose to one that never had a neighbour to offer.
+        total = sum(qweight[tok] for tok in subject)
         if not total:
             return []
         wants_cjk = bool(_CJK.search(text))
@@ -801,7 +868,7 @@ class FeynmanKB:
             # subject (title / tags / aliases / entry question, weight 2.5+).
             # One stray shared body bigram is how "天气" used to reach a
             # cosmology card.
-            if not any(doc.weights[tok] >= 2.5 for tok in common):
+            if not any(doc.weights[tok] >= 2.5 for tok in common & subject):
                 continue
             # A second shape of the same failure: a question that names
             # several things but touches the card through exactly one token.
@@ -814,7 +881,7 @@ class FeynmanKB:
             # the shared token is not what was asked about. Two-token
             # questions are exempt because a short compound gets split into
             # overlapping bigrams ("费曼图" -> 费曼 + 曼图).
-            if len(common) == 1 and len(query) > 2:
+            if len(common & subject) == 1 and len(query) > 2:
                 continue
             # Coverage: how much of the query the card accounts for. A long
             # card is not penalised for being long; a stray bigram is.

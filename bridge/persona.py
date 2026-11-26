@@ -29,6 +29,10 @@ class Persona:
     # Which rule profile inside the language the mind reads with ("default"
     # unless a package says otherwise: the 老庄 package reads classical).
     language_profile: str
+    # Read the derived term graph (data/lexicon) when answering. Off by
+    # default: the graph is rebuilt data, so a fresh clone has none and must
+    # still answer identically.
+    recall_expansion: bool
     baselines: Dict[str, float]
     taus: Dict[str, float]
     voice: Dict[str, List[str]]
@@ -116,6 +120,7 @@ def load(path: str | Path) -> Persona:
         name=str(data.get("name") or ""),
         language=str(data.get("language") or "zh"),
         language_profile=str(data.get("language_profile") or "default"),
+        recall_expansion=bool(data.get("recall_expansion") or False),
         baselines={d: float(baselines[d]) for d in DIMENSIONS},
         taus={d: float(taus[d]) for d in DIMENSIONS},
         voice={k: list(v) for k, v in voice.items() if isinstance(v, list)},
