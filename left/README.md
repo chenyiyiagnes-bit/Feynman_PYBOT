@@ -69,4 +69,29 @@ python plugins/feynman_vault.py
 
 路径可用 `QBOT_FEYNMAN_CORPUS` / `QBOT_FEYNMAN_KNOWLEDGE` / `QBOT_FEYNMAN_VAULT` 覆盖。
 
+语料行格式自动识别两种：旧格式 `{"source","section","text"}`，以及审计库的会话格式
+`{"messages":[系统,用户,助手],"meta":{...}}`。会话格式只取 assistant 正文作费曼的话
+（按 `\n` 拼接多轮），来源取 `meta.work_name`、段落取 `meta.span_id`，且只收
+`meta.lang == "zh"` 的行；噪声、去世词、长度与拉丁比例过滤两种格式相同。
+
+双语配对行也认：`{"source","section","en","zh"}`，中英两侧都在才入样，缺一侧整行
+跳过——语料要不了一一对应就不能拿来凑数。配对单位是翻译管线自己的分块
+（`pipeline/make_paired_corpus.py` 按 `chunk_md` 的第 i 块配第 i 块），不是按
+段落数猜对齐。
+
+一份语料一个口径：`--corpus` 走"费曼署名作品"白名单（书库用），
+`--trusted-corpus` 跳过白名单（已逐条审过的库用），两个都可重复：
+
+```sh
+python plugins/feynman_vault.py \
+  --trusted-corpus .../base_library_audited.jsonl \
+  --corpus .../cpt_zh.jsonl \
+  --trusted-corpus .../feynman_paired_zh.jsonl
+```
+
+白名单除书名（`AUTHORED_SOURCE_MARKERS`）外还有一份"署名作品登记表"
+（`AUTHORED_SOURCES`）：论文、单篇演讲、口述史、访谈这类文件名里不一定带
+"费曼"的稿子按篇登记；讲他的书、书评、讣告、舞台剧剧评、合著者与致敬文章、
+书的序言版面由 `EXCLUDED_SOURCE_MARKERS` 拦下，先于放行判断。
+
 模块级实现与原文的对照、以及所有偏离原因，见 `docs/PARITY.md`。

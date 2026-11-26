@@ -21,7 +21,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from . import assoc, dialogue, evidence, lang, ranking, review, spreading
+from . import (assoc, dialogue, evidence, lang, ranking, review,
+                 scales, spreading)
 from .learner import LearnedStore, card_row, normalize
 from .paths import learned_dir_for
 
@@ -139,6 +140,21 @@ _CJK = re.compile(r"[一-鿿]+")
 # ``lang.load`` to try another segmentation scheme mean to change the KB under
 # test, not the baseline the scheme is compared against — going through the
 # live name would make the baseline call the candidate, and recurse.
+# Question scaffolding that says nothing about the subject. Left in, these
+# bigrams let any card that happens to contain "什么" win the query.
+_STOP_BIGRAMS = {
+    "什么", "么是", "是什", "为什", "怎么", "么样", "有没", "多少", "哪个", "哪些",
+    "这个", "那个", "就是", "一个", "我们", "你们", "他们", "可以", "是不",
+    "不是", "没有", "一下", "知道", "告诉", "为会", "么会", "子是",
+    # Conversational scaffolding around a real question: "能不能聊聊X到底
+    # 是怎么回事". Left in, these bigrams dilute the subject tokens and push
+    # an on-topic card below the answer gate.
+    "聊聊", "回事", "到底", "能不",
+    # Magnitude scaffolding: "原子有多大" is a question about atoms and a
+    # scale, not about the bigrams 多大/有多.
+    "多大", "多小", "多快", "多慢", "多高", "多重", "多远", "多长", "多久",
+    "有多", "几倍",
+}
 
 _BASELINE_LOAD = lang.load
 
@@ -218,6 +234,15 @@ _ZH_EPISODIC = re.compile(
     r".{0,8}(?:吃|喝|干|做|聊|说|去|见)(?:了|过)?(?:什么|啥|谁|哪儿|哪里)"
 )
 
+# "How big is it?" questions: only these invite a stored magnitude anchor.
+# An ordinary "what is X" keeps its answer uncluttered.
+_SCALE_ZH = re.compile(
+    r"多大|多小|多快|多慢|多高|多重|多远|多长|多久|多少|几倍|数量级|量级|尺度")
+_SCALE_EN = re.compile(
+    r"how (?:big|large|small|fast|slow|far|heavy|hot|cold|long)|"
+    r"what(?:'s| is) the (?:size|scale|mass|speed)|order of magnitude",
+    re.IGNORECASE)
+
 # "Why does ice float?" is a physics question, not a request for an anecdote
 # from the biography. A biography/persona card may only answer a why-question
 # when the question is actually about Feynman.
@@ -254,6 +279,17 @@ class Lookup:
     association: Optional[str] = None
     association_edge: Optional[dict] = None
     diagnostics: dict = field(default_factory=dict)
+    # A characteristic magnitude on the answering card, spoken only when the
+    # question asks for a size / speed / order of magnitude.
+    scale: Optional[str] = None
+    # One question the right brain may ask after answering, built only from
+    # real data: a genuine near-tie between two cards, or the existence of a
+    # confirmed premise edge below the answered card.
+    question: Optional[str] = None
+    # Cards this lookup deliberately demoted because they were just spoken
+    # (retrieval inhibition). An audit field: the answer was chosen, not
+    # merely found.
+    inhibited: Tuple[str, ...] = ()
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -267,7 +303,51 @@ class Lookup:
             "association": self.association,
             "association_edge": self.association_edge,
             **self.diagnostics,
+            "scale": self.scale,
+            "question": self.question,
+            "inhibited": list(self.inhibited),
         }
+
+
+# A near-tie this close is not a confident answer: two cards are within a
+# few hundredths of each other. The hedge (engine) and the clarifying
+# question (below) share the threshold so they cannot disagree.
+QUESTION_MARGIN = 0.06
+
+# Retrieval inhibition: a card just spoken is demoted, not banned. Small on
+# purpose — it should break near-ties, never outvote clear evidence.
+INHIBIT_FACTOR = 0.94
+
+
+def _question_for(found: "Lookup", titles: Dict[str, str], language: str,
+                  premise_ok: bool) -> Optional[str]:
+    """The one question the right brain may ask, or None.
+
+    It names only real things: the two near-tied cards' own titles, or the
+    fact that a confirmed premise edge sits below the answered card. A
+    missing title is never papered over with a card id.
+    """
+    if not found.text or ":" not in found.source:
+        return None
+    card_id = found.source.split(":", 1)[1]
+    if (found.margin is not None and found.margin <= QUESTION_MARGIN
+            and len(found.alternatives) >= 2):
+        top = titles.get(card_id)
+        alt = titles.get(found.alternatives[1][0])
+        if top and alt:
+            if language == "en":
+                if _CJK.search(top) or _CJK.search(alt):
+                    return None
+                return (f"I'm not sure which you meant — “{top}”, "
+                        f"or “{alt}”?")
+            return f"我拿不太准：你想问的是「{top}」，还是「{alt}」那边？"
+        return None
+    if premise_ok:
+        if language == "en":
+            return ("There is another layer under this one; ask “why” "
+                    "to go down.")
+        return "这一层底下还有一层；想往下走，就再问一句“为什么”。"
+    return None
 
 
 @dataclass
@@ -420,6 +500,7 @@ class FeynmanKB:
                           if spreading is None else bool(spreading))
         self._spread: Optional[Dict[str, List[Tuple[str, float]]]] = None
         self._assoc: Optional[assoc.AssocGraph] = None
+        self._scales: Optional[scales.ScaleBook] = None
         self.dir: Optional[Path] = None
         self.learned_dir: Optional[Path] = Path(learned_dir) if learned_dir else None
         # Judgement about this mind's own cards belongs to the persona, not to
@@ -1210,14 +1291,25 @@ class FeynmanKB:
                detail: str = "normal",
                associate: bool = False, *, public_only: bool = False,
                mode: str = "legacy", structured: bool = False,
-               prefer_examples: bool = False) -> Lookup:
+               prefer_examples: bool = False,
+               previous_card: Optional[str] = None,
+               scale: bool = False,
+               curiosity: bool = False,
+               inhibit: Iterable[str] = ()) -> Lookup:
         """Retrieve one answer plus the score, runner-up margin and how many
         candidates were considered. Admission always compares the two best
         eligible cards, even when the caller asks for a single candidate.
 
         ``associate=True`` appends at most one hand-confirmed association
         remark. It is chosen *after* the answer is fixed and never touches
-        the source or the score.
+        the source or the score. ``previous_card`` is the card answered on
+        the previous turn; if an edge joins it to this answer, the remark
+        continues that thought instead of introducing a new card cold.
+
+        ``scale=True`` adds the card's verified magnitude anchor, but only
+        when the question itself asks for a size, speed or order of
+        magnitude. The association never changes the source or the score; a
+        curated scale question may pick its anchored card on purpose.
         """
         if (language is not None and language != self.language) or (
                 self.language == "en" and _CJK.search(text)):
@@ -1227,7 +1319,15 @@ class FeynmanKB:
                           diagnostics={"decision": "hypothetical_measurement"})
         found = self._lookup(text, language=language, min_score=min_score,
                              limit=limit, prefer_kinds=prefer_kinds,
-                             detail=detail, public_only=public_only)
+                             detail=detail, public_only=public_only,
+                             inhibit=inhibit)
+        if scale:
+            # A curated magnitude question goes straight to the card its
+            # anchor was written for; ordinary retrieval loses these
+            # ("原子有多大") because the noun is too common to discriminate.
+            routed = self._scale_route(text, language, detail)
+            if routed is not None:
+                found = routed
         intent = evidence.intent_for(text, self.language)
         diagnostics = {"intent": intent, "mode": mode}
         ranked = []
@@ -1279,14 +1379,178 @@ class FeynmanKB:
                 found = replace(found, text=" ".join(part["text"] for part in plan))
         if not found.text:
             diagnostics.setdefault("decision", "no_evidence")
+        if scale and found.text and not found.scale:
+            anchor = self._scale_for(text, found, language)
+            if anchor:
+                found = replace(found, scale=anchor)
+        if curiosity and found.text and ":" in found.source:
+            card_id = found.source.split(":", 1)[1]
+            titles = {doc.id: doc.title for doc in self.docs}
+            graph = self._assoc_graph()
+            premise_ok = bool(graph and graph.has_premise(card_id))
+            question = _question_for(found, titles, language, premise_ok)
+            if question:
+                found = replace(found, question=question)
         if associate and found.text:
-            matched = self._association_for(found, language)
+            matched = self._association_for(found, language,
+                                            previous_card=previous_card)
             if matched is not None:
-                found = replace(found, association=matched.text, association_edge=matched.provenance())
+                found = replace(found, association=matched.text,
+                                association_edge=matched.provenance())
         return replace(found, diagnostics=diagnostics)
 
+    def _scale_route(self, text: str, language: str, detail: str
+                     ) -> Optional[Lookup]:
+        """Answer a curated magnitude question from the anchored card."""
+        pattern = _SCALE_EN if language == "en" else _SCALE_ZH
+        if not pattern.search(text or ""):
+            return None
+        book = self._scale_book()
+        hit = book.anchor_for(text, language)
+        if hit is None:
+            return None
+        card_id, ask = hit
+        docs = self.docs
+        doc = next((d for d in docs if d.id == card_id), None)
+        if doc is None:
+            return None
+        body = doc.answer_for(detail)
+        if not body:
+            return None
+        if language == "en" and _CJK.search(body):
+            return None
+        anchor = book.line(card_id, language)
+        prefix = self.source_root
+        # The score is a fixed evidence mark for "the curated phrasing
+        # matched", not a TF-IDF value: there is exactly one candidate.
+        return Lookup(text=body, source=f"{prefix}:{card_id}", score=1.0,
+                      considered=1, matched=(ask,), scale=anchor)
+
+    def _scale_for(self, text: str, found: Lookup, language: str
+                   ) -> Optional[str]:
+        """The card's magnitude anchor, only for a magnitude question."""
+        pattern = _SCALE_EN if language == "en" else _SCALE_ZH
+        if not pattern.search(text or ""):
+            return None
+        if ":" not in found.source:
+            return None
+        card_id = found.source.split(":", 1)[1]
+        if card_id.startswith("learned-") or card_id == "no_match":
+            return None
+        anchor = self._scale_book().line(card_id, language)
+        if not anchor or anchor in (found.text or ""):
+            return None
+        return anchor
+
+    def follow_premise(self, card_id: str, language: str = "zh",
+                       detail: str = "normal",
+                       avoid: Iterable[str] = ()) -> Optional[Lookup]:
+        """Answer a bare "why?" by walking one confirmed premise hop.
+
+        The body is the premise card's own answer; the sentence in front of
+        it is the hand-written link. Nothing is generated here: the link is
+        confirmed data and the prose comes from the row. None means the card
+        has no confirmed premise, so the caller answers normally instead.
+        """
+        if (not card_id or card_id.startswith("learned-")
+                or card_id == "no_match"):
+            return None
+        graph = self._assoc_graph()
+        if graph is None or not graph.edges:
+            return None
+        step = graph.premise_step(card_id, language=language, avoid=avoid)
+        if step is None:
+            return None
+        premise_id, link = step
+        docs = self.docs
+        doc = next((d for d in docs if d.id == premise_id), None)
+        if doc is None:
+            return None
+        body = doc.answer_for(detail)
+        if not body:
+            return None
+        if language == "en" and _CJK.search(body):
+            return None
+        lead = (f"One step down: {link}. " if language == "en"
+                else f"往下追一层：{link}。")
+        prefix = self.source_root
+        return Lookup(text=lead + body, source=f"{prefix}:{premise_id}")
+
+    def recast(self, card_id: str, language: str = "zh"
+               ) -> Optional[Tuple[str, str]]:
+        """Say the card a second way, or None.
+
+        Wraps the association graph's confirmed analogy: the mind may recast
+        a card only through an edge that already exists, and only when both
+        halves (the shared mechanism and where it breaks) are written.
+        """
+        if (not card_id or card_id.startswith("learned-")
+                or card_id == "no_match"):
+            return None
+        graph = self._assoc_graph()
+        if graph is None or not graph.edges:
+            return None
+        docs = self.docs
+        titles = {doc.id: doc.title for doc in docs}
+        hit = graph.recast(card_id, language=language, titles=titles)
+        if hit is None:
+            return None
+        line, key = hit
+        return line, f"analogy:{key}"
+
+    def rethink(self, card_id: str, language: str = "zh",
+                spoken: Iterable[str] = ()) -> Optional[Tuple[str, str]]:
+        """Look at the same card from a face that has not been said yet.
+
+        Reflection, not retrieval: the card stays the same, only the angle
+        changes. Faces come from confirmed edges (see ``AssocGraph.facets``)
+        and ``spoken`` names the ones already used, so a second reflection
+        never repeats the first. Returns ``(line, facet key)`` or None when
+        the card has nothing new to show — the caller then says the card
+        again rather than inventing an angle.
+        """
+        if (not card_id or card_id.startswith("learned-")
+                or card_id == "no_match"):
+            return None
+        graph = self._assoc_graph()
+        if graph is None or not graph.edges:
+            return None
+        docs = self.docs
+        titles = {doc.id: doc.title for doc in docs}
+        used = {str(key) for key in spoken}
+        for key, line in graph.facets(card_id, language=language,
+                                      titles=titles):
+            if key in used:
+                continue
+            return line, key
+        return None
+
+    def card_body(self, card_id: str, language: str = "zh",
+                  detail: str = "normal") -> Optional[str]:
+        """The card's own answer, for saying it again plainly.
+
+        Used when a reflection has no unused face: repeating the card is
+        better than manufacturing a new angle. None means the card does not
+        exist in this language (or is Chinese-only in English mode), so the
+        caller must not speak it.
+        """
+        if not card_id or card_id == "no_match":
+            return None
+        docs = self.docs
+        doc = next((d for d in docs if d.id == card_id), None)
+        if doc is None:
+            return None
+        body = doc.answer_for(detail)
+        if not body:
+            return None
+        if language == "en" and _CJK.search(body):
+            return None
+        return body
+
     def _association_for(self, found: Lookup,
-                         language: Optional[str]) -> Optional[assoc.Match]:
+                         language: Optional[str],
+                         previous_card: Optional[str] = None
+                         ) -> Optional[assoc.Match]:
         prefix = self.source_root + ":"
         if not found.source.startswith(prefix):
             return None
@@ -1303,7 +1567,7 @@ class FeynmanKB:
         skip = {card_id}
         skip.update(other for other, _score in found.alternatives)
         return graph.select(card_id, language=language, titles=titles,
-                            exclude=skip)
+                            exclude=skip, continuity_with=previous_card)
 
     def _assoc_graph(self) -> Optional[assoc.AssocGraph]:
         if self._assoc is None:
@@ -1384,10 +1648,16 @@ class FeynmanKB:
         return next((p for p in passages if cue.search(p) and p not in spoken
                      and (kind != "rephrase" or not any(p in s for s in spoken))), None), None
 
+    def _scale_book(self) -> scales.ScaleBook:
+        if self._scales is None:
+            self._scales = scales.load()
+        return self._scales
+
     def _lookup(self, text: str, language: Optional[str] = None,
                 min_score: Optional[float] = None, limit: int = 3,
                 prefer_kinds: Iterable[str] = (),
-                detail: str = "normal", public_only: bool = False) -> Lookup:
+                detail: str = "normal", public_only: bool = False,
+                inhibit: Iterable[str] = ()) -> Lookup:
         # A package names its own source; there is no cross-package index to
         # borrow a prefix from.
         prefix = self.source_root
@@ -1398,7 +1668,22 @@ class FeynmanKB:
         soft_ok = min_score is None or min_score <= self.MIN_SCORE
         floor = min(threshold, self.SOFT_SCORE) if soft_ok else threshold
         hits = self.search(text, language=language, limit=max(2, limit),
-                           min_score=floor, prefer_kinds=prefer_kinds, public_only=public_only)
+                           min_score=floor, prefer_kinds=prefer_kinds,
+                           public_only=public_only)
+        # Retrieval inhibition: a card spoken in the last few turns is less
+        # likely to be selected again, so a near-tie resolves to the other
+        # card instead of circling. This never turns a confident answer into
+        # a miss: the demotion only applies when the demoted top still clears
+        # the gate, so the worst case is the runner-up taking over — exactly
+        # what the phenomenon says should happen.
+        blocked = {str(card_id) for card_id in inhibit}
+        inhibited: Tuple[str, ...] = ()
+        if blocked and len(hits) > 1 and hits[0][0] * INHIBIT_FACTOR >= threshold:
+            demoted = [(score * INHIBIT_FACTOR if doc.id in blocked else score,
+                        doc) for score, doc in hits]
+            demoted.sort(key=lambda pair: pair[0], reverse=True)
+            inhibited = tuple(doc.id for _score, doc in hits if doc.id in blocked)
+            hits = demoted
         alternatives = tuple((doc.id, score) for score, doc in hits[:3])
         if not hits or hits[0][0] < threshold:
             if hits:
@@ -1414,6 +1699,7 @@ class FeynmanKB:
                         considered=len(hits),
                         matched=self._matched_terms(text, doc, language),
                         alternatives=alternatives,
+                        inhibited=inhibited,
                     )
                 # A user-taught restatement must not veto the corpus card it
                 # restates: a near-tie across the learned/corpus boundary is
@@ -1424,7 +1710,7 @@ class FeynmanKB:
                 if tie is not None:
                     return tie
             return Lookup(None, f"{prefix}:no_match", considered=len(hits),
-                          alternatives=alternatives)
+                          alternatives=alternatives, inhibited=inhibited)
         score, doc = hits[0]
         margin = score - hits[1][0] if len(hits) > 1 else None
         return Lookup(
@@ -1435,6 +1721,7 @@ class FeynmanKB:
             considered=len(hits),
             matched=self._matched_terms(text, doc, language),
             alternatives=alternatives,
+            inhibited=inhibited,
         )
 
     def _matched_terms(self, text: str, doc: Doc,

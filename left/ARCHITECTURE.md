@@ -132,7 +132,7 @@ PYTHONPATH=. .venv/bin/python -B scripts/run_all_tests.py
 | `test_adaptive_fixes.py` | 8 | 适应性改造回归：相对排序补救、确定性归并、离线诚实降级。 |
 | `test_dialogue_modes.py` | 7 | P20 五条对话优化：默认全关，开启只加字段，正文逐字节不变。 |
 | `test_discord_gateway.py` | 12 | P18 Discord 网关：离线用假总线测，不需要 bot token，也不装 discord.py。 |
-| `test_domain_crawler.py` | 7 | 旁路扩展器回归（P6.3）：默认关闭、只写扩展库、死亡标记拦截、原型覆盖生效。 |
+| `test_domain_crawler.py` | 19 | 旁路扩展器回归：默认关闭、只写扩展库、小句级抽取与分句死亡标记过滤、限速重试、落盘缓存、provenance 回滚、日志/回滚端点。 |
 | `test_domain_expander.py` | 8 | 扩展库 ext_hash 与原子写入回归（P6.5）。 |
 | `test_entangled_pairs.py` | 4 | 纠缠对建设回归：只从 E→C 共现边生成、(实体, 后果) 键可命中、覆盖可实验挂载。 |
 | `test_entity_clause_miner.py` | 21 | 实体专属后果挖掘器：从句级门禁的回归测试。 |

@@ -83,7 +83,7 @@ v2.0 安装器从 **5781 行**开始；`FILES` 字典的正文到 6111 行，611
 
 | 组件 | 文件 | 作用 |
 |---|---|---|
-| 铸字器 | `plugins/feynman_vault.py` | 从本机 `cpt_zh.jsonl` 中费曼署名作品抽起手式/实体/动作/可观测后果，每颗记 `source｜section`；量出语体相位、逐槽实测偏移、7 类句法骨架、同句 ±5 字共现表；元话语名词（角度/结论/说法/情况…）不进任何槽；可选 `jieba` 词性净化 |
+| 铸字器 | `plugins/feynman_vault.py` | 从本机 `cpt_zh.jsonl` 中费曼署名作品抽起手式/实体/动作/可观测后果，每颗记 `source｜section`；量出语体相位、逐槽实测偏移、7 类句法骨架、同句 ±5 字共现表；元话语名词（角度/结论/说法/情况…）不进任何槽；可选 `jieba` 词性净化；语料行按行自动识别旧格式（`source/section/text`）与审计库会话格式（`messages` + `meta`，取 assistant 正文、来源 `work_name`、段落 `span_id`，只收 `meta.lang == "zh"`）；多份语料可同时入样（`--corpus` 走署名白名单、`--trusted-corpus` 跳过白名单），每份用自己的判据；白名单外另设署名作品登记表 `AUTHORED_SOURCES`（论文、单篇演讲、口述史、访谈按篇登记），别人写的剧评、书目综述、合著者文章、序言版面由 `EXCLUDED_SOURCE_MARKERS` 先拦下；双语配对行（`en`+`zh`）两侧都在才入样 |
 | 引擎 | `plugins/feynman_typesetter.py` | 3⁴=81 条四槽路径、语体旋钮（0–120°）、逐槽实测偏移、术语闸门、跨域纠缠加成、语体相干门、语料骨架渲染、八个心智算子、用户实体注入与原型平滑、纯净度/枪毙路径、留白字粒 |
 | 会话记忆 | `plugins/feynman_memory.py` | 每会话一条带阻尼的复振幅：同向保留（0.85·cosΔθ），相长叠加，上限 2.0；旧方向被抵消到 0.15 以下判退相干；下一轮以 ≤15° 的力度拉回旋钮 |
 | 接口 | `bus/main.py` | `GET /feynman/vault`、`GET /feynman/operators`、`POST /feynman/print`（可选 `user_query` / `session_id`） |
@@ -141,11 +141,11 @@ v2.0 安装器从 **5781 行**开始；`FILES` 字典的正文到 6111 行，611
     预设扩到 7 个。方案里的 `human_warmth`（亡妻阿琳、人生温情）不实现，与"剔除去世与追忆内容"
     的约束直接冲突。
 
-### 实测（2026-11-24，真实语料）
+### 实测（2026-11-26，真实语料）
 
-- 语料：`cpt_zh.jsonl` 中费曼署名作品 2,236 个干净段落、74,071 句；四槽字粒 60/60/60/17
-  （后果槽按"可观测状态"硬过滤，动词开头的片段一律不要，所以数量最少）；句法骨架 7 条；
-  共现对 409 条；实测槽位偏移 `{−2.6, −0.6, +1.4, +3.4}`。
+- 语料：审计库 + `cpt_zh.jsonl` 署名作品 + 双语配对语料，共 18,094 个干净段落、145,386 句、
+  114 个来源；四槽字粒 60/60/60/60；句法骨架 7 条；共现对 520 条；实测槽位偏移
+  `{−4.1, −2.1, −0.1, +1.9}`。
 - 出处抽查：所有字粒均含 `source｜section`，来源限定在讲义中译、别闹了费曼先生、发现的乐趣、
   永远的费曼合集、费曼讲系列、QED、物理定律的本性等本人作品。
 - 确定性：同 `bank_id+style_deg+nonce` 两次排版完全一致。
@@ -163,9 +163,9 @@ v2.0 安装器从 **5781 行**开始；`FILES` 字典的正文到 6111 行，611
 | P6.5 ext_hash 与扩展库 | `plugins/domain_expander.py` | 原文哈希漏掉 `edge_scores`/`skeleton_scores`，且时间戳参与哈希导致每次都漂；这里 8 位指纹覆盖四个字段、排序去重、时间戳排除；空库固定 `00000000`，种子链与旧基线逐字节一致；写入走临时文件 + `os.replace`，读-改-写共用 `RLock` |
 | P6.6 受控进化闭环 | `plugins/evolution_loop.py`、`bus/main.py`（`/feynman/feedback`） | 原文隐式信号拿单句四槽相干度冒充跨轮相干度；这里显式 👍 +0.30 / 👎 −0.45、钳位 [0.15,1.5]、跌破剪枝；隐式只看同 session 的实体延续或 `|Δphase| ≤ 8°`，换话题才轻微衰减；GC 按分数排序；学到的乘子只在 `source=="user"` 的路径上生效 |
 | P6.1 第四模式前端 | `frontend/dashboard.py` | 原文前端按 `sentence`/`slots`/`skeleton_type` 等不存在的字段渲染；这里对齐真实响应 `printed_collapse`、`paths[0]["glyphs"]`、`skeleton["pattern_type"]`、`sources`、`session`、`ext_hash`；新增问句输入、会话开关/新会话、👍/👎、经验乘子与 ext_hash 展示；首屏不自动排版 |
-| P6.3 旁路爬虫 | `plugins/domain_crawler.py`、`bus/main.py`（`/feynman/extend`） | 原文爬虫被截断且默认自动跑；这里默认 `FEYNMAN_ENABLE_EXTENDER=0`，手动触发、一次 ≤5 实体、5s 超时、单实体缓存；只用中文维基摘要，只写扩展库，摘要含去世/追悼标记整条丢弃，抓取日志不参与哈希 |
+| P6.3 旁路爬虫 | `plugins/domain_crawler.py`、`bus/main.py`（`/feynman/extend`、`/feynman/extend/log`、`/feynman/extend/rollback`）、`right/scripts/import_crawl_candidates.py` | 原文爬虫被截断且默认自动跑；这里默认 `FEYNMAN_ENABLE_EXTENDER=0`，手动触发、一次 ≤5 实体（去重）、5s 超时、请求间隔 250ms、429/5xx 只重试一次并尊重 Retry-After；只访问允许名单内的维基域名，消歧义页转搜索、中文条目优先、纯英文实体走英文站并取中文 langlinks；摘要按小句过滤去世/追悼标记，全删光才整条丢弃；否定/条件句跳过，名词化搭配不算动作；缓存落盘 `data/crawl_cache.json` 且按状态区分 TTL；每次抓取留 run_id 与 `edge_provenance`，可按 run 回滚；爬虫共现实体只经右脑脚本转成 `same_domain` 隔离候选，永不直接说话 |
 
-验收：7 个测试套件 72 项全部通过（`test_feynman_typesetter` 21、`test_feynman_entities_memory` 17、`test_feynman_abstract` 6、`test_domain_expander` 8、`test_evolution_loop` 11、`test_frontend_contract` 2、`test_domain_crawler` 7）；全模块 `py_compile` 通过。已知限制：抽象句的"后果"槽仍按语体相位选取，可能与实体无直接语义关系；爬虫只补原型与共现边，不自动加分，分数仍只由显式反馈驱动。
+验收：7 个测试套件 84 项全部通过（`test_feynman_typesetter` 21、`test_feynman_entities_memory` 17、`test_feynman_abstract` 6、`test_domain_expander` 8、`test_evolution_loop` 11、`test_frontend_contract` 2、`test_domain_crawler` 19）；全模块 `py_compile` 通过。已知限制：抽象句的"后果"槽仍按语体相位选取，可能与实体无直接语义关系；爬虫只补原型与共现边，不自动加分，分数仍只由显式反馈驱动；爬虫实体到右脑卡片只生成 `same_domain` 隔离候选（`assoc_candidates_web.json`），须逐条代审后才能成边。
 
 
 ## P7 四层增量落地（2026-11-24，对照 `PYBOT量子算法4_20261124-2232.md`）

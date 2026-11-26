@@ -57,6 +57,11 @@ def _edge(**over):
     return assoc.Edge(**base)
 
 
+def _speaking_sides(edge):
+    """Which endpoints may speak this edge (symmetric vs one-way)."""
+    return (edge.a, edge.b) if edge.kind in assoc.SYMMETRIC else (edge.a,)
+
+
 class TestEdgeSchema(unittest.TestCase):
     def test_a_valid_human_edge_has_no_problems(self):
         self.assertEqual(assoc.problems(_edge()), [])
@@ -85,6 +90,36 @@ class TestEdgeSchema(unittest.TestCase):
         e = _edge(origin="cooccur", kind="same_domain",
                   mechanism="", difference="")
         self.assertEqual(assoc.problems(e), [])
+
+    def test_same_equation_needs_a_mapping(self):
+        e = _edge(kind="same_equation", mapping="")
+        self.assertTrue(any("mapping" in p for p in assoc.problems(e)))
+        ok = _edge(kind="same_equation", mapping="x↔q、m↔L",
+                   mapping_en="x↔q, m↔L")
+        self.assertEqual(assoc.problems(ok), [])
+
+    def test_mapping_must_be_pairs(self):
+        bad = _edge(kind="same_equation", mapping="x~q")
+        self.assertTrue(assoc.problems(bad))
+        empty_side = _edge(kind="same_equation", mapping="x↔")
+        self.assertTrue(assoc.problems(empty_side))
+
+    def test_limit_of_needs_a_condition(self):
+        e = _edge(kind="limit_of", condition="", condition_en="")
+        self.assertTrue(any("condition" in p for p in assoc.problems(e)))
+        ok = _edge(kind="limit_of", condition="ζ≫1", condition_en="zeta >> 1")
+        self.assertEqual(assoc.problems(ok), [])
+
+    def test_tension_needs_the_missing_condition(self):
+        e = _edge(kind="tension", difference="", difference_en="")
+        self.assertTrue(any("difference" in p for p in assoc.problems(e)))
+        ok = _edge(kind="tension", mechanism="一条说可逆，一条说熵增")
+        self.assertEqual(assoc.problems(ok), [])
+
+    def test_english_mapping_may_not_contain_chinese(self):
+        bad = _edge(kind="same_equation", mapping="x↔q",
+                    mapping_en="x↔电荷")
+        self.assertTrue(assoc.problems(bad))
 
 
 class TestLoadAndQuarantine(unittest.TestCase):
@@ -176,6 +211,75 @@ class TestSentence(unittest.TestCase):
         ])
         line = graph.sentence("x", titles={"m": "机制卡", "p": "前提卡"})
         self.assertIn("机制卡", line)
+
+    def test_same_equation_names_the_mapping_and_inverts_it(self):
+        edge = _edge(kind="same_equation", mechanism="同一个二阶方程",
+                     mapping="x↔q、m↔L",
+                     mechanism_en="the same second-order equation",
+                     mapping_en="x↔q, m↔L")
+        graph = assoc.AssocGraph([edge])
+        forward = graph.sentence("x", titles={"y": "乙卡"})
+        self.assertIn("x↔q", forward)
+        self.assertIn("乙卡", forward)
+        backward = graph.sentence("y", titles={"x": "甲卡"})
+        self.assertIn("q↔x", backward)
+        self.assertNotIn("x↔q", backward)
+
+    def test_same_equation_outranks_same_mechanism(self):
+        graph = assoc.AssocGraph([
+            _edge(kind="same_mechanism", b="m"),
+            _edge(kind="same_equation", b="eq", mapping="x↔q",
+                  mapping_en="x↔q"),
+        ])
+        line = graph.sentence("x", titles={"m": "机制卡", "eq": "方程卡"})
+        self.assertIn("方程卡", line)
+        self.assertIn("同一个方程", line)
+
+    def test_limit_of_speaks_only_from_the_special_case(self):
+        edge = _edge(kind="limit_of", condition="ζ≫1", condition_en="zeta >> 1")
+        graph = assoc.AssocGraph([edge])
+        line = graph.sentence("x", titles={"y": "一般理论"})
+        self.assertIn("一般理论", line)
+        self.assertIn("ζ≫1", line)
+        self.assertIsNone(graph.sentence("y", titles={"x": "特例"}))
+
+    def test_tension_states_the_missing_condition(self):
+        edge = _edge(kind="tension", mechanism="一条说可逆，一条说熵增",
+                     difference="可逆说的是全部微观自由度")
+        line = assoc.AssocGraph([edge]).sentence("x", titles={"y": "乙卡"})
+        self.assertIn("看着矛盾", line)
+        self.assertIn("乙卡", line)
+        self.assertIn("缺的条件", line)
+        self.assertIn("全部微观自由度", line)
+
+    def test_continuity_line_continues_the_previous_card(self):
+        graph = assoc.AssocGraph([_edge()])
+        line = graph.sentence("x", titles={"y": "乙卡"}, continuity_with="y")
+        self.assertIn("接着刚才", line)
+        self.assertIn("乙卡", line)
+        self.assertNotIn("这和", line)
+
+    def test_continuity_needs_an_edge_to_the_previous_card(self):
+        graph = assoc.AssocGraph([_edge(b="z")])
+        line = graph.sentence("x", titles={"z": "丙卡"}, continuity_with="y")
+        self.assertNotIn("接着刚才", line)
+        self.assertIn("丙卡", line)  # the ordinary line still speaks
+
+    def test_continuity_falls_back_when_it_does_not_fit(self):
+        long_mechanism = "很长" * 80
+        edge = _edge(mechanism=long_mechanism)
+        graph = assoc.AssocGraph([edge])
+        line = graph.sentence("x", titles={"y": "乙卡"}, continuity_with="y")
+        self.assertTrue(line is None or "接着刚才" not in line)
+
+    def test_english_continuity_says_following_on(self):
+        edge = _edge(mechanism_en="same damping",
+                     difference_en="friction vs air")
+        line = assoc.AssocGraph([edge]).sentence(
+            "x", language="en", titles={"y": "Card Y"},
+            continuity_with="y")
+        self.assertIn("Following on from", line)
+        self.assertNotRegex(line, r"[一-鿿]")
 
 
 class TestMining(unittest.TestCase):
@@ -309,6 +413,146 @@ class TestEngineSpeaks(unittest.TestCase):
         self.assertIn("Don't confuse it with", association)
         self.assertNotRegex(association, r"[\u4e00-\u9fff]")
 
+    def test_next_turn_continues_the_previous_card(self):
+        from omega_mind.config import get_persona
+        from omega_mind.engine import MindEngine
+        from omega_mind.pybot_bridge import PyBotBridge
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
+        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
+        if not kb.available():
+            self.skipTest("feynman-open knowledge not on this machine")
+        mind = MindEngine(
+            persona=get_persona("generic"), store_path=None,
+            clock=lambda: 1000.0, bridge=PyBotBridge.disabled(), kb=kb,
+            auto_save=False)
+        first = mind.turn("\u9971\u548c\u662f\u4ec0\u4e48", now=1000.0)
+        self.assertEqual(first.source, "feynman_kb:C_SATURATE")
+        second = mind.turn("\u6b63\u53cd\u9988\u662f\u4ec0\u4e48", now=1001.0)
+        self.assertEqual(second.source, "feynman_kb:C_FEEDBACK")
+        association = second.retrieval.get("association")
+        self.assertIn("\u63a5\u7740\u521a\u624d", association)
+        self.assertIn("\u9971\u548c", association)
+        self.assertIn("\u6781\u9650", association)
+
+    def test_small_talk_breaks_the_thread(self):
+        from omega_mind.config import get_persona
+        from omega_mind.engine import MindEngine
+        from omega_mind.pybot_bridge import PyBotBridge
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
+        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
+        if not kb.available():
+            self.skipTest("feynman-open knowledge not on this machine")
+        mind = MindEngine(
+            persona=get_persona("generic"), store_path=None,
+            clock=lambda: 1000.0, bridge=PyBotBridge.disabled(), kb=kb,
+            auto_save=False)
+        mind.turn("\u9971\u548c\u662f\u4ec0\u4e48", now=1000.0)
+        mind.turn("\u4eca\u5929\u5929\u6c14\u4e0d\u9519", now=1001.0)
+        third = mind.turn("\u6b63\u53cd\u9988\u662f\u4ec0\u4e48", now=1002.0)
+        association = third.retrieval.get("association") or ""
+        self.assertNotIn("\u63a5\u7740\u521a\u624d", association)
+
+    def test_asking_the_same_question_twice_does_not_continue(self):
+        from omega_mind.config import get_persona
+        from omega_mind.engine import MindEngine
+        from omega_mind.pybot_bridge import PyBotBridge
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
+        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
+        if not kb.available():
+            self.skipTest("feynman-open knowledge not on this machine")
+        mind = MindEngine(
+            persona=get_persona("generic"), store_path=None,
+            clock=lambda: 1000.0, bridge=PyBotBridge.disabled(), kb=kb,
+            auto_save=False)
+        mind.turn("\u9971\u548c\u662f\u4ec0\u4e48", now=1000.0)
+        again = mind.turn("\u9971\u548c\u662f\u4ec0\u4e48", now=1001.0)
+        association = again.retrieval.get("association") or ""
+        self.assertNotIn("\u63a5\u7740\u521a\u624d", association)
+
+
+class TestWhyChain(unittest.TestCase):
+    """A bare "why?" after an answer walks one confirmed premise hop."""
+
+    def _graph(self):
+        return assoc.AssocGraph([
+            _edge(a="x", b="y", kind="premise", mechanism="x 要先有 y",
+                  mechanism_en="x needs y first", difference="",
+                  difference_en=""),
+            assoc.Edge(a="y", b="z", kind="premise", origin="cooccur",
+                       mechanism="机器猜的", mechanism_en="machine guess"),
+        ])
+
+    def test_premise_step_returns_the_card_and_the_link(self):
+        self.assertEqual(self._graph().premise_step("x"), ("y", "x 要先有 y"))
+
+    def test_premise_step_speaks_english(self):
+        self.assertEqual(self._graph().premise_step("x", language="en"),
+                         ("y", "x needs y first"))
+
+    def test_premise_points_one_way(self):
+        self.assertIsNone(self._graph().premise_step("y"))
+
+    def test_cooccurrence_is_never_a_premise(self):
+        graph = assoc.AssocGraph([
+            assoc.Edge(a="y", b="z", kind="premise", origin="cooccur",
+                       mechanism="机器猜的")])
+        self.assertIsNone(graph.premise_step("y"))
+
+    def test_avoid_stops_the_chain_going_in_a_circle(self):
+        self.assertIsNone(self._graph().premise_step("x", avoid={"y"}))
+
+
+class TestWhyFollowUp(unittest.TestCase):
+    """Engine-level: "为什么？" continues from the previous card's premise."""
+
+    def _mind(self, language="zh"):
+        from omega_mind.config import get_persona
+        from omega_mind.engine import MindEngine
+        from omega_mind.pybot_bridge import PyBotBridge
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
+        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-why-"))
+        if not kb.available():
+            self.skipTest("feynman-open knowledge not on this machine")
+        return MindEngine(
+            persona=get_persona("generic"), store_path=None,
+            clock=lambda: 1000.0, bridge=PyBotBridge.disabled(), kb=kb,
+            auto_save=False, language=language)
+
+    def test_a_bare_why_walks_one_premise_hop(self):
+        mind = self._mind()
+        first = mind.turn("彩虹为什么是弯的", now=1000.0)
+        self.assertEqual(first.source, "feynman_kb:opt-009")
+        why = mind.turn("为什么？", now=1001.0)
+        self.assertEqual(why.source, "feynman_kb:opt-002")
+        self.assertTrue(why.base_reply)
+        self.assertIn("折射率", why.base_reply)
+
+    def test_the_hop_uses_the_english_branch_too(self):
+        mind = self._mind("en")
+        first = mind.turn("Why is a rainbow curved?", now=1000.0)
+        self.assertEqual(first.source, "feynman_kb_en:opt-009")
+        why = mind.turn("Why?", now=1001.0)
+        self.assertEqual(why.source, "feynman_kb_en:opt-002")
+        self.assertNotRegex(why.reply, r"[一-鿿]")
+
+    def test_an_unrelated_turn_breaks_the_chain(self):
+        mind = self._mind()
+        mind.turn("彩虹为什么是弯的", now=1000.0)
+        mind.turn("今天天气不错", now=1001.0)
+        why = mind.turn("为什么？", now=1002.0)
+        self.assertNotEqual(why.source, "feynman_kb:opt-002")
+
+    def test_a_why_with_its_own_subject_is_not_a_follow_up(self):
+        mind = self._mind()
+        mind.turn("彩虹为什么是弯的", now=1000.0)
+        why = mind.turn("为什么天空是蓝的", now=1001.0)
+        self.assertNotEqual(why.source, "feynman_kb:opt-002")
+        self.assertEqual(why.source, "feynman_kb:opt-012")
+
 
 class TestCandidateReview(unittest.TestCase):
     """Every mined pair has a human verdict, and promotions are real edges."""
@@ -379,21 +623,22 @@ class TestCommittedEdges(unittest.TestCase):
         for edge in self.graph.edges:
             if edge.origin != "human" or edge.kind not in assoc.SPOKEN:
                 continue
-            sides = ("x", "y") if edge.kind == "same_mechanism" else ("x",)
-            for _ in sides:
-                line = self.graph.sentence(edge.a if edge.kind != "same_mechanism"
-                                           else edge.a, titles=self.titles)
+            for side in _speaking_sides(edge):
+                line = self.graph.sentence(side, titles=self.titles)
                 self.assertIsNotNone(line, edge)
                 self.assertLessEqual(len(line), assoc.MAX_SENTENCE_CHARS, edge)
-                break
 
     def test_every_spoken_edge_has_english_prose(self):
         for edge in self.graph.edges:
             if edge.origin != "human" or edge.kind not in assoc.SPOKEN:
                 continue
             self.assertTrue(edge.mechanism_en.strip(), edge)
-            if edge.kind in ("same_mechanism", "boundary"):
+            if edge.kind in ("same_mechanism", "same_equation", "boundary"):
                 self.assertTrue(edge.difference_en.strip(), edge)
+            if edge.kind == "same_equation":
+                self.assertTrue(edge.mapping_en.strip(), edge)
+            if edge.kind == "limit_of":
+                self.assertTrue(edge.condition_en.strip(), edge)
 
     def test_english_branch_speaks_with_english_titles(self):
         en_titles = {doc.id: doc.title for doc in self.en_kb.docs}
@@ -411,15 +656,13 @@ class TestCommittedEdges(unittest.TestCase):
         for edge in self.graph.edges:
             if edge.origin != "human" or edge.kind not in assoc.SPOKEN:
                 continue
-            sides = (edge.a, edge.b) if edge.kind == "same_mechanism" \
-                else (edge.a,)
-            for side in sides:
+            for side in _speaking_sides(edge):
                 for lang, titles in (("zh", zh_titles), ("en", en_titles)):
                     line = self.graph.sentence(side, language=lang,
                                                titles=titles)
                     self.assertIsNotNone(line, (edge, side, lang))
-                    self.assertNotRegex(
-                        line, r"[\u4e00-\u9fff]") if lang == "en" else None
+                    if lang == "en":
+                        self.assertNotRegex(line, r"[\u4e00-\u9fff]")
 
     def test_every_card_has_an_english_name(self):
         import re
@@ -434,6 +677,9 @@ class TestCommittedEdges(unittest.TestCase):
         self.assertIn("same_mechanism", kinds)
         self.assertIn("premise", kinds)
         self.assertIn("boundary", kinds)
+        self.assertIn("same_equation", kinds)
+        self.assertIn("limit_of", kinds)
+        self.assertIn("tension", kinds)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from .config import BOUNDS, DIMENSIONS, PersonaConfig
-from .cube import HOME_OF, CubeState, Move, Pos, parse_move
+from .cube import HOME_OF, CubeState, Move, Pos, _rotate, parse_move
 
 # A quarter-turn boost of at most +20% for a cubie standing on the front face
 # after having been moved there, decaying by 5% per extra turn on stage until
@@ -120,12 +120,38 @@ SENSITIVITY_GAIN = 1.35
 
 
 def front_names(cube: CubeState) -> Set[str]:
-    return {name for pos, name in cube.occupancy.items() if pos[2] == 1}
+    """Cubies on the front face *as currently framed*. A reframe moves this
+    set without moving a single cubie."""
+    return {name for pos, name in cube.occupancy.items()
+            if cube.view(pos)[2] == 1}
 
 
 def displacement(cube: CubeState) -> int:
     return sum(1 for pos, name in cube.occupancy.items()
                if HOME_OF.get(name) != pos)
+
+
+@dataclass(frozen=True)
+class CubeSignal:
+    """The arrangement read as a continuous signal, not just a stance.
+
+    ``displacement`` is the share of cubies away from home: the slow channel
+    the baselines already relax toward. ``delta`` is how many displaced
+    cubies this mind gained or lost since the last observed turn — the fast
+    channel, and the only one the left brain consumes. ``front_load`` is the
+    share of the front face that is displaced rather than default.
+    """
+
+    displacement: float = 0.0
+    delta: int = 0
+    front_load: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "displacement": round(self.displacement, 4),
+            "delta": self.delta,
+            "front_load": round(self.front_load, 4),
+        }
 
 
 @dataclass(frozen=True)
@@ -165,6 +191,11 @@ class CubeFeedback:
         self.dwell: Dict[str, int] = {}
         self.last_turn: Dict[str, int] = {}
         self.observed_turn: Optional[int] = None
+        # Momentum baseline: displacement measured at the previous observed
+        # turn. None until the first observation, so a fresh mind does not
+        # report a spurious jump from an unknown past.
+        self.last_displaced: Optional[int] = None
+        self.signal = CubeSignal()
 
     # -- per-turn observation ---------------------------------------------
 
@@ -184,6 +215,18 @@ class CubeFeedback:
                 del self.dwell[name]
         for name in live:
             self.dwell[name] = self.dwell.get(name, 0) + 1
+        # Measure the arrangement once per turn: displacement is the slow
+        # stance, delta is the fast momentum, front_load is how much of the
+        # focus face is a moved stance. First observation has no baseline,
+        # so its delta is zero rather than "whatever the past was".
+        displaced = displacement(cube)
+        delta = 0 if self.last_displaced is None else displaced - self.last_displaced
+        self.last_displaced = displaced
+        front = sum(1 for pos, name in cube.occupancy.items()
+                    if cube.view(pos)[2] == 1 and HOME_OF.get(name) != pos)
+        self.signal = CubeSignal(displacement=displaced / 26.0,
+                                 delta=delta,
+                                 front_load=front / 9.0)
 
     def gains(self, cube: CubeState) -> Dict[str, float]:
         """Appraisal multiplier for cubies currently moved onto the front."""
@@ -228,9 +271,11 @@ class CubeFeedback:
         """
         depth = 0
         verbosity = 0.0
+        back = -cube.orientation % 4
         for slot in FRONT_CORNERS:
-            name = cube.cubie_at(slot)
-            if not name or HOME_OF.get(name) == slot:
+            body = _rotate(slot, "y", back)
+            name = cube.cubie_at(body)
+            if not name or HOME_OF.get(name) == body:
                 continue
             step, delta = CORNER_WEIGHTS.get(name, (0, 0.0))
             depth += step
@@ -349,6 +394,7 @@ class CubeFeedback:
             "dwell": dict(self.dwell),
             "last_turn": dict(self.last_turn),
             "observed_turn": self.observed_turn,
+            "last_displaced": self.last_displaced,
         }
 
     def restore(self, data: Dict[str, Any]) -> None:
@@ -356,8 +402,15 @@ class CubeFeedback:
         self.last_turn = {str(k): int(v) for k, v in (data.get("last_turn") or {}).items()}
         observed = data.get("observed_turn")
         self.observed_turn = int(observed) if observed is not None else None
+        displaced = data.get("last_displaced")
+        self.last_displaced = int(displaced) if displaced is not None else None
+        # The signal itself is cheap to recompute; keep it neutral until the
+        # next observation so a restored mind never speaks a stale delta.
+        self.signal = CubeSignal()
 
     def reset(self) -> None:
         self.dwell.clear()
         self.last_turn.clear()
         self.observed_turn = None
+        self.last_displaced = None
+        self.signal = CubeSignal()

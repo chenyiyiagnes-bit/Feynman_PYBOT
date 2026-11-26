@@ -127,6 +127,88 @@ _HEDGE = {
 }
 _HEDGE_MARGIN = 0.06
 
+# Proactive interference: when a new subject arrives while most of the cube
+# is still displaced, the mind is carrying the last subject into this one.
+# The confidence line widens a little and the hedge may fire outside
+# ``careful`` — but only once per shift, never more than this many turns
+# apart, and only when the cube is actually loaded.
+_INTERFERENCE_DISPLACEMENT = 0.35
+_INTERFERENCE_MARGIN = 0.04
+_HEDGE_COOLDOWN = 2
+
+
+def hedge_applies(margin: Optional[float], posture: str,
+                  interference: bool = False,
+                  limit: float = _HEDGE_MARGIN) -> bool:
+    """Whether the near-tie hedge belongs on this answer.
+
+    A clean cube and a confident posture give exactly the old behaviour:
+    only ``careful`` with a margin inside the line. Interference widens the
+    line and lets the hedge through outside ``careful`` — a style sentence,
+    never a change to the answer.
+    """
+    if margin is None:
+        return False
+    if interference:
+        limit += _INTERFERENCE_MARGIN
+    return margin < limit and (posture == "careful" or interference)
+
+# Retrieval inhibition: a card spoken within this many turns is demoted in
+# the next lookup (see FeynmanKB.INHIBIT_FACTOR). Inhibition only breaks
+# near-ties; a question whose only card is that one still gets it.
+INHIBIT_TURNS = 3
+
+# A recast is a reframing, and the cube is reoriented with it: same facts,
+# different face in front. One reframe per few turns, so the frame settles
+# instead of spinning.
+REFRAME_COOLDOWN = 3
+
+# Reflection has to stop somewhere or it becomes rumination: the same card
+# may show at most this many new faces in a row, after which the nudge is
+# answered with the card again, plainly.
+REFLECT_CAP = 2
+
+# A curious mind may ask one question, and then has to listen for a while.
+# Three turns is long enough that a question reads as interest rather than
+# as an interview.
+QUESTION_COOLDOWN = 3
+
+# A bare follow-up that asks for the reason behind the last answer. It must
+# carry no subject of its own: "为什么天空是蓝的" is a new question, not a
+# request to go deeper into the rainbow.
+_WHY_ZH = re.compile(
+    r"^(?:为什么|为啥|凭什么|何以|怎么知道|依据是什么|根据是什么)"
+    r"(?:呢|呀|啊|嘛)?[？?。！!~～\s]*$")
+_WHY_EN = re.compile(
+    r"^(?:why|why so|how come|how so|on what grounds|what makes that so)"
+    r"[?.! ]*$", re.IGNORECASE)
+
+# A bare "I don't get it". Repeating the card is useless, so the mind may
+# recast it through a confirmed analogy — once per card, never twice.
+_CONFUSION_ZH = re.compile(
+    r"^(?:没懂|没听懂|没明白|不明白|什么意思|啥意思|换个说法|再说一遍|"
+    r"说人话|打个比方)[？?。！!~～\s]*$")
+_CONFUSION_EN = re.compile(
+    r"^(?:i (?:don'?t|do not) (?:get|understand)(?: it)?|"
+    r"what do you mean|explain (?:that )?(?:again|simpler)|"
+    r"in plain (?:english|words)|put it another way)[?.! ]*$",
+    re.IGNORECASE)
+
+# A bare nudge to go round the last answer once more. It carries no subject
+# of its own, so it asks for a *different face of the same card*, never a
+# new lookup: a paraphrase with a subject ("为什么天空是蓝的") is a new
+# question and must not be forced onto the previous card.
+_REFLECT_ZH = re.compile(
+    r"^(?:再想想|再想一次|再想一遍|重新想想|再琢磨(?:一下)?|"
+    r"往深里想|再深入(?:一点|些)?|深入(?:一点|些)|"
+    r"换个角度(?:想)?|换个方向(?:想)?|从另一个角度(?:想)?|"
+    r"还有呢|还有吗|再多说(?:一)?点|再展开(?:说说|讲讲)?)"
+    r"[？?。！!~～\s]*$")
+_REFLECT_EN = re.compile(
+    r"^(?:think (?:about it )?again|think (?:it )?through again|"
+    r"what else|go deeper|dig deeper|another angle|"
+    r"from another angle|keep going)[?.! ]*$", re.IGNORECASE)
+
 # Questions the semantic tier can answer directly. These are the only paths
 # by which stored facts reach a reply; the KB still owns everything else.
 _FACT_QUESTIONS = {
@@ -266,6 +348,36 @@ class MindEngine:
         self._last_source: Optional[str] = None
         self._dialogue_focus: Optional[_DialogueFocus] = None
         self._topics = dialogue.TopicHistory()
+        # The card answered on the previous turn, for the association line to
+        # continue: "following on from what I just said". Only an immediate
+        # neighbour counts, and only when that turn was answered from a card.
+        self._last_card: Optional[str] = None
+        self._last_card_turn: int = -10
+        # Cards already visited by a "why?" chain, so a cyclic pair of
+        # premise edges cannot ping-pong forever.
+        self._why_seen: set = set()
+        # Cards already recast through an analogy after "I don't get it".
+        # Saying the same recast twice is worse than saying nothing.
+        self._recast_seen: set = set()
+        # When the mind last asked a question of its own. A curious mind may
+        # ask, but not every turn: an engine that interrogates the user is
+        # not curious, it is tiresome.
+        self._last_question_turn: int = -10 ** 9
+        # Cards answered in the last few turns, with the turn number. The
+        # next lookup demotes them a little (retrieval inhibition).
+        self._recent_cards: Dict[str, int] = {}
+        # When the hedge last fired. Proactive interference reads the
+        # previous card from ``_last_card`` and the load from the cube.
+        self._last_hedge_turn: int = -10 ** 9
+        # When the cube was last reframed (a recast turns the whole cube).
+        self._last_reframe_turn: int = -10 ** 9
+        # Faces of a card already shown by reflection, so a second
+        # "think again" moves on instead of repeating the first. Also the
+        # card and count of the running run of reflections, capped by
+        # ``REFLECT_CAP`` so it cannot become rumination.
+        self._spoken_facets: Dict[str, set] = {}
+        self._reflect_card: Optional[str] = None
+        self._reflect_streak: int = 0
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -354,7 +466,8 @@ class MindEngine:
                      if self.posture_mode == "affect_cube" else None)
         left_policy = (left_brain.LeftBrainPolicy() if self.posture_mode == "fixed"
                        else left_brain.plan_for(self.state, self.persona, activations,
-                                                cube_bias=cube_bias))
+                                                cube_bias=cube_bias,
+                                                cube_signal=self.cube_feedback.signal))
         self.last_left_brain = left_policy.to_dict()
 
         self.relations.touch(user, now)
@@ -412,6 +525,11 @@ class MindEngine:
         directive = self.policy.compute(
             style_state, [] if self.posture_mode == "fixed" else activations, self.language)
         presented = self._present_evidence(base_reply, source, left_policy.detail)
+        # The aside is one trailing line: a verified magnitude anchor wins
+        # over the association when the question asked for one, then a
+        # curiosity question may take the same slot.
+        aside = (self.last_retrieval.get("scale")
+                 or self.last_retrieval.get("association"))
         reply = self.renderer.render(
             presented if presented is not None else base_reply,
             directive, self.turn_index, self.language,
@@ -420,8 +538,19 @@ class MindEngine:
             or source.startswith("fallback") or bool(self.last_retrieval.get("evidence_plan")))
         # The association is an aside, so it goes after the shell: the
         # answer keeps its own ending, the remark stays one clean line.
-        reply = _with_association(reply, self.last_retrieval.get("association"),
-                                  left_policy.detail)
+        reply = _with_association(reply, aside, left_policy.detail)
+        # Curiosity, if there is room: the question was built by the lookup
+        # from a real near-tie or a confirmed premise edge. It rides in the
+        # same single trailing slot as an aside, and only in ``explore``.
+        question = self.last_retrieval.get("question")
+        if (question and not aside
+                and left_policy.posture == "explore"
+                and self.turn_index - self._last_question_turn
+                >= QUESTION_COOLDOWN):
+            spoken = _with_association(reply, question, left_policy.detail)
+            if spoken != reply:
+                reply = spoken
+                self._last_question_turn = self.turn_index
         if self._uses_knowledge_package():
             self._remember_dialogue(source, base_reply, reply, text)
 
@@ -457,6 +586,18 @@ class MindEngine:
             "text": text,
             **result.to_dict(),
         })
+        # Remember where this answer came from, so the next turn's aside can
+        # continue the thought. Only a card counts; small talk breaks the
+        # thread on purpose.
+        if source.startswith(("feynman_kb:", "feynman_kb_en:")):
+            self._last_card = source.split(":", 1)[1]
+        else:
+            self._last_card = None
+        self._last_card_turn = self.turn_index
+        # A different card (or no card) ends a run of reflections: the cap
+        # counts consecutive returns to one subject, not lifetime visits.
+        if self._reflect_card is not None and self._last_card != self._reflect_card:
+            self._reflect_streak = 0
         self.turn_index += 1
         self.last_interaction = now
         self.state.last_ts = now
@@ -587,6 +728,65 @@ class MindEngine:
             self.last_retrieval["evidence_layout"] = list(plan)
         return presented
 
+    def _continuity_card(self) -> Optional[str]:
+        """The previous turn's card, only if that turn was the one before."""
+        if self._last_card and self._last_card_turn == self.turn_index - 1:
+            return self._last_card
+        return None
+
+    def _is_why_followup(self, text: str) -> bool:
+        """A short, subject-free "why?" that asks to go one step deeper."""
+        stripped = text.strip()
+        if not stripped or len(stripped) > 12:
+            return False
+        pattern = _WHY_EN if self.language == "en" else _WHY_ZH
+        return bool(pattern.match(stripped))
+
+    def _is_confusion(self, text: str) -> bool:
+        """A short, subject-free "I don't get it" — a recast, not a query."""
+        stripped = text.strip()
+        if not stripped or len(stripped) > 24:
+            return False
+        pattern = _CONFUSION_EN if self.language == "en" else _CONFUSION_ZH
+        return bool(pattern.match(stripped))
+
+    def _is_reflection(self, text: str) -> bool:
+        """A short, subject-free nudge to think the last answer again.
+
+        Only the phrase itself triggers this: similarity between questions
+        is too blunt to tell "same subject, new question" from "say that
+        again", and a wrong guess here answers the wrong question.
+        """
+        stripped = text.strip()
+        if not stripped or len(stripped) > 16:
+            return False
+        pattern = _REFLECT_EN if self.language == "en" else _REFLECT_ZH
+        return bool(pattern.match(stripped))
+
+    def _inhibit_set(self, text: str = "") -> set:
+        """Cards answered so recently that repeating them would circle.
+
+        Re-asking the very same question is not circling: the user wants the
+        same answer, so inhibition is suspended for an identical repeat.
+        """
+        if self._last_query is not None and text.strip() == self._last_query.strip():
+            return set()
+        cutoff = self.turn_index - INHIBIT_TURNS
+        return {cid for cid, turn in self._recent_cards.items() if turn > cutoff}
+
+    def _note_card(self, source: str) -> None:
+        """Remember the card just spoken, for retrieval inhibition."""
+        if not source.startswith("feynman_kb"):
+            return
+        prefix, _, card_id = source.partition(":")
+        if not card_id or "_soft" in prefix:
+            return
+        self._recent_cards[card_id] = self.turn_index
+        if len(self._recent_cards) > 12:
+            for old in sorted(self._recent_cards,
+                              key=self._recent_cards.get)[:-12]:
+                del self._recent_cards[old]
+
     def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None,
                     cube_bias: Optional[Any] = None):
         """Left brain by language. Chinese and English never mix in one reply."""
@@ -627,6 +827,81 @@ class MindEngine:
             if followup is not None:
                 return followup
 
+        # "I don't get it" is not a new question. Say the last card a second
+        # way, through a confirmed analogy — and only once per card, because
+        # a recast repeated is just the same explanation again.
+        if self._is_confusion(text):
+            previous = self._continuity_card()
+            if previous and previous not in self._recast_seen:
+                again = self.kb.recast(previous, language=self.language)
+                if again is not None:
+                    self._recast_seen.add(previous)
+                    self.last_retrieval = {"source": again[1],
+                                           "recast": again[0]}
+                    # A recast is a reframe: the cube turns in the mind's
+                    # hands so the next turn is seen from a different face.
+                    # Nothing physical moves; only what counts as front.
+                    if (self.turn_index - self._last_reframe_turn
+                            >= REFRAME_COOLDOWN):
+                        self.cube.reframe(1)
+                        self._last_reframe_turn = self.turn_index
+                    return again[0], again[1]
+        else:
+            self._recast_seen.clear()
+        # A bare nudge ("think again") is reflection: the same card, one
+        # face it has not shown yet — a confirmed premise, boundary, limit
+        # or analogy, never an invented angle. The card is fixed; only the
+        # angle moves. Past the cap, or with no face left, the card is said
+        # again plainly: silence about having nothing new is worse.
+        if self._is_reflection(text):
+            previous = self._continuity_card()
+            if previous:
+                source = f"{self.kb.source_root}:{previous}"
+                streak = (self._reflect_streak + 1
+                          if self._reflect_card == previous else 1)
+                hit = None
+                if streak <= REFLECT_CAP:
+                    hit = self.kb.rethink(
+                        previous, language=self.language,
+                        spoken=self._spoken_facets.get(previous, ()))
+                if hit is not None:
+                    line, key = hit
+                    self._spoken_facets.setdefault(previous, set()).add(key)
+                    self._reflect_card = previous
+                    self._reflect_streak = streak
+                    self.last_retrieval = {"source": source,
+                                           "reflection": key}
+                    self._note_card(source)
+                    return line, source
+                body = self.kb.card_body(previous,
+                                         language=self.language,
+                                         detail=policy.detail)
+                if body:
+                    self._reflect_card = previous
+                    self._reflect_streak = streak
+                    self.last_retrieval = {"source": source,
+                                           "reflection": "repeat"}
+                    self._note_card(source)
+                    return body, source
+        # A bare "why?" is not a new query: it asks the previous answer to go
+        # one premise deeper. Only a confirmed premise edge counts, so this
+        # never invents a reason; with no edge the ordinary lookup runs.
+        if self._is_why_followup(text):
+            previous = self._continuity_card()
+            if previous:
+                deeper = self.kb.follow_premise(
+                    previous, language=self.language,
+                    detail=policy.detail, avoid=self._why_seen)
+                if deeper is not None:
+                    self.last_retrieval = deeper.to_dict()
+                    self._why_seen.add(previous)
+                    if ":" in deeper.source:
+                        self._why_seen.add(deeper.source.split(":", 1)[1])
+                    return deeper.text, deeper.source
+            else:
+                self._why_seen.clear()
+        else:
+            self._why_seen.clear()
         found = self.kb.lookup(
             text, language=self.language, min_score=None if packaged else policy.min_score,
             limit=3 if packaged else policy.limit,
@@ -635,7 +910,11 @@ class MindEngine:
             public_only=packaged and self.review_learning,
             mode=self.retrieval_mode if packaged else "legacy",
             structured=packaged and self.structured_evidence,
-            prefer_examples=self.persona.prefer_examples)
+            prefer_examples=self.persona.prefer_examples,
+            previous_card=self._continuity_card(),
+            scale=packaged,
+            curiosity=packaged and policy.posture == "explore",
+            inhibit=self._inhibit_set(text))
         self.last_retrieval = found.to_dict()
         reply, source = found.text, found.source
         if (target and self._dialogue_focus is not None
@@ -659,17 +938,35 @@ class MindEngine:
                 bridged = self._left_reply(text, cube_bias)
                 reply, source = bridged if bridged is not None else knowledge.answer(text)
             else:
+
                 reply, source = self.bridge.reply(text)
                 if not _match_language(reply or "", "en"):
                     reply, source = knowledge.answer_en(text)
         if not reply or not _match_language(reply, self.language):
             reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
         # A guarded mind flags a near-tie instead of pretending to be sure.
+        # Proactive interference widens the line: a new subject arriving while
+        # the cube is still loaded from the last one gets the same hedge even
+        # outside ``careful``. It never changes which card answered or what
+        # the card says.
         margin = self.last_retrieval.get("margin")
-        if (policy.posture == "careful" and source.startswith(self.kb.source_prefix)
+        interference = (
+            source.startswith(self.kb.source_prefix)
+            and self._last_card is not None
+            and ":" in source
+            and source.split(":", 1)[1] != self._last_card
+            and self.cube_feedback.signal.displacement
+            >= _INTERFERENCE_DISPLACEMENT
+            and self.turn_index - self._last_hedge_turn >= _HEDGE_COOLDOWN)
+        if (source.startswith(self.kb.source_prefix)
                 and not self.last_retrieval.get("evidence_plan")
-                and margin is not None and margin < _HEDGE_MARGIN):
+                and (hedge_applies(margin, policy.posture, interference)
+                     or (policy.posture == "careful"
+                         and margin is not None and margin < _HEDGE_MARGIN))):
             reply = reply + _HEDGE[self.language]
+            self.last_retrieval["hedge"] = True
+            self._last_hedge_turn = self.turn_index
+        self._note_card(source)
         return reply, source
 
     def _uses_knowledge_package(self) -> bool:
@@ -996,6 +1293,14 @@ class MindEngine:
             "resonance": self.resonance_snapshot(),
             "left_brain": self.last_left_brain,
             "retrieval": self.last_retrieval,
+            "last_question_turn": self._last_question_turn,
+            "recent_cards": dict(self._recent_cards),
+            "last_hedge_turn": self._last_hedge_turn,
+            "last_reframe_turn": self._last_reframe_turn,
+            "spoken_facets": {cid: sorted(facets)
+                              for cid, facets in self._spoken_facets.items()},
+            "reflect_card": self._reflect_card,
+            "reflect_streak": self._reflect_streak,
             "challenge": (self.challenge_session.snapshot()
                           if self.challenge_session is not None else {}),
             "pybot": self._pybot_snapshot(),
@@ -1136,6 +1441,19 @@ class MindEngine:
         # be saved and silently dropped on load.
         engine.last_left_brain = dict(data.get("left_brain") or {})
         engine.last_retrieval = dict(data.get("retrieval") or {})
+        engine._last_question_turn = int(data.get("last_question_turn",
+                                                  -10 ** 9))
+        engine._recent_cards = {str(k): int(v) for k, v in
+                                (data.get("recent_cards") or {}).items()}
+        engine._last_hedge_turn = int(data.get("last_hedge_turn", -10 ** 9))
+        engine._last_reframe_turn = int(data.get("last_reframe_turn", -10 ** 9))
+        engine._spoken_facets = {
+            str(cid): {str(key) for key in keys}
+            for cid, keys in (data.get("spoken_facets") or {}).items()
+        }
+        reflect_card = data.get("reflect_card")
+        engine._reflect_card = str(reflect_card) if reflect_card else None
+        engine._reflect_streak = int(data.get("reflect_streak", 0))
         challenge = data.get("challenge") or {}
         if challenge:
             engine.challenge().restore(challenge)
@@ -1178,5 +1496,9 @@ class MindEngine:
         self._dialogue_focus = None
         self._topics = dialogue.TopicHistory()
         self.challenge_session = None
+        self._last_question_turn = -10 ** 9
+        self._recent_cards = {}
+        self._last_hedge_turn = -10 ** 9
+        self._last_reframe_turn = -10 ** 9
         if self.store_path and self.store_path.exists():
             self.store_path.unlink()

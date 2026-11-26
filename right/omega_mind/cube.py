@@ -109,8 +109,26 @@ def parse_move(text: str) -> Move:
 class CubeState:
     occupancy: Dict[Pos, str] = field(default_factory=_initial_arrangement)
     history: List[str] = field(default_factory=list)
+    # Which side the mind is looking at: whole-cube quarter-turns about y.
+    # A reframe changes nothing physical. It only changes which face counts
+    # as "front" for attention, gains and front-corner bias — the mechanical
+    # form of reappraisal: same facts, different salience.
+    orientation: int = 0
 
     # -- moves -------------------------------------------------------------
+
+    def reframe(self, quarters: int = 1) -> int:
+        """Turn the whole cube in the mind's hands. Occupancy is untouched."""
+        self.orientation = (self.orientation + quarters) % 4
+        return self.orientation
+
+    def view(self, pos: Pos) -> Pos:
+        """Where a body position appears in the current viewing frame."""
+        return _rotate(pos, "y", self.orientation % 4)
+
+    def front_positions(self) -> List[Pos]:
+        """Body positions currently on the front face of the view."""
+        return [pos for pos in self.occupancy if self.view(pos)[2] == 1]
 
     def turn(self, face: str, quarters: int = 1) -> List[str]:
         """Rotate one face; returns the names of the cubies it moved."""
@@ -165,6 +183,7 @@ class CubeState:
             "occupancy": [[pos[0], pos[1], pos[2], name]
                           for pos, name in sorted(self.occupancy.items())],
             "history": self.history,
+            "orientation": self.orientation,
         }
 
     def restore(self, data: Dict) -> None:
@@ -175,6 +194,7 @@ class CubeState:
             for x, y, z, name in data.get("occupancy", [])
         }
         self.history = list(data.get("history", []))
+        self.orientation = int(data.get("orientation", 0)) % 4
 
 
 # -- rendering -------------------------------------------------------------
@@ -236,4 +256,6 @@ def render_net(cube: CubeState) -> str:
     lines.append("        " + "  ".join(faces["D"][2]))
     if cube.history:
         lines.append("moves: " + " ".join(cube.history[-8:]))
+    if cube.orientation % 4:
+        lines.append(f"frame: y×{cube.orientation % 4}（重框不改摆位）")
     return "\n".join(lines)
