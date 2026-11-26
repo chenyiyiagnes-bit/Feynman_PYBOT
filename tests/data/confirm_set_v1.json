@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "built": "2026-11-26",
+  "author": "Claude Code",
+  "provenance": "为评估手写，不是从卡片标题、别名或任何训练语料里摘出来的。问题按卡片正文的物理主题从头写：作者先读卡片讲什么，再用自己的话问一遍。acceptable 是作者在跑检索之前按主题判定的答案卡，运行结果只记录、不回填。",
+  "rules": [
+    "与 omega_mind.golden_queries 不重叠（测试强制）",
+    "不与任何卡片 title / entry_question / alias 逐字相同（测试强制）",
+    "不进训练语料；只做评估证据",
+    "新增条目必须另起 version 或另建文件，不改历史条目"
+  ],
+  "cases": [
+    {
+      "query": "为什么高处掉下来的东西越落越快，但空气里下落的雨滴不会一直加速",
+      "language": "zh",
+      "acceptable": [
+        "flp-i-08",
+        "U0_DAMP"
+      ]
+    },
+    {
+      "query": "天为什么不是紫色，虽然紫光散射得更厉害",
+      "language": "zh",
+      "acceptable": [
+        "opt-012"
+      ]
+    },
+    {
+      "query": "彩虹的七种颜色是怎么排出来的",
+      "language": "zh",
+      "acceptable": [
+        "opt-009",
+        "opt-010"
+      ]
+    },
+    {
+      "query": "反物质在费曼的图景里是什么",
+      "language": "zh",
+      "acceptable": [
+        "qed-004"
+      ]
+    },
+    {
+      "query": "为什么物理定律里总有守恒量",
+      "language": "zh",
+      "acceptable": [
+        "part-009",
+        "flp-i-04"
+      ]
+    },
+    {
+      "query": "超导里的电子为什么两两配对",
+      "language": "zh",
+      "acceptable": [
+        "cm-002"
+      ]
+    },
+    {
+      "query": "花粉在水里乱动，这件事证明了什么",
+      "language": "zh",
+      "acceptable": [
+        "sm-006"
+      ]
+    },
+    {
+      "query": "两个黑洞撞在一起，能量去哪了",
+      "language": "zh",
+      "acceptable": [
+        "grav-002"
+      ]
+    },
+    {
+      "query": "为什么自然界总是挑作用量最小的那条路",
+      "language": "zh",
+      "acceptable": [
+        "flp-ii-19"
+      ]
+    },
+    {
+      "query": "只有两个状态的量子系统怎么描述",
+      "language": "zh",
+      "acceptable": [
+        "flp-iii-08"
+      ]
+    },
+    {
+      "query": "知道光子走了哪条缝之后，条纹为什么就没了",
+      "language": "zh",
+      "acceptable": [
+        "q-measurement-path-info",
+        "q-measurement-collapse"
+      ]
+    },
+    {
+      "query": "坐飞船出去一圈回来，老得比别人慢，这是真的吗",
+      "language": "zh",
+      "acceptable": [
+        "rel-lt-time"
+      ]
+    },
+    {
+      "query": "温度和热量不是一回事，差在哪",
+      "language": "zh",
+      "acceptable": [
+        "thermo-temp-heat"
+      ]
+    },
+    {
+      "query": "磁铁穿过线圈时产生的电，和线圈自己动有没有区别",
+      "language": "zh",
+      "acceptable": [
+        "em-induction-motion"
+      ]
+    },
+    {
+      "query": "波的相速度和群速度分别是什么意思",
+      "language": "zh",
+      "acceptable": [
+        "wave-phase-group"
+      ]
+    },
+    {
+      "query": "费曼图到底是在算什么",
+      "language": "zh",
+      "acceptable": [
+        "work-001",
+        "qed-003"
+      ]
+    },
+    {
+      "query": "拿诺奖那天他为什么不自在",
+      "language": "zh",
+      "acceptable": [
+        "persona-authority-002",
+        "bio-031"
+      ]
+    },
+    {
+      "query": "不懂的时候应该怎么回答别人",
+      "language": "zh",
+      "acceptable": [
+        "ethic-001",
+        "core-003"
+      ]
+    },
+    {
+      "query": "研究一朵花会不会把它的美弄没了",
+      "language": "zh",
+      "acceptable": [
+        "life-art-002"
+      ]
+    },
+    {
+      "query": "为什么他总说底下还有很大的空间",
+      "language": "zh",
+      "acceptable": [
+        "bio-025",
+        "comp-001",
+        "math-comp-006"
+      ]
+    },
+    {
+      "query": "为什么阿琳去世后他没有装作没事",
+      "language": "zh",
+      "acceptable": [
+        "life-art-008",
+        "bio-007"
+      ]
+    },
+    {
+      "query": "当众被人指出错误，该怎么处理",
+      "language": "zh",
+      "acceptable": [
+        "core-009",
+        "card-004"
+      ]
+    },
+    {
+      "query": "纠缠的两个粒子能不能拿来超光速传消息",
+      "language": "zh",
+      "acceptable": [
+        "q-entangle-signal"
+      ]
+    },
+    {
+      "query": "温度高，是不是每个分子都跑得更快",
+      "language": "zh",
+      "acceptable": [
+        "thermo-temp-avgke"
+      ]
+    },
+    {
+      "query": "Why does the sky stay blue at sunset near the horizon",
+      "language": "en",
+      "acceptable": [
+        "opt-012"
+      ]
+    },
+    {
+      "query": "Why does an electron going backwards in time look like a positron",
+      "language": "en",
+      "acceptable": [
+        "qed-004"
+      ]
+    },
+    {
+      "query": "What makes some materials conduct and others insulate",
+      "language": "en",
+      "acceptable": [
+        "cm-005"
+      ]
+    },
+    {
+      "query": "How did pollen jittering in water convince people atoms are real",
+      "language": "en",
+      "acceptable": [
+        "sm-006"
+      ]
+    },
+    {
+      "query": "Does a gravitational wave actually carry energy away",
+      "language": "en",
+      "acceptable": [
+        "grav-002"
+      ]
+    },
+    {
+      "query": "What should you say when you do not know the answer",
+      "language": "en",
+      "acceptable": [
+        "ethic-001",
+        "core-003"
+      ]
+    }
+  ]
+}
