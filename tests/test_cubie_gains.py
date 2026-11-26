@@ -81,21 +81,50 @@ class TestCubieGains(unittest.TestCase):
         engine.turn("ok", now=1020.0)
         self.assertEqual(engine.kb.aliases, {})
 
-    def test_english_feynman_keeps_todays_contract(self):
-        # English override patterns are not part of this change.
+    def test_english_feynman_hears_its_own_language(self):
+        # One package, one language: Chinese laughter is not this mind's humor.
         engine = self.mind("feynman-en")
-        engine.turn("What is an atom?", now=1000.0)
+        chinese = engine.turn("哈哈", now=1000.0)
+        self.assertNotIn("edge_humor", _strengths(chinese))
+        self.assertAlmostEqual(_strengths(chinese)["edge_habit"], 0.2)
+
+        engine = self.mind("feynman-en")
+        engine.turn("Do you like painting?", now=1000.0)
         haha = engine.turn("haha", now=1020.0)
         strengths = _strengths(haha)
-        self.assertAlmostEqual(strengths.get("edge_habit", 0.0), 0.2)
-        self.assertNotIn("edge_humor", strengths)
-        self.assertEqual(engine.cube.history, [])
-        self.assertEqual(engine.kb.aliases, {})
+        self.assertGreaterEqual(strengths["edge_humor"], 0.5)
+        self.assertAlmostEqual(strengths["edge_habit"], 0.2)
+        self.assertEqual(engine.cube.history, ["R"])
+        self.assertIn("Do you like painting?",
+                      engine.kb.aliases.get("life-art-001", []))
 
-        for text in ("you're wrong", "I don't know"):
+        engine = self.mind("feynman-en")
+        engine.turn("Do you like painting?", now=1000.0)
+        amazing = engine.turn("that's amazing", now=1020.0)
+        self.assertGreaterEqual(_strengths(amazing)["edge_humor"], 0.5)
+        self.assertEqual(engine.cube.history, ["R"])
+        self.assertIn("Do you like painting?",
+                      engine.kb.aliases.get("life-art-001", []))
+
+        for text in ("ok", "hmm", "hi"):
             engine = self.mind("feynman-en")
             result = engine.turn(text, now=1000.0)
-            self.assertNotIn("core_intuition", _strengths(result), text)
+            strengths = _strengths(result)
+            self.assertAlmostEqual(strengths["edge_habit"], 0.2, msg=text)
+            self.assertNotIn("edge_humor", strengths, text)
+            self.assertEqual(engine.cube.history, [], text)
+
+        shame = ("(looks away) ", "(voice hardens) ")
+        for text in ("you're wrong", "I don't know", "I don't understand"):
+            engine = self.mind("feynman-en")
+            before = engine.state.get("dopamine")
+            result = engine.turn(text, now=1000.0)
+            strengths = _strengths(result)
+            self.assertAlmostEqual(strengths["core_intuition"], 1.0, msg=text)
+            self.assertNotIn("corner_shame", strengths, text)
+            self.assertEqual(engine.cube.history, ["R"], text)
+            self.assertGreater(engine.state.get("dopamine") - before, 0.15, text)
+            self.assertFalse(any(p in shame for p in result.directive.prefixes), text)
 
     def test_laozhuang_uses_author_gains(self):
         for package in ("laozhuang-zh", "laozhuang-en"):
@@ -107,15 +136,32 @@ class TestCubieGains(unittest.TestCase):
                 self.assertAlmostEqual(strengths["edge_humor"], 0.8)
                 self.assertEqual(engine.cube.history, ["R"])
 
+                shame_zh = ("（别过头）", "（语气硬了一点）")
+                shame_en = ("(looks away) ", "(voice hardens) ")
                 engine = self.mind(package)
-                wrong = engine.turn("你说错了", now=1000.0)
+                wrong = engine.turn("你刚才说错了", now=1000.0)
                 strengths = _strengths(wrong)
                 self.assertAlmostEqual(strengths["core_intuition"], 0.6)
-                self.assertAlmostEqual(strengths["edge_habit"], 0.2)
-                self.assertAlmostEqual(strengths["corner_shame"], 0.9)
+                self.assertNotIn("corner_shame", strengths)
                 self.assertLess(wrong.resonance["energy"], 2.25)
                 self.assertFalse(wrong.resonance["breakthrough"])
+                self.assertFalse(any(p in shame_zh + shame_en
+                                     for p in wrong.directive.prefixes))
                 self.assertNotEqual(engine.cube.history, ["R", "R", "F", "R'"])
+
+                engine = self.mind(package)
+                told = engine.turn("you're wrong", now=1000.0)
+                strengths = _strengths(told)
+                self.assertAlmostEqual(strengths["core_intuition"], 0.6)
+                self.assertNotIn("corner_shame", strengths)
+                self.assertFalse(any(p in shame_zh + shame_en
+                                     for p in told.directive.prefixes))
+
+                engine = self.mind(package)
+                putdown = engine.turn("nonsense", now=1000.0)
+                self.assertAlmostEqual(_strengths(putdown)["corner_shame"], 0.9)
+                self.assertTrue(any(p in shame_zh + shame_en
+                                    for p in putdown.directive.prefixes))
 
                 for text in ("嗯", "ok", "hmm"):
                     engine = self.mind(package)
@@ -129,6 +175,37 @@ class TestCubieGains(unittest.TestCase):
                     strengths = _strengths(asked)
                     self.assertAlmostEqual(strengths["core_logic"], 0.6, msg=text)
                     self.assertEqual(engine.cube.history, [], msg=text)
+
+                engine = self.mind(package)
+                defined = engine.turn("what is the definition of the dao", now=1000.0)
+                self.assertNotIn("corner_pedantry", _strengths(defined))
+
+                engine = self.mind(package)
+                fine = engine.turn("it seems fine", now=1000.0)
+                self.assertNotIn("core_intuition", _strengths(fine))
+
+                engine = self.mind(package)
+                interesting = engine.turn("why is that interesting", now=1000.0)
+                self.assertNotIn("edge_humor", _strengths(interesting))
+
+                engine = self.mind(package)
+                praised = engine.turn("that's interesting", now=1000.0)
+                self.assertAlmostEqual(_strengths(praised)["edge_humor"], 0.8)
+
+                engine = self.mind(package)
+                lost = engine.turn("I don't understand", now=1000.0)
+                self.assertAlmostEqual(_strengths(lost)["core_intuition"], 0.6)
+                self.assertEqual(engine.cube.history, [])
+
+                for text in ("the experiment failed", "why did the experiment fail"):
+                    engine = self.mind(package)
+                    failed = engine.turn(text, now=1000.0)
+                    self.assertAlmostEqual(
+                        _strengths(failed)["edge_trauma"], 1.2, msg=text)
+
+                engine = self.mind(package)
+                missed = engine.turn("he failed the exam", now=1000.0)
+                self.assertNotIn("edge_trauma", _strengths(missed))
 
 
 if __name__ == "__main__":

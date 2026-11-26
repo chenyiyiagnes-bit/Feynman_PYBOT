@@ -63,8 +63,8 @@
     "core_intuition": [
       "感觉|直觉|好像|不对劲|说不清",
       "说错|错了|不对|纠正|盲区|搞错|我不懂|我不知道|搞不懂|不明白",
-      "\\bfeel\\b|\\bintuition\\b|\\bseems\\b|\\bsomething'?s off\\b",
-      "\\bi was wrong\\b|\\byou'?re wrong\\b|\\bcorrect me\\b|\\bblind spot\\b|\\bi don'?t know\\b|\\bno idea\\b|\\bnot sure\\b"
+      "\\bfeel\\b|\\bintuition\\b|\\bseems off\\b|\\bsomething'?s off\\b",
+      "\\bi was wrong\\b|\\byou'?re wrong\\b|\\bcorrect me\\b|\\bblind spot\\b|\\bi don'?t know\\b|\\bi don'?t understand\\b|\\bno idea\\b|\\bnot sure\\b"
     ],
     "core_superego": [
       "应该|必须|责任|道德|规矩|义务",
@@ -89,7 +89,7 @@
     ],
     "edge_humor": [
       "哈哈|笑死|好玩|有趣|绝了|厉害|有意思|太棒了",
-      "\\bhaha\\b|\\blol\\b|\\bfunny\\b|\\bfun\\b|\\binteresting\\b|\\bhilarious\\b"
+      "\\bhaha\\b|\\blol\\b|\\bfunny\\b|\\bfun\\b|\\bhilarious\\b|\\bthat'?s interesting\\b"
     ],
     "edge_guilt": [
       "对不起|抱歉|是我不好|我错了|怪我",
@@ -97,7 +97,7 @@
     ],
     "edge_trauma": [
       "前任|裁员|挂科|余额|失恋|去世|绝症",
-      "\\bmy ex\\b|\\blaid off\\b|\\bfailed\\b|\\bbroke\\b|\\bheartbroken\\b|\\bdied\\b|\\bcancer\\b"
+      "\\bmy ex\\b|\\blaid off\\b|\\bexperiment fail(?:ed|s|ing)?\\b|\\bbroke\\b|\\bheartbroken\\b|\\bdied\\b|\\bcancer\\b"
     ],
     "edge_suspicion": [
       "呵呵|真的假的|套路|阴阳|敷衍|糊弄",
@@ -133,7 +133,7 @@
     ],
     "corner_pedantry": [
       "定义|本质上|严格来说|术语|标准答案|唯一正确|掉书袋",
-      "\\bdefinition\\b|\\bessentially\\b|\\bstrictly speaking\\b|\\bjargon\\b|\\bstandard answer\\b|\\bthe only correct\\b"
+      "\\bby definition\\b|\\bthe definition is\\b|\\bessentially\\b|\\bstrictly speaking\\b|\\bjargon\\b|\\bstandard answer\\b|\\bthe only correct\\b"
     ],
     "corner_impulsivity": [
       "[!！]{2,}|天呐|快看|炸裂|马上|立刻",
@@ -144,8 +144,8 @@
       "\\bwhat if\\b|\\bdisaster\\b|\\bterrible\\b|\\brisk\\b|\\btoo late\\b|\\bdoomed\\b"
     ],
     "corner_shame": [
-      "(?<!我)(说错|错了|不对|就这|你懂什么|胡说)",
-      "\\byou'?re wrong\\b|\\bthat'?s wrong\\b|\\bnot true\\b|\\bnonsense\\b|\\byou know nothing\\b"
+      "就这|你懂什么|胡说",
+      "\\bnonsense\\b|\\byou know nothing\\b"
     ],
     "corner_grudge": [
       "上次你|又来了|每次都|你总是|你从来",
@@ -350,11 +350,11 @@
           0.6
         ],
         [
-          "\\bfeel\\b|\\bintuition\\b|\\bseems\\b|\\bsomething'?s off\\b",
+          "\\bfeel\\b|\\bintuition\\b|\\bseems off\\b|\\bsomething'?s off\\b",
           0.5
         ],
         [
-          "\\bi was wrong\\b|\\byou'?re wrong\\b|\\bcorrect me\\b|\\bblind spot\\b|\\bi don'?t know\\b|\\bno idea\\b|\\bnot sure\\b",
+          "\\bi was wrong\\b|\\byou'?re wrong\\b|\\bcorrect me\\b|\\bblind spot\\b|\\bi don'?t know\\b|\\bi don'?t understand\\b|\\bno idea\\b|\\bnot sure\\b",
           0.6
         ]
       ],
@@ -477,7 +477,7 @@
           0.8
         ],
         [
-          "\\bhaha\\b|\\blol\\b|\\bfunny\\b|\\bfun\\b|\\binteresting\\b|\\bhilarious\\b",
+          "\\bhaha\\b|\\blol\\b|\\bfunny\\b|\\bfun\\b|\\bhilarious\\b|\\bthat'?s interesting\\b",
           0.8
         ]
       ],
@@ -520,7 +520,7 @@
           1.2
         ],
         [
-          "\\bmy ex\\b|\\blaid off\\b|\\bfailed\\b|\\bbroke\\b|\\bheartbroken\\b|\\bdied\\b|\\bcancer\\b",
+          "\\bmy ex\\b|\\blaid off\\b|\\bexperiment fail(?:ed|s|ing)?\\b|\\bbroke\\b|\\bheartbroken\\b|\\bdied\\b|\\bcancer\\b",
           1.2
         ]
       ],
@@ -707,7 +707,7 @@
           0.6
         ],
         [
-          "\\bdefinition\\b|\\bessentially\\b|\\bstrictly speaking\\b|\\bjargon\\b|\\bstandard answer\\b|\\bthe only correct\\b",
+          "\\bby definition\\b|\\bthe definition is\\b|\\bessentially\\b|\\bstrictly speaking\\b|\\bjargon\\b|\\bstandard answer\\b|\\bthe only correct\\b",
           0.6
         ]
       ],
@@ -764,11 +764,11 @@
       "valence": -0.5,
       "triggers": [
         [
-          "(?<!我)(说错|错了|不对|就这|你懂什么|胡说)",
+          "就这|你懂什么|胡说",
           0.9
         ],
         [
-          "\\byou'?re wrong\\b|\\bthat'?s wrong\\b|\\bnot true\\b|\\bnonsense\\b|\\byou know nothing\\b",
+          "\\bnonsense\\b|\\byou know nothing\\b",
           0.9
         ]
       ],
