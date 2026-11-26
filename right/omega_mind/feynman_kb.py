@@ -24,7 +24,9 @@ from . import assoc, spreading
 from .learner import LearnedStore, card_row, normalize
 
 DEFAULT_DIRS = [
-    Path("/Users/yiyichen/Projects/feynman-open/knowledge"),
+    # The repo ships the Feynman cards next to the personas; a checkout answers
+    # out of the box. Set OMEGA_KB_PATH to point at your own card directory.
+    Path(__file__).resolve().parents[2] / "personas" / "feynman" / "knowledge",
 ]
 
 # English is a translated overlay: the Chinese cards stay the source of truth,
@@ -439,6 +441,10 @@ class FeynmanKB:
             path = self._find_dir(knowledge_dir)
             if path is not None:
                 self.load(path, english_dir=english_dir)
+        # A learned overlay can exist with no corpus at all: the user may teach
+        # the mind before any cards are installed.
+        if self.learned_dir is not None and self.learned is None:
+            self._load_learned()
 
     @staticmethod
     def _find_dir(explicit: Optional[str]) -> Optional[Path]:
