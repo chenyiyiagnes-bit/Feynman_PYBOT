@@ -112,6 +112,26 @@ class Segmentation(unittest.TestCase):
         self.assertEqual(left.content_words("物理学家怎么看待权威"),
                          ["物理学家", "怎么", "看待", "权威"])
 
+    def test_spans_point_at_the_words(self) -> None:
+        text = "  熵，到底；是什么？"
+        spans = self.zh.segment_spans(text)
+        self.assertEqual([word for word, _, _ in spans], self.zh.segment(text))
+        for word, start, end in spans:
+            with self.subTest(word=word):
+                self.assertEqual(text[start:end], word)
+
+    def test_english_spans_keep_the_surface_form(self) -> None:
+        text = "Studies of the scientific method"
+        spans = self.en.segment_spans(text)
+        self.assertEqual(text[spans[0][1]:spans[0][2]], "Studies")
+        self.assertIn("scientific", [word for word, _, _ in spans])
+        for word, start, end in spans:
+            self.assertEqual(text[start:end], word)
+
+    def test_empty_text_has_no_spans(self) -> None:
+        self.assertEqual(self.zh.segment_spans(""), [])
+        self.assertEqual(self.zh.segment_spans("   "), [])
+
 
 def _left_segmentation():
     path = ROOT / "left"

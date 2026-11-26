@@ -34,6 +34,8 @@ class LanguageCore:
         self.profile: str = data.get("profile", "default")
         self.version: int = int(data.get("version", 1))
         self._ascii: Pattern[str] = re.compile(data["ascii"])
+        # same pattern, any case: spans point at the text as it was written
+        self._ascii_any: Pattern[str] = re.compile(data["ascii"], re.I)
         self._cjk: Optional[Pattern[str]] = (
             re.compile(data["cjk"]) if "cjk" in data else None)
         self._stop_bigrams = frozenset(data.get("stop_bigrams", ()))
@@ -103,14 +105,34 @@ class LanguageCore:
         miner and any tool that has to line up with the index. It is a pure
         function of the rule file, so two callers on the same profile cannot
         disagree, and a missing word table surfaces as a rule error instead of
-        a silent fallback.
+        a silent fallback. English is tokenised, not merely split: stop words
+        are dropped and words are stemmed, because that is what the index
+        holds. Use ``segment_spans`` for the words as written.
         """
-        text = (text or "").strip()
-        if not text:
+        if self._cjk is None:
+            return self._tokens_en((text or "").strip().lower())
+        return [word for word, _, _ in self.segment_spans(text)]
+
+    def segment_spans(self, text: str) -> List[Tuple[str, int, int]]:
+        """Words with the character offsets they occupy in ``text``.
+
+        ``segment`` answers *what* the words are; this answers *where*, which
+        is what a coded card needs so every token can be traced back to the
+        source bytes. For English the surface form is returned rather than the
+        stem: an offset pointing at a string that is not in the text would not
+        be an offset. Words are not filtered here — callers that only want
+        content words drop the ones they don't want by position.
+
+        A token never crosses whitespace or punctuation: an offset that spans
+        a gap would not point at the word it claims to.
+        """
+        text = text or ""
+        if not text.strip():
             return []
         if self._cjk is None:
-            return self._tokens_en(text.lower())
-        out: List[str] = []
+            return [(match.group(0), match.start(), match.end())
+                    for match in self._ascii_any.finditer(text)]
+        out: List[Tuple[str, int, int]] = []
         pos = 0
         length = len(text)
         while pos < length:
@@ -118,21 +140,21 @@ class LanguageCore:
             if self._cjk.fullmatch(ch):
                 word = self._longest_word(text, pos)
                 if word:
-                    out.append(word)
+                    out.append((word, pos, pos + len(word)))
                     pos += len(word)
                 else:
-                    out.append(ch)
+                    out.append((ch, pos, pos + 1))
                     pos += 1
                 continue
             match = self._ascii.match(text.lower(), pos)
             if match:
-                out.append(match.group(0))
+                out.append((text[match.start():match.end()], pos, match.end()))
                 pos = match.end()
                 continue
-            pos += 1
+            pos += 1  # separator: not a token, and it breaks any run
         return self._join_unknown_runs(out)
 
-    def _join_unknown_runs(self, tokens: List[str]) -> List[str]:
+    def _join_unknown_runs(self, spans: List[Tuple[str, int, int]]) -> List[Tuple[str, int, int]]:
         """Glue dictionary misses back into words.
 
         Forward maximum matching leaves an unseen name as one character per
@@ -141,28 +163,37 @@ class LanguageCore:
         is kept whole up to six characters; particles (``unigram_stop``) break
         the run, which is what keeps "浮在水面上" from becoming one token.
         Longer runs are cut into two-character pieces so no unbounded string
-        reaches a caller.
+        reaches a caller. A gap in the source (whitespace or punctuation)
+        between two characters also ends the run, so every returned span stays
+        over characters that are actually adjacent.
         """
-        out: List[str] = []
-        run: List[str] = []
+        out: List[Tuple[str, int, int]] = []
+        run: List[Tuple[str, int, int]] = []
 
         def flush() -> None:
             if not run:
                 return
-            text = "".join(run)
-            if len(text) <= 6:
-                out.append(text)
+            word = "".join(part for part, _, _ in run)
+            if len(run) <= 6:
+                out.append((word, run[0][1], run[-1][2]))
             else:
-                out.extend(text[i:i + 2] for i in range(0, len(text), 2))
+                for i in range(0, len(run), 2):
+                    piece = run[i:i + 2]
+                    out.append(("".join(part for part, _, _ in piece),
+                                piece[0][1], piece[-1][2]))
             run.clear()
 
-        for token in tokens:
+        previous_end = -1
+        for token, start, end in spans:
+            if start != previous_end:
+                flush()
+            previous_end = end
             if (len(token) == 1 and self._cjk is not None
                     and self._cjk.fullmatch(token) and token not in self._unigram_stop):
-                run.append(token)
+                run.append((token, start, end))
                 continue
             flush()
-            out.append(token)
+            out.append((token, start, end))
         flush()
         return out
 
