@@ -20,6 +20,17 @@
 提交作者必须用能关联 GitHub 账号的邮箱（如 `227941007+chenyiyiagnes-bit@users.noreply.github.com`），
 `yiyichen@YiyideMacStudio.lan` 这类本机邮箱不会关联到账号。
 
+## 安全与隐私红线（所有 agent 必读）
+
+仓库根的 [`AGENTS.md`](AGENTS.md) 是全部 agent 的硬性规则页，动手前先读。要点：
+
+- **凭据一律不进仓库**：token、key、密码只放 `.env`（已忽略），示例只写 `.env.example`。
+  发现凭据已进历史，通知主负责人**轮换**——删文件不能让凭据失效。
+  先例：2026-11-26 `left/.en` 的 `DISCORD_BOT_TOKEN` 随 `814bc85` 泄漏到公开仓库，已删、已轮换。
+- **不写死本机绝对路径**（macOS 用户主目录下的绝对路径之类），用相对路径或环境变量覆盖。
+- **提交前跑** `python3 -m unittest tests.test_repo_hygiene`，它会在 git 索引上查这三类问题。
+- 对外发布、发消息、付费、删除、登录等动作，即使是被分派的活也要先经主负责人授权。
+
 ## 语料红线
 
 只上传代码、测试、人设 JSON、文档。以下一律不进仓库：

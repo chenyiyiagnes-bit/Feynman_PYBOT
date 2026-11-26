@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+SELF = Path(__file__).resolve()
 
 SECRET_NAMES = {".en", ".env", ".probe_write"}
 SAMPLE_IGNORES = [
@@ -44,6 +45,8 @@ class TestHygiene(unittest.TestCase):
         offenders = []
         for name in tracked_files():
             path = ROOT / name
+            if path.resolve() == SELF:  # this file must spell the needle out
+                continue
             if path.suffix not in {".py", ".md", ".json", ".yml", ".yaml",
                                    ".txt", ".sh", ".toml"}:
                 continue
