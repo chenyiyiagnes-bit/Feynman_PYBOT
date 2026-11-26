@@ -44,6 +44,23 @@ python3 scripts/chat.py --list
 不想保存就加 `--no-state`。左脑排版器默认关闭（`--bridge` 或 `OMEGA_LEFT_BRIDGE=1` 才开，
 需要自备 vault，见 `docs/bridge.md`）。
 
+## 做一个自己的角色
+
+```bash
+# 中立人设（26 个方块、平基线、空知识库）
+python3 tools/new_persona.py mybot --name 我的角色
+
+# 或从已调好的人设改个名（保留基线、口头禅、触发器）
+python3 tools/new_persona.py mybot --from feynman
+
+# 往 personas/mybot/knowledge/ 放 jsonl 卡片，然后
+python3 tools/validate_persona.py personas/mybot/persona.json
+python3 scripts/chat.py --persona mybot
+```
+
+知识卡格式见 `personas/mybot/knowledge/README.md`：一行一张，`title`/`text`/`tags`
+就够；命不中就不答，不会编。
+
 ## 两套示例人设
 
 | 人设 | 状态 | 语料 |

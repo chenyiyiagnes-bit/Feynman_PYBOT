@@ -62,8 +62,10 @@ class LeftResponder:
 
     def available(self) -> bool:
         if not self.enabled:
+            self.last_error = self.last_error or "disabled (set OMEGA_LEFT_BRIDGE=1)"
             return False
         if not self.vault_path.is_file():
+            self.last_error = f"vault missing: {self.vault_path}"
             return False
         try:
             self._load_modules()

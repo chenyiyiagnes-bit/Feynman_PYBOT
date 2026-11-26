@@ -54,6 +54,13 @@ def main(argv=None) -> int:
     engine = build(args.persona, language=args.lang,
                    enable_bridge=args.bridge or None, state_path=state)
 
+    if args.bridge:
+        responder = engine.left_responder
+        if responder is None or not responder.available():
+            reason = (responder.last_error if responder is not None
+                      else "LeftResponder not constructed")
+            print(f"桥未启用：{reason}（需要 OMEGA_LEFT_BRIDGE 数据，见 docs/bridge.md）")
+
     print(f"PYBOT · {args.persona} · {engine.language} · "
           f"知识卡 {len(engine.kb.docs)} 张 · 输入 /quit 退出")
     while True:
