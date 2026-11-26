@@ -39,10 +39,10 @@ class TestRendererFactSafety(unittest.TestCase):
             self.assertIn("36g", r.reply)
             self.assertIn("25-30", r.reply)
 
-    def test_no_verbatim_repeat(self):
+    def test_a_greeting_preserves_the_question(self):
         e = MindEngine(persona=get_persona("generic"), bridge=PyBotBridge.disabled(), kb=FeynmanKB.disabled())
         replies = [e.turn("你好", now=1000.0 + i * 60).reply for i in range(6)]
-        self.assertEqual(len(replies), len(set(replies)))
+        self.assertEqual(set(replies), {"我在。想聊点什么？"})
 
     def test_empty_and_huge_input_do_not_crash(self):
         e = MindEngine(persona=get_persona("generic"), bridge=PyBotBridge.disabled(), kb=FeynmanKB.disabled())

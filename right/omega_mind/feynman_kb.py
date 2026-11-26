@@ -901,7 +901,8 @@ class FeynmanKB:
             return []
         if language != "en" and _ZH_EPISODIC.search(text):
             return []
-        expanded = self.core.bridge(self.core.expand(text))
+        query_text = self.core.query_text(text)
+        expanded = self.core.bridge(self.core.expand(query_text))
         query = set(self.core.tokens(expanded))
         if not query:
             return []
@@ -1070,8 +1071,8 @@ class FeynmanKB:
                detail: str = "normal",
                associate: bool = False) -> Lookup:
         """Retrieve one answer plus the score, runner-up margin and how many
-        candidates were considered. ``limit`` is what makes the margin
-        observable: with limit=1 there is no runner-up to compare against.
+        candidates were considered. Admission always compares the two best
+        eligible cards, even when the caller asks for a single candidate.
 
         ``associate=True`` appends at most one hand-confirmed association
         remark. It is chosen *after* the answer is fixed and never touches
@@ -1110,6 +1111,70 @@ class FeynmanKB:
             self._assoc = assoc.load(self.assoc_path)
         return self._assoc
 
+    def follow_up(self, card_id: str, kind: str, target: str,
+                  spoken: Tuple[str, ...]) -> Optional[str]:
+        """Select a passage or an audited relation for a grounded follow-up."""
+        card = next((doc for doc in self.docs if doc.id == card_id), None)
+        if card is None:
+            return None
+        core = self.core
+        cue = {"why": core.explanation, "boundary": core.condition,
+               "rephrase": core.example}[kind]
+        body = card.answer_for("rich")
+        passages = re.split(r"(?<=[。！？])\s*|(?<=[.!?])\s+|\n+", body)
+        passages = [passage.strip() for passage in passages if passage.strip()]
+        relevant = None
+        if target:
+            # For a conditional, short Chinese nouns may be a single
+            # character. Use the condition itself, not the generic tail
+            # ("那该怎么办"), as weak evidence alongside the bigrams.
+            if kind == "boundary":
+                target = re.split(r"[，,；;]", target, maxsplit=1)[0]
+            terms = set(core.tokens(target))
+            chars = set(core.unigrams(target)) if kind == "boundary" else set()
+
+            def overlap(passage: str) -> Tuple[int, int]:
+                matched = len(terms.intersection(core.tokens(passage)))
+                if matched >= 2 and matched * 2 >= len(terms):
+                    return matched, 0
+                intro, colon, _ = passage.partition("：")
+                if chars and colon and target[0] in intro and core.example.search(intro):
+                    # A one-character reference must name the example's
+                    # subject (苗), not just share its condition (干、水).
+                    shared = len(chars.intersection(core.unigrams(passage)))
+                    if shared >= 2:
+                        return 0, shared
+                return 0, 0
+
+            passages = [passage for passage in passages
+                        if any(overlap(passage)) and cue.search(passage)]
+            passages.sort(key=overlap, reverse=True)
+            if kind == "boundary":
+                # An example can introduce a conditional after a colon.
+                # Quote the condition itself when the introduction is extra.
+                for i, passage in enumerate(passages):
+                    _, colon, condition_text = passage.partition("：")
+                    if colon and cue.search(condition_text):
+                        passages[i] = condition_text.strip()
+            selected = next((p for p in passages if p not in spoken), None)
+            if selected:
+                return selected
+
+            def relevant(line: str) -> bool:
+                return overlap(line)[0] > 0
+
+        edge_kind = {"why": "premise", "boundary": "boundary",
+                     "rephrase": "same_mechanism"}[kind]
+        graph = self._assoc_graph()
+        titles = {doc.id: doc.title for doc in self.docs}
+        line = graph.sentence(
+            card_id, language=self.language, titles=titles,
+            kinds=(edge_kind,), spoken=spoken, relevant=relevant)
+        if line or target:
+            return line
+        return next((p for p in passages if cue.search(p) and p not in spoken
+                     and (kind != "rephrase" or not any(p in s for s in spoken))), None)
+
     def _lookup(self, text: str, language: Optional[str] = None,
                 min_score: Optional[float] = None, limit: int = 3,
                 prefer_kinds: Iterable[str] = (),
@@ -1123,7 +1188,7 @@ class FeynmanKB:
         # withholding ("be careful / say nothing"), so it stays strict.
         soft_ok = min_score is None or min_score <= self.MIN_SCORE
         floor = min(threshold, self.SOFT_SCORE) if soft_ok else threshold
-        hits = self.search(text, language=language, limit=limit,
+        hits = self.search(text, language=language, limit=max(2, limit),
                            min_score=floor, prefer_kinds=prefer_kinds)
         alternatives = tuple((doc.id, score) for score, doc in hits[:3])
         if not hits or hits[0][0] < threshold:
@@ -1167,7 +1232,7 @@ class FeynmanKB:
                        language: Optional[str] = None) -> Tuple[str, ...]:
         """Query tokens that hit this card — the evidence behind the answer."""
         core = self.core
-        tokens = set(core.tokens(core.bridge(core.expand(text))))
+        tokens = set(core.tokens(core.bridge(core.expand(core.query_text(text)))))
         shared = sorted(tok for tok in tokens if tok in doc.weights)
         return tuple(shared[:10])
 

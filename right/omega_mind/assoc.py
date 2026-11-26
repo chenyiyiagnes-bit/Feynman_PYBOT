@@ -22,7 +22,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set
 
 # Spoken kinds, strongest first. "same_domain" is filing, not explanation;
 # it stays in the data so the graph is complete, but it is never said aloud.
@@ -128,17 +128,22 @@ class AssocGraph:
 
     def sentence(self, card_id: str, language: str = "zh",
                  titles: Optional[Mapping[str, str]] = None,
-                 exclude: Iterable[str] = ()) -> Optional[str]:
+                 exclude: Iterable[str] = (), *,
+                 kinds: Sequence[str] = SPOKEN,
+                 spoken: Sequence[str] = (),
+                 relevant: Optional[Callable[[str], bool]] = None) -> Optional[str]:
         """At most one confirmed line about ``card_id``, or None.
 
         Kind priority is fixed (same_mechanism, boundary, premise); ties keep
         file order, so the first hand-written edge wins deterministically.
+        A follow-up may restrict the kind, match a topic and skip lines
+        already spoken.
         ``exclude`` names cards the answer is already about (the caller
         passes the other top hits) — never explain what the user asked for.
         """
         skip: Set[str] = set(exclude)
         titles = titles or {}
-        for kind in SPOKEN:
+        for kind in kinds:
             for edge in self.confirmed(card_id):
                 if edge.kind != kind:
                     continue
@@ -153,7 +158,9 @@ class AssocGraph:
                 line = _render(edge, card_id, other, kind, language, titles)
                 cap = (MAX_SENTENCE_CHARS_EN if language == "en"
                        else MAX_SENTENCE_CHARS)
-                if line and len(line) <= cap:
+                if (line and len(line) <= cap
+                        and (relevant is None or relevant(line))
+                        and not any(line in text for text in spoken)):
                     return line
         return None
 

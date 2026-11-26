@@ -48,6 +48,16 @@ class LanguageCore:
             (key, tokens) for key, tokens in data.get("terms", ()))
         self._bridge: Tuple[Tuple[str, str], ...] = tuple(
             (key, tokens) for key, tokens in data.get("bridge", ()))
+        self._query_prefix = re.compile(data.get("query_prefix", r"(?!)"), re.I)
+        self._topic_change = re.compile(data.get("topic_change", r"(?!)"), re.I)
+        self._definition = re.compile(data.get("definition", r"(?!)"), re.I)
+        self._followups = {
+            kind: re.compile(pattern, re.I)
+            for kind, pattern in data.get("followups", {}).items()
+        }
+        self.condition = re.compile(data.get("condition", r"(?!)"), re.I)
+        self.explanation = re.compile(data.get("explanation", r"(?!)"), re.I)
+        self.example = re.compile(data.get("example", r"(?!)"), re.I)
         self._lexicon = frozenset(self._build_lexicon(data))
         self._lexicon_max = max((len(w) for w in self._lexicon), default=1)
 
@@ -245,6 +255,28 @@ class LanguageCore:
         return word
 
     # -- query expansion --------------------------------------------------
+
+    def query_text(self, text: str) -> str:
+        """Remove wrappers and recover explicit requests to define a term."""
+        text = self._query_prefix.sub("", text.strip(), count=1)
+        text = self._topic_change.sub("", text, count=1)
+        definition = self._definition.fullmatch(text.rstrip("？?。 ."))
+        if definition is not None:
+            term = next(value for value in definition.groups() if value)
+            if term in self._lexicon and self.tokens(term):
+                return term
+        return text
+
+    def followup(self, text: str) -> Tuple[str, str]:
+        text = self._query_prefix.sub("", text.strip(), count=1)
+        if self._topic_change.match(text):
+            return "", ""
+        text = text.rstrip("。！!？?… .")
+        for kind, pattern in self._followups.items():
+            match = pattern.fullmatch(text)
+            if match is not None:
+                return kind, (match.groupdict().get("target") or "").strip()
+        return "", ""
 
     def expand(self, text: str) -> str:
         """Add subject vocabulary a question phrase hides."""

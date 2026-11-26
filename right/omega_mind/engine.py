@@ -65,6 +65,14 @@ class TurnResult:
         }
 
 
+@dataclass
+class _DialogueFocus:
+    card_id: str
+    source: str
+    spoken: List[str]
+    last_reply: str
+
+
 _PROACTIVE = {
     "zh": [
         "喂，在忙吗？我刚想起来一个怪问题——为什么冰块浮在水上，玻璃球却沉？",
@@ -85,6 +93,11 @@ _FALLBACK = {
     "zh": "嗯……这个问题我得再翻翻记忆库。",
     "en": "I'm not confident about that one.",
 }
+_FOLLOWUP_GAP = {
+    "zh": "我手头就这些资料。你想先弄清哪一步？",
+    "en": "That's as far as my sources go. Which step should we look at again?",
+}
+_ACK = {"zh": "嗯。", "en": "Got it."}
 
 # A guarded turn says so when two cards are almost tied. This is a style
 # sentence, not a fact: it only comments on the retrieval margin.
@@ -186,7 +199,7 @@ class MindEngine:
         # Optional corpus-callosum responder (bridge.LeftResponder). Kept
         # duck-typed and default-None: the right brain must run without the
         # left brain installed, and with None the turn path is unchanged.
-        # It is tried only when a Chinese card lookup finds nothing.
+        # The standalone prototype can use it after a Chinese lookup miss.
         self.left_responder = left_responder
         self.language = language
 
@@ -218,6 +231,7 @@ class MindEngine:
         # learned alias.
         self._last_query: Optional[str] = None
         self._last_source: Optional[str] = None
+        self._dialogue_focus: Optional[_DialogueFocus] = None
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -239,6 +253,7 @@ class MindEngine:
             # end of every turn, so switching users only has to read.
             self.state.set("affinity", self.relations.affinity(user, self.persona.baseline("affinity")))
             self.current_user = user
+            self._dialogue_focus = None
         # The cube's return path: how long each displaced cubie has held the
         # front face this turn, and which baselines the affect state should
         # relax toward while the arrangement stays scrambled.
@@ -332,12 +347,17 @@ class MindEngine:
                 base_reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
 
         directive = self.policy.compute(self.state, activations, self.language)
-        reply = self.renderer.render(base_reply, directive, self.turn_index,
-                                     self.language, posture=left_policy.posture)
+        reply = self.renderer.render(
+            base_reply, directive, self.turn_index, self.language,
+            posture=left_policy.posture,
+            preserve=bool(self.last_retrieval.get("dialogue_act"))
+            or source.startswith("fallback"))
         # The association is an aside, so it goes after the shell: the
         # answer keeps its own ending, the remark stays one clean line.
         reply = _with_association(reply, self.last_retrieval.get("association"),
                                   left_policy.detail)
+        if self._uses_knowledge_package():
+            self._remember_dialogue(source, base_reply, reply)
 
         result = TurnResult(
             reply=reply,
@@ -485,45 +505,42 @@ class MindEngine:
         if personal is not None:
             self.last_retrieval = {}
             return personal
-        if self.language == "zh":
-            # PyBot only answers in English, so Chinese mode uses the cards.
-            found = self.kb.lookup(
-                text,
-                min_score=policy.min_score,
-                limit=policy.limit,
-                prefer_kinds=policy.prefer_kinds,
-                detail=policy.detail,
-                associate=True,
-            )
-            self.last_retrieval = found.to_dict()
-            reply, source = found.text, found.source
-            if not _match_language(reply or "", "zh"):
-                # Corpus-callosum step: a card miss may still be answered by
-                # the typesetter, styled by what the right brain feels right
-                # now. Only then does the builtin fallback get its turn.
+        packaged = self._uses_knowledge_package()
+        target = ""
+        if packaged:
+            social = knowledge.social_reply(text, self.language)
+            if social is not None:
+                self.last_retrieval = {"dialogue_act": "social"}
+                return social, "builtin_en" if self.language == "en" else "builtin_kb"
+            kind, target = self.kb.core.followup(text)
+            followup = self._contextual_reply(kind, target)
+            if followup is not None:
+                return followup
+
+        found = self.kb.lookup(
+            text, language=self.language, min_score=policy.min_score,
+            limit=policy.limit, prefer_kinds=policy.prefer_kinds,
+            detail=policy.detail, associate=True)
+        self.last_retrieval = found.to_dict()
+        reply, source = found.text, found.source
+        if (target and self._dialogue_focus is not None
+                and source.startswith(self.kb.source_prefix + "_soft:")):
+            # A weak match elsewhere cannot answer a follow-up that could
+            # not be grounded in the current topic.
+            self.last_retrieval["unverified_followup"] = True
+            reply = None
+        if not _match_language(reply or "", self.language):
+            if packaged:
+                return _FALLBACK[self.language], f"fallback:{self.language}"
+            # Keep the standalone prototype's fallback tools for callers
+            # without a persona knowledge package.
+            if self.language == "zh":
                 bridged = self._left_reply(text, cube_bias)
-                if bridged is not None:
-                    reply, source = bridged
-                else:
-                    reply, source = knowledge.answer(text)
-        else:
-            # The translated card overlay is the mind's English knowledge;
-            # PyBot remains the fallback voice when no card matches.
-            found = self.kb.lookup(
-                text, language="en",
-                min_score=policy.min_score,
-                limit=policy.limit,
-                prefer_kinds=policy.prefer_kinds,
-                detail=policy.detail,
-                associate=True,
-            )
-            self.last_retrieval = found.to_dict()
-            reply, source = found.text, found.source
-            if not reply or not _match_language(reply, "en"):
+                reply, source = bridged if bridged is not None else knowledge.answer(text)
+            else:
                 reply, source = self.bridge.reply(text)
-            if not reply or not _match_language(reply, "en"):
-                en_reply, en_source = knowledge.answer_en(text)
-                reply, source = en_reply, en_source
+                if not _match_language(reply or "", "en"):
+                    reply, source = knowledge.answer_en(text)
         if not reply or not _match_language(reply, self.language):
             reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
         # A guarded mind flags a near-tie instead of pretending to be sure.
@@ -532,6 +549,49 @@ class MindEngine:
                 and margin is not None and margin < _HEDGE_MARGIN):
             reply = reply + _HEDGE[self.language]
         return reply, source
+
+    def _uses_knowledge_package(self) -> bool:
+        directory = self.kb.dir
+        return directory is not None and directory.name == "knowledge"
+
+    def _contextual_reply(self, kind: str, target: str) -> Optional[tuple[str, str]]:
+        if kind == "ack":
+            self.last_retrieval = {"dialogue_act": kind}
+            return _ACK[self.language], f"ack:{self.language}"
+        focus = self._dialogue_focus
+        if not kind or focus is None:
+            return None
+        if kind == "repeat":
+            passage = focus.last_reply
+        else:
+            passage = self.kb.follow_up(focus.card_id, kind, target, tuple(focus.spoken))
+        if not _match_language(passage or "", self.language):
+            if target:
+                return None
+            self.last_retrieval = {"dialogue_act": "followup_gap", "card_id": focus.card_id}
+            return _FOLLOWUP_GAP[self.language], f"fallback:{self.language}"
+        self.last_retrieval = {
+            "dialogue_act": kind, "source": focus.source,
+            "card_id": focus.card_id, "evidence": passage,
+        }
+        return passage, focus.source
+
+    def _remember_dialogue(self, source: str, base: str, reply: str) -> None:
+        kind = self.last_retrieval.get("dialogue_act")
+        focus = self._dialogue_focus
+        if kind in ("ack", "followup_gap"):
+            return
+        prefix, _, card_id = source.partition(":")
+        own = self.kb.source_prefix
+        if prefix not in (own, own + "_soft") or not card_id or card_id == "no_match":
+            self._dialogue_focus = None
+        elif kind == "repeat":
+            return
+        elif focus is not None and focus.card_id == card_id:
+            focus.spoken = (focus.spoken + [base, reply])[-12:]
+            focus.last_reply = reply
+        else:
+            self._dialogue_focus = _DialogueFocus(card_id, source, [base, reply], reply)
 
     def _personal_reply(self, text: str):
         """Answer a direct question from what the mind was told before.
@@ -588,6 +648,8 @@ class MindEngine:
             self.challenge_session = ChallengeSession(
                 self.kb, self, language=language)
             self.challenge_session.restore(progress)
+        if language != self.language:
+            self._dialogue_focus = None
         self.language = language
         if self.auto_save:
             self.save()
@@ -941,6 +1003,7 @@ class MindEngine:
         self._resonance_ts = None
         self.last_left_brain = {}
         self.last_retrieval = {}
+        self._dialogue_focus = None
         self.challenge_session = None
         if self.store_path and self.store_path.exists():
             self.store_path.unlink()

@@ -171,10 +171,11 @@ class TestScenarios(unittest.TestCase):
         self.assertLess(e.state.get("affinity"), e.persona.baseline("affinity") - 0.05)
 
     # 12
-    def test_no_verbatim_repeat_same_input(self):
+    def test_ordinary_statements_can_vary_without_changing_the_facts(self):
         e = engine()
-        replies = [e.turn("你好", now=1000.0 + 60 * i).reply for i in range(6)]
+        replies = [e.turn("为什么火会燃烧", now=1000.0 + 60 * i).reply for i in range(6)]
         self.assertEqual(len(replies), len(set(replies)))
+        self.assertTrue(all("氧" in r for r in replies))
 
     # extra: knowledge path keeps facts
     def test_knowledge_reply_keeps_facts(self):

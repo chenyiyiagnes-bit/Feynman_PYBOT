@@ -73,8 +73,9 @@ class TestGoldenRetrieval(unittest.TestCase):
         self.assertIsNotNone(wide.margin)
         self.assertLess(wide.margin, 0.05)
         narrow = self.kb_for("zh").lookup("什么是阻尼", limit=1)
-        self.assertIsNone(narrow.margin)
-        self.assertEqual(narrow.considered, 1)
+        self.assertEqual(narrow.margin, wide.margin)
+        self.assertEqual(narrow.source, wide.source)
+        self.assertEqual(narrow.considered, 2)
 
     def test_lookup_exposes_score_and_source(self):
         found = self.kb_for("zh").lookup("什么是扩散")

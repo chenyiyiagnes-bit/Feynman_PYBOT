@@ -3,6 +3,18 @@
   "profile": "default",
   "version": 1,
   "ascii": "[a-z0-9]+(?:[.\\-][a-z0-9]+)*",
+  "query_prefix": "^(?:please[ ,]+|excuse me[ ,]+)",
+  "topic_change": "^(?:new topic|another question|changing the subject)[,: ]+",
+  "followups": {
+    "ack": "(?:ok(?:ay)?|i see|got it|thanks)",
+    "repeat": "(?:please )?(?:say (?:that|it) again|repeat (?:that|it))",
+    "rephrase": "(?:i (?:don't|still don't) (?:get|understand)(?: it)?|put it another way|give (?:me )?an example|say it more simply)",
+    "why": "(?:(?:so[ ,]+)?(?:why|how come)(?: is that)?|(?:so[ ,]+(?:why|how come) |why (?=(?:do|does|did|must|would|is) (?:it|that|we|they)\\b))(?P<target>.+)|go on)",
+    "boundary": "(?:and |but )?what if (?P<target>.+)"
+  },
+  "condition": "\\b(?:if|when|only|unless|provided)\\b",
+  "explanation": "\\b(?:because|since|so|therefore|that's why|must)\\b",
+  "example": "\\b(?:for example|imagine|suppose|just like)\\b",
   "stop": [
     "a", "an", "the", "of", "to", "in", "on", "at", "for", "from", "by",
     "with", "and", "or", "but", "is", "are", "was", "were", "be", "been",

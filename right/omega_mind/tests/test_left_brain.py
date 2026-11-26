@@ -147,13 +147,12 @@ class TestPostureIsBehavioral(unittest.TestCase):
         self.assertIsNotNone(engine.last_retrieval["margin"])
         self.assertIn("not fully certain", tentative)
 
-        # Fatigue collapses the candidate set to one, so there is no margin
-        # to hedge on and the same fact is stated plainly.
+        # A short answer still has the same runner-up and uncertainty.
         terse = left_brain.LeftBrainPolicy(posture="careful", limit=1)
-        plain, _ = engine._base_reply("What is entropy?", terse)
-        self.assertIsNone(engine.last_retrieval["margin"])
-        self.assertNotIn("not fully certain", plain)
-        self.assertTrue(tentative.startswith(plain))
+        still_tentative, terse_source = engine._base_reply("What is entropy?", terse)
+        self.assertIsNotNone(engine.last_retrieval["margin"])
+        self.assertEqual(terse_source, source)
+        self.assertEqual(still_tentative, tentative)
 
 
 class TestSharpActivationAlert(unittest.TestCase):

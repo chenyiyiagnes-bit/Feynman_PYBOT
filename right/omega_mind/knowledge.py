@@ -10,8 +10,6 @@ import re
 from typing import List, Optional, Tuple
 
 _FACTS: List[Tuple[str, str]] = [
-    (r"^\s*(你好|您好|嗨|哈喽|早上好|晚上好)[！!。.~～\s]*$",
-     "我在。想聊点什么？"),
     (r"火|燃烧|木头",
      "火是太阳光在木头里存了好几年的能量：树把碳拆开存起来，点火只是让氧重新扑回去和碳抱在一起，把当年晒到的热量放出来。"),
     (r"橡皮筋|弹性",
@@ -38,28 +36,44 @@ _FALLBACK = "嗯……这个问题我得再翻翻记忆库。"
 
 
 _NAME = re.compile(r"^(?:你好[，,]?\s*)?我叫([一-鿿A-Za-z·]{2,8})[。.!！]*$")
+_GREETING = re.compile(r"^(你好|您好|嗨|哈喽|早上好|晚上好)[！!。.~～\s]*$")
 _EN_NAME = re.compile(r"^(?:hi[,.!]?\s*)?(?:my name is|i am|i'm|call me)\s+([A-Za-z][A-Za-z .'-]{0,30}?)[.!]?$",
                       re.IGNORECASE)
 _EN_GREETING = re.compile(r"^(?:hi|hello|hey|good morning|good evening)[!.\s]*$",
                           re.IGNORECASE)
 
 
+def social_reply(text: str, language: str) -> Optional[str]:
+    """Recognize standalone greetings and introductions in the current language."""
+    stripped = text.strip()
+    if language == "en":
+        match = _EN_NAME.match(stripped)
+        if match:
+            return f"Got it, {match.group(1).strip()}. What would you like to talk about?"
+        if _EN_GREETING.match(stripped):
+            return "I'm here. What's on your mind?"
+        return None
+    match = _NAME.match(stripped)
+    if match:
+        return f"记住了，{match.group(1)}。想聊点什么？"
+    if _GREETING.match(stripped):
+        return "我在。想聊点什么？"
+    return None
+
+
 def answer_en(text: str) -> Tuple[str, str]:
     """English builtin: greeting, name, and an explicit fallback."""
-    stripped = text.strip()
-    match = _EN_NAME.match(stripped)
-    if match:
-        return f"Got it, {match.group(1).strip()}. What would you like to talk about?", "builtin_en"
-    if _EN_GREETING.match(stripped):
-        return "I'm here. What's on your mind?", "builtin_en"
+    social = social_reply(text, "en")
+    if social is not None:
+        return social, "builtin_en"
     return "I'm not confident about that one.", "fallback_en"
 
 
 def answer(text: str) -> Tuple[str, str]:
     """Return (reply, source)."""
-    match = _NAME.match(text.strip())
-    if match:
-        return f"记住了，{match.group(1)}。想聊点什么？", "builtin_kb"
+    social = social_reply(text, "zh")
+    if social is not None:
+        return social, "builtin_kb"
     for pattern, reply in _FACTS:
         if re.search(pattern, text):
             return reply, "builtin_kb"
