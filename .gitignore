@@ -1,3 +1,11 @@
+# --- secrets: never commit ---
+.env
+.env.*
+!.env.example
+.en
+*.probe_write
+left/.probe_write
+
 # --- runtime state: never commit ---
 *.state.json
 mind_state*.json
@@ -5,6 +13,9 @@ snapshots/
 left/data/kb_learned/
 right/omega_mind/data/kb_learned/
 right/omega_mind/data/assoc/
+left/data/assoc/
+**/data/kb_learned/
+**/data/assoc/
 *.sqlite
 *.sqlite3
 *.db
@@ -13,6 +24,15 @@ right/omega_mind/data/assoc/
 corpora/
 **/corpus/raw/
 *.jsonl.private
+cpt_zh.jsonl
+p8_corpus_*
+*feynman_style_vault*.json
+*.npz
+left/data/*.json
+!left/data/README.md
+left/data/*.npz
+left/data/solve_cache.json
+left/data/v2_lemma_wiki.json
 
 # --- python ---
 __pycache__/
