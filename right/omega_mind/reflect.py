@@ -243,37 +243,28 @@ def _record(history: Dict[str, Any], text: str, kind: str, turn: int,
 
 # -- golden gate ------------------------------------------------------------
 
-def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
-    """The same net the tests use: no repair may flip a known answer.
-
-    A package that ships ``evals/golden.json`` is checked against its own
-    rows only. A KB built without a package prefix (tests, one-off scripts)
-    falls back to the merged net, filtered by language.
-    """
+def golden_ok(kb: FeynmanKB, *, public_only: bool = False) -> Tuple[bool, List[str]]:
+    """Protect a managed package's own net, with the merged net for prototypes."""
     failures: List[str] = []
     prefix = kb.source_root
-    golden, negatives = for_package(prefix)
-    if not golden and not negatives:
-        golden = tuple(row for row in GOLDEN if row[1] == kb.language)
-        negatives = tuple(row for row in NEGATIVES if row[1] == kb.language)
+    if kb.managed_package and kb.dir is not None:
+        package = kb.dir.parent
+        golden, negatives = for_package(package.name, package.parent)
     else:
-        golden = tuple(row for row in golden if row[1] == kb.language)
-        negatives = tuple(row for row in negatives if row[1] == kb.language)
+        golden, negatives = GOLDEN, NEGATIVES
     for query, language, acceptable in golden:
         if language != kb.language:
-            continue  # the other package's cards are not in this index
-        _, source = kb.answer(query)
-        if not source.startswith(prefix + ":"):
-            failures.append(f"{query} -> {source}")
             continue
-        card = source[len(prefix) + 1:]
+        result = kb.lookup(query, public_only=public_only, structured=public_only)
+        if not result.source.startswith(prefix + ":"):
+            failures.append(f"{query} -> {result.source}")
+            continue
+        card = result.source[len(prefix) + 1:]
         if card not in acceptable:
             failures.append(f"{query} -> {card}")
-    for query, language in NEGATIVES:
-        if language != kb.language:
-            continue
-        text, _ = kb.answer(query)
-        if text is not None:
+    for query, language in negatives:
+        if language == kb.language and kb.lookup(
+                query, public_only=public_only, structured=public_only).text is not None:
             failures.append(f"{query} -> answered")
     return (not failures, failures)
 
@@ -291,7 +282,7 @@ def _trial_kb(kb: FeynmanKB, store: LearnedStore) -> Optional[FeynmanKB]:
                           profile=kb.profile,
                           lexicon_dir=(str(kb.lexicon_dir)
                                        if kb.lexicon_dir else None),
-                          source_prefix=kb.source_prefix,
+                          source_prefix=(kb.source_prefix if kb.managed_package else None),
                           spreading=kb.spreading)
     except Exception:
         return None
@@ -450,7 +441,7 @@ def _trial_copy(kb: FeynmanKB, store: LearnedStore
             language=kb.language,
             profile=kb.profile,
             lexicon_dir=(str(kb.lexicon_dir) if kb.lexicon_dir else None),
-            source_prefix=kb.source_prefix,
+            source_prefix=(kb.source_prefix if kb.managed_package else None),
             spreading=kb.spreading)
     except Exception:
         shutil.rmtree(tmp, ignore_errors=True)

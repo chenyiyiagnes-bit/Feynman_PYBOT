@@ -174,14 +174,15 @@ def render(report: dict, list_missing: bool = False) -> str:
 def pilot(package: Path, questions: Path, limit: int) -> list[dict]:
     """Prioritize human review with a fixed query list, without editing cards."""
     from omega_mind.dialogue import card_revision
-    from omega_mind.golden_queries import GOLDEN
+    from omega_mind.golden_queries import for_package
 
     kb = feynman_kb.FeynmanKB(knowledge_dir=str(package / "knowledge"),
                               source_prefix=package.name)
     suite = json.loads(questions.read_text(encoding="utf-8"))
     counts = Counter(cid for case in suite["cases"] if case.get("language") == kb.language
                      for cid in case["acceptable"] if cid in kb.by_id)
-    counts.update(cid for _, language, acceptable in GOLDEN if language == kb.language
+    golden, _ = for_package(package.name, package.parent)
+    counts.update(cid for _, language, acceptable in golden if language == kb.language
                   for cid in acceptable if cid in kb.by_id)
     physics = {"physics_guardrail", "physics_card", "lecture_card", "physics_edge", "teachable_unit"}
     ordered = sorted((doc for doc in kb.docs if doc.id in counts and doc.kind in physics

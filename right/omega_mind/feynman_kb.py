@@ -1063,8 +1063,9 @@ class FeynmanKB:
                     score = min(1.0, score + 0.10)
                 boosted.append((score, doc))
             scored = boosted
-        if self.spreading and scored and not public_only:
-            index = self._spread_index(docs)
+        if self.spreading and scored:
+            index = (self._spread_index(docs) if len(docs) == len(self.docs)
+                     else spreading.npmi_neighbors(docs))
             subject = set(qweight)
             spread: List[Tuple[float, Doc]] = []
             for score, doc in scored:

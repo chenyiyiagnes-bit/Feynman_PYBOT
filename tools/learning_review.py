@@ -67,7 +67,7 @@ def rehearse(kb, data: dict, decision: dict, cases: list[dict]) -> None:
     if not any(expected == actual for expected, actual in
                zip((case["card"] for case in cases), baseline)):
         raise ValueError("holdout has no passing baseline case to protect")
-    original_failures = set(reflect.golden_ok(kb)[1])
+    original_failures = set(reflect.golden_ok(kb, public_only=True)[1])
     trial, scratch = reflect._trial_copy(kb, kb.learned)
     if trial is None or scratch is None:
         raise ValueError("could not construct an isolated trial")
@@ -81,7 +81,7 @@ def rehearse(kb, data: dict, decision: dict, cases: list[dict]) -> None:
         if any(before == case["card"] and after != before
                for case, before, after in zip(cases, baseline, changed)):
             raise ValueError("holdout regression")
-        if set(reflect.golden_ok(trial)[1]) - original_failures:
+        if set(reflect.golden_ok(trial, public_only=True)[1]) - original_failures:
             raise ValueError("golden retrieval regression")
     finally:
         shutil.rmtree(scratch)
