@@ -3,8 +3,13 @@
 One package, one language. The Chinese package is `personas/feynman-zh/`; run
 them separately — the runtime never mixes the two.
 
-- Cards: `knowledge/*.jsonl`, 302 cards. Lecture and interview cards quote
-  English sources; they are not back-translated from the Chinese cards.
+- Cards: `knowledge/*.jsonl`. The 293 rows in the thirteen teaching files
+  are meant to come from Feynman's English (lectures, books, talks), not
+  from a translation of `feynman-zh`. Where a card was rewritten that way,
+  `translation_of` and `source_language` are gone and a `support` note names
+  the English source. Cards with no English source checked were left as they
+  were, and those still carry the old translation marks. The nine `web-*`
+  rows are a separate file.
 - `knowledge/verified_facts.jsonl` holds the nine `web-*` quotes already
   stored in `feynman-zh` (same ids, titles, text, and URLs). Those rows were
   English to begin with. The Chinese audit note on them is rewritten in
