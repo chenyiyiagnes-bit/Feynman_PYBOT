@@ -60,6 +60,23 @@ def to_config(persona: Persona) -> PersonaConfig:
     cfg.disable_cubies = list(persona.disable_cubies)
     cfg.override_triggers = {k: list(v) for k, v in persona.override_triggers.items()}
     cfg.extra_effects = {k: dict(v) for k, v in persona.extra_effects.items()}
+    # The cubie table is where the author wrote the gain. Override lists
+    # carry only the pattern text, so the match is by that string, per cubie.
+    gains: dict = {}
+    for cubie in persona.cubies:
+        name = str(cubie.get("name") or "")
+        if not name:
+            continue
+        table: dict = {}
+        for item in cubie.get("triggers") or []:
+            if not isinstance(item, (list, tuple)) or len(item) < 2:
+                continue
+            try:
+                table[str(item[0])] = float(item[1])
+            except (TypeError, ValueError):
+                continue
+        gains[name] = table
+    cfg.trigger_gains = gains
     return cfg
 
 

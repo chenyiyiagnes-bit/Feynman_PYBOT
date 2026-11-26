@@ -1,0 +1,135 @@
+"""Cubie-table gains survive an override.
+
+``override_triggers`` replaces which patterns fire. The gain stays the one
+written on the matching cubie-table row. A pattern the table does not
+contain keeps 1.0. These cases go through ``app.runtime.build`` so a
+compile-time default of 1.0 cannot hide behind ``get_persona``.
+"""
+
+from __future__ import annotations
+
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from app.runtime import STATE_DIR_ENV, build
+
+ROOT = Path(__file__).resolve().parents[1]
+PERSONAS = ROOT / "personas"
+
+
+def _strengths(result) -> dict:
+    return {act.name: act.strength for act in result.activations}
+
+
+class TestCubieGains(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self._env = mock.patch.dict(os.environ, {STATE_DIR_ENV: self._tmp.name})
+        self._env.start()
+
+    def tearDown(self):
+        self._env.stop()
+        self._tmp.cleanup()
+
+    def mind(self, package: str):
+        # Each mind gets its own learned dir. A shared state directory would
+        # carry an alias from the previous utterance into the next mind.
+        slot = tempfile.mkdtemp(dir=self._tmp.name)
+        os.environ[STATE_DIR_ENV] = slot
+        return build(package, personas_root=PERSONAS, enable_bridge=False)
+
+    def test_feynman_chinese_strengths_stay_put(self):
+        engine = self.mind("feynman-zh")
+        laugh = engine.turn("哈哈", now=1000.0)
+        strengths = _strengths(laugh)
+        # Replacement, not an appended English pattern: humor stays 0.8.
+        self.assertAlmostEqual(strengths["edge_humor"], 0.8)
+        self.assertAlmostEqual(strengths["edge_habit"], 0.2)
+        self.assertEqual(engine.cube.history, ["R"])
+
+        engine = self.mind("feynman-zh")
+        murmur = engine.turn("嗯", now=1000.0)
+        self.assertAlmostEqual(_strengths(murmur)["edge_habit"], 1.0)
+        self.assertEqual(engine.cube.history, ["F"])
+
+        engine = self.mind("feynman-zh")
+        before = engine.state.get("dopamine")
+        wrong = engine.turn("你说错了", now=1000.0)
+        strengths = _strengths(wrong)
+        self.assertAlmostEqual(strengths["core_intuition"], 1.0)
+        self.assertNotIn("corner_shame", strengths)
+        self.assertGreater(engine.state.get("dopamine") - before, 0.15)
+        self.assertEqual(engine.cube.history, ["R"])
+
+        engine = self.mind("feynman-zh")
+        asked = engine.turn("为什么光会衍射", now=1000.0)
+        self.assertAlmostEqual(_strengths(asked)["core_logic"], 0.6)
+        self.assertEqual(engine.cube.history, [])
+        self.assertIn("wave-interference-diffraction", asked.source)
+
+    def test_feynman_praise_writes_an_alias_and_a_tint_does_not(self):
+        engine = self.mind("feynman-zh")
+        engine.turn("原子是什么？", now=1000.0)
+        engine.turn("哈哈", now=1020.0)
+        self.assertIn("原子是什么？", engine.kb.aliases.get("flp-i-01", []))
+
+        engine = self.mind("feynman-zh")
+        engine.turn("原子是什么？", now=1000.0)
+        engine.turn("ok", now=1020.0)
+        self.assertEqual(engine.kb.aliases, {})
+
+    def test_english_feynman_keeps_todays_contract(self):
+        # English override patterns are not part of this change.
+        engine = self.mind("feynman-en")
+        engine.turn("What is an atom?", now=1000.0)
+        haha = engine.turn("haha", now=1020.0)
+        strengths = _strengths(haha)
+        self.assertAlmostEqual(strengths.get("edge_habit", 0.0), 0.2)
+        self.assertNotIn("edge_humor", strengths)
+        self.assertEqual(engine.cube.history, [])
+        self.assertEqual(engine.kb.aliases, {})
+
+        for text in ("you're wrong", "I don't know"):
+            engine = self.mind("feynman-en")
+            result = engine.turn(text, now=1000.0)
+            self.assertNotIn("core_intuition", _strengths(result), text)
+
+    def test_laozhuang_uses_author_gains(self):
+        for package in ("laozhuang-zh", "laozhuang-en"):
+            with self.subTest(package=package):
+                engine = self.mind(package)
+                laugh = engine.turn("哈哈", now=1000.0)
+                strengths = _strengths(laugh)
+                self.assertAlmostEqual(strengths["edge_habit"], 0.2)
+                self.assertAlmostEqual(strengths["edge_humor"], 0.8)
+                self.assertEqual(engine.cube.history, ["R"])
+
+                engine = self.mind(package)
+                wrong = engine.turn("你说错了", now=1000.0)
+                strengths = _strengths(wrong)
+                self.assertAlmostEqual(strengths["core_intuition"], 0.6)
+                self.assertAlmostEqual(strengths["edge_habit"], 0.2)
+                self.assertAlmostEqual(strengths["corner_shame"], 0.9)
+                self.assertLess(wrong.resonance["energy"], 2.25)
+                self.assertFalse(wrong.resonance["breakthrough"])
+                self.assertNotEqual(engine.cube.history, ["R", "R", "F", "R'"])
+
+                for text in ("嗯", "ok", "hmm"):
+                    engine = self.mind(package)
+                    murmur = engine.turn(text, now=1000.0)
+                    self.assertAlmostEqual(
+                        _strengths(murmur)["edge_habit"], 1.0, msg=text)
+
+                for text in ("why", "为什么光会衍射"):
+                    engine = self.mind(package)
+                    asked = engine.turn(text, now=1000.0)
+                    strengths = _strengths(asked)
+                    self.assertAlmostEqual(strengths["core_logic"], 0.6, msg=text)
+                    self.assertEqual(engine.cube.history, [], msg=text)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -28,12 +28,29 @@ HABITUATION_FACTOR = 0.6
 MAX_STRENGTH = 3.0
 
 
+def _override_gain(persona: PersonaConfig, cubie: str, pattern: str) -> float:
+    """Author gain when this override text is also a cubie-table trigger.
+
+    Overrides replace the table's pattern list; they do not replace its
+    gains. A pattern the table does not contain (Feynman's correction and
+    jargon lines) stays at 1.0, which is what a bare override meant before
+    the table was consulted.
+    """
+    table = persona.trigger_gains.get(cubie) or {}
+    gain = table.get(pattern)
+    if gain is None:
+        return 1.0
+    return float(gain)
+
+
 class AppraisalEngine:
     def __init__(self, persona: PersonaConfig):
         self.persona = persona
         self._recent: Dict[str, Deque[int]] = defaultdict(lambda: deque(maxlen=HABITUATION_WINDOW))
         self._override: Dict[str, List[Tuple[re.Pattern, float]]] = {
-            name: [(re.compile(p, re.IGNORECASE), 1.0) for p in patterns]
+            name: [(re.compile(p, re.IGNORECASE),
+                    _override_gain(persona, name, p))
+                   for p in patterns]
             for name, patterns in persona.override_triggers.items()
         }
 

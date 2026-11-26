@@ -68,6 +68,10 @@ class PersonaConfig:
 
     # cubie name -> replacement regex list
     override_triggers: Dict[str, List[str]] = field(default_factory=dict)
+    # cubie name -> pattern string -> author gain from that cubie's table.
+    # Appraisal uses this when an override pattern is the same text as a
+    # table trigger. A pattern with no entry keeps gain 1.0.
+    trigger_gains: Dict[str, Dict[str, float]] = field(default_factory=dict)
     disable_cubies: List[str] = field(default_factory=list)
 
     # cubie name -> extra state deltas
