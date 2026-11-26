@@ -266,6 +266,27 @@ class TestContextBridge(unittest.TestCase):
                             for a in report.actions), report.to_dict())
 
 
+class TestWeakSourceRoot(unittest.TestCase):
+    def _episode(self, source: str, score: float = 0.1,
+                 margin: float = 0.0) -> Episode:
+        return Episode(
+            turn=1, now=1.0, user="default", text="q",
+            reply="a", source=source, tags=[],
+            retrieval={"score": score, "margin": margin})
+
+    def test_judgement_uses_the_package_prefix(self):
+        thin = self._episode("feynman-zh:abc")
+        self.assertTrue(reflect._is_weak(thin, "feynman-zh"))
+        self.assertFalse(reflect._is_weak(thin, "feynman_kb"))
+        # The unnamed KB still uses the default prefix.
+        self.assertTrue(reflect._is_weak(self._episode("feynman_kb:abc")))
+        self.assertFalse(reflect._is_weak(
+            self._episode("feynman_kb:abc", score=0.9, margin=0.5)))
+        self.assertTrue(reflect._is_weak(
+            self._episode("feynman-zh_soft:abc", score=0.9, margin=0.5),
+            "feynman-zh"))
+
+
 class TestWeakAnswer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

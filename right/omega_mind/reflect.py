@@ -135,15 +135,22 @@ def _is_miss(source: str) -> bool:
     return source.endswith(":no_match") or source.startswith("fallback")
 
 
-def _is_weak(episode: Any) -> bool:
-    """Answered, but by a card that barely qualified or barely won."""
+def _is_weak(episode: Any, source_root: str = "feynman_kb") -> bool:
+    """Answered, but by a card that barely qualified or barely won.
+
+    ``source_root`` is this package's prefix. A firm hit is ``<root>:<card>``
+    and a barely-cleared one is ``<root>_soft:<card>``. The default root is
+    the unnamed KB's ``feynman_kb``; a packaged mind passes its own.
+    """
     retrieval = getattr(episode, "retrieval", None) or {}
     if not retrieval:
         return False
     source = getattr(episode, "source", "")
-    if not source.startswith("feynman_kb"):
+    firm = source.startswith(source_root + ":")
+    soft = source.startswith(source_root + "_soft:")
+    if not firm and not soft:
         return False
-    if "soft" in source:
+    if soft:
         return True
     score = retrieval.get("score")
     margin = retrieval.get("margin")
@@ -575,7 +582,7 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
             finding = _record(history, text, "unanswered",
                               getattr(episode, "turn", 0), source,
                               _alternatives(episode))
-        elif _is_weak(episode):
+        elif _is_weak(episode, kb.source_root):
             finding = _record(history, text, "weak",
                               getattr(episode, "turn", 0), source,
                               _alternatives(episode))
@@ -595,7 +602,7 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
             continue
         prev_source = str(getattr(prev, "source", "") or "")
         prev_text = str(getattr(prev, "text", "") or "").strip()
-        if _is_miss(prev_source) or _is_weak(prev):
+        if _is_miss(prev_source) or _is_weak(prev, kb.source_root):
             if any(mark in follow for mark in CORRECTION_MARKERS):
                 corrections.append((prev, nxt))
             if prev_text and (

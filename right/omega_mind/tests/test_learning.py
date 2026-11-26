@@ -644,5 +644,29 @@ class TestSoftRecall(unittest.TestCase):
         self.assertTrue(found.source.endswith(":no_match"))
 
 
+class TestSnapshotKeepsPackageLanguage(unittest.TestCase):
+    def test_a_zh_package_ignores_an_english_snapshot(self):
+        root = Path(__file__).resolve().parents[3]
+        kb = FeynmanKB(
+            knowledge_dir=str(root / "personas" / "feynman-zh" / "knowledge"),
+            language="zh",
+            source_prefix="feynman-zh",
+        )
+        engine = MindEngine(
+            persona=get_persona("feynman"),
+            bridge=PyBotBridge.disabled(),
+            kb=kb, auto_save=False, language="zh")
+        data = engine.snapshot()
+        data["language"] = "en"
+        restored = MindEngine.load_from_dict(
+            data, bridge=PyBotBridge.disabled(), kb=kb,
+            language="zh", auto_save=False)
+        self.assertEqual(restored.language, "zh")
+        self.assertEqual(restored.kb.language, "zh")
+        self.assertIs(restored.kb, kb)
+        result = restored.turn("原子是什么？", now=1000.0)
+        self.assertEqual(result.source, "feynman-zh:flp-i-01")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import os
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from app.runtime import (
+    STATE_DIR_ENV,
     build,
     knowledge_dir,
     resolve_persona,
@@ -81,6 +85,19 @@ class TestBuild(unittest.TestCase):
         result = engine.turn("原子是什么？", now=1000.0)
         self.assertTrue(result.reply)
         self.assertTrue(result.source.startswith("feynman-zh"), result.source)
+
+    def test_praise_after_a_card_writes_an_alias(self):
+        # build() names the source with the package id (feynman-zh:…), not
+        # the literal feynman_kb. Praise has to teach against that prefix.
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.dict(os.environ, {STATE_DIR_ENV: tmp}):
+                engine = build("feynman-zh", personas_root=PERSONAS,
+                               enable_bridge=False)
+                first = engine.turn("原子是什么？", now=1000.0)
+                self.assertEqual(first.source, "feynman-zh:flp-i-01")
+                engine.turn("哈哈，太棒了", now=1020.0)
+                self.assertIn("原子是什么？",
+                              engine.kb.aliases.get("flp-i-01", []))
 
     def test_no_knowledge_dir_still_builds(self):
         # A bare package: persona.json and nothing else. Every shipped package

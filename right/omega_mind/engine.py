@@ -94,6 +94,18 @@ _HEDGE = {
 }
 _HEDGE_MARGIN = 0.06
 
+
+def _from_package(source: str, root: str) -> bool:
+    """True when this answer came from this package, firm or soft.
+
+    A package names its own prefix (``feynman-zh:flp-i-01``, or
+    ``feynman-zh_soft:`` when the card only barely cleared). The literal
+    ``feynman_kb`` is only the default for a KB no caller named.
+    """
+    return bool(source) and (
+        source.startswith(root + ":") or source.startswith(root + "_soft:")
+    )
+
 # Questions the semantic tier can answer directly. These are the only paths
 # by which stored facts reach a reply; the KB still owns everything else.
 _FACT_QUESTIONS = {
@@ -252,7 +264,8 @@ class MindEngine:
         # Praise is the only feedback signal this mind has. If the previous
         # turn was answered from a card and this turn is praise, remember the
         # phrasing that led there; later paraphrases of it will score higher.
-        if (self._last_source and self._last_source.startswith("feynman_kb:")
+        if (self._last_source and _from_package(self._last_source,
+                                               self.kb.source_root)
                 and self._last_query
                 and any(a.name == "edge_humor" and a.strength >= 0.5
                         for a in activations)):
@@ -383,7 +396,7 @@ class MindEngine:
                                    topic=self.kb.topic_for(text))
             elif metaphor_candidate(text):
                 self._remember_candidate(text)
-        if source.startswith("feynman_kb") and ":" in source:
+        if _from_package(source, self.kb.source_root):
             card_id = source.split(":", 1)[1]
             self.kb.note_hit(card_id)
         self._last_query = text
@@ -527,7 +540,8 @@ class MindEngine:
             reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
         # A guarded mind flags a near-tie instead of pretending to be sure.
         margin = self.last_retrieval.get("margin")
-        if (policy.posture == "careful" and source.startswith("feynman_kb")
+        if (policy.posture == "careful"
+                and _from_package(source, self.kb.source_root)
                 and margin is not None and margin < _HEDGE_MARGIN):
             reply = reply + _HEDGE[self.language]
         return reply, source
@@ -896,7 +910,16 @@ class MindEngine:
         engine.cube_feedback.restore(data.get("cube_feedback", {}))
         engine.dreamer.restore(data.get("dreams", {}))
         engine.current_user = data.get("current_user", "default")
-        engine.language = data.get("language", "zh")
+        # A loaded package is one language. The snapshot may remember a mode
+        # from another run, but it must not point this mind at a language its
+        # cards do not speak. A disabled KB holds no package, so the saved
+        # mode still decides tone and fallbacks.
+        saved_language = data.get("language", "zh")
+        if (kb is not None and kb.mode != "disabled"
+                and (kb.dir is not None or kb.available())):
+            engine.language = kb.language
+        else:
+            engine.language = saved_language
         # These two are the last turn's visible policy/retrieval; they used to
         # be saved and silently dropped on load.
         engine.last_left_brain = dict(data.get("left_brain") or {})

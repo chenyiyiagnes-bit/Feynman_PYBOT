@@ -139,8 +139,9 @@ class Cards(unittest.TestCase):
                 for lang in PACKAGES:
                     with self.subTest(package=lang):
                         engine = runtime.build(PACKAGES[lang].name)
-                        self.assertTrue(engine.kb.count if hasattr(engine.kb, "count")
-                                        else True)
+                        self.assertEqual(engine.language, lang)
+                        self.assertEqual(engine.kb.language, lang)
+                        self.assertGreater(len(engine.kb.docs), 0)
 
 
 if __name__ == "__main__":
