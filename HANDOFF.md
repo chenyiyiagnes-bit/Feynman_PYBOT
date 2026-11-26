@@ -36,6 +36,26 @@ personas/laozhuang-en/   老庄 · 英文
 - `laozhuang-en` 有 `persona.json`，英文语气是**占位**，也没有卡片。
 - 英文联想边本地生成过 89 条（不入库，`data/assoc/` 被忽略）。
 
+2026-11-26 这一轮做完 A1–A5、B1–B4、C1–C3、D4（提交 `03b642e`…`5296c9c`）：
+
+- **A1–A3** 语言规则搬进 `right/omega_mind/lang/`，`modern`/`classical` 两套 profile；
+  **A4** `tools/eval_segmentation.py`；**A5** 干净确认集 15/30（诚实基线，不粉饰）。
+- **B1** `tools/build_lexicon.py`：派生 `terms.json`/`edges.jsonl`（不入库、可复现）；
+  **B2** `tools/code_cards.py`：token id + 字节偏移，每个 token 可回溯；覆盖率
+  zh 22.9% / en 46.9%（OOV 是事实，不是缺陷）；**B3** 召回扩展默认关，打开后
+  golden 47/47、陷阱 5/5、确认集 11→12，但**只有 2 字邻居能命中**（索引是 bigram）；
+  **B4** `bridge/slot_gate.py`：用户槽词必须在所选卡片的编码 token 里，否则拒答。
+- **C1** `tools/promote_terms.py`：候选＝高 npmi 跨卡相邻词对，晋升须在人工切分集上
+  F1 提升 ≥ `MIN_F1_GAIN`（0.0005，暂定）且不丢 exact；决定写入
+  `data/lexicon/promotions.jsonl`，重建保留晋升、丢弃不重试（`--retry` 除外）。
+- **C2** `right/omega_mind/corrections.py`：切错/答错记录带出处、词表版本与时间，
+  可统计（按 kind/source/重复问题）与回放；日志在 `PYBOT_STATE_DIR`（默认 `data/state/`，已忽略）。
+- **C3** `tools/lexicon_versions.py`：每次构建整批写入 `data/lexicon/versions/<内容哈希>/`，
+  顶层文件是激活版本的副本；`activate` 是整文件替换，不是补丁。编码与词表版本不一致时
+  闸门自动失效（`terms_digest` 对不上）。
+- **D4** `tools/build_assoc.py`：由卡片重建联想边，只产出 `origin="cooccur"` 候选
+  （永不朗读、没有 mechanism），每卡扇出封顶，重建逐字节一致。
+
 验证方式：
 
 ```sh
@@ -87,9 +107,9 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 
 | # | 任务 | 验收标准 | 依赖 |
 |---|---|---|---|
-| C1 | 词条晋升流程 | 高 PMI + 跨卡复现的候选词 → 评估提升 ≥ 阈值（数值待定，见 §5）→ 晋升并记出处；不提升则记日志丢弃 | B1、A4 |
-| C2 | 人工修正日志 | 每次「切错了/答错了」写成带出处的记录，可统计、可回放 | B1 |
-| C3 | 词表版本化 | 编码整批重建、可回滚；不做增量修补 | B1 |
+| C1 | 词条晋升流程 | **已完成** `68ca31c`：候选＝高 npmi 跨卡相邻词对；晋升须在人工切分集上 F1 提升 ≥ `MIN_F1_GAIN`（0.0005，暂定，可用 `--retry` 重评）且不丢 exact；决定记入 `data/lexicon/promotions.jsonl`，重建保留晋升 | B1、A4 |
+| C2 | 人工修正日志 | **已完成** `386e182`：`omega_mind/corrections.py` 记录切错/答错（含出处、词表版本、时间），可统计、可回放 | B1 |
+| C3 | 词表版本化 | **已完成** `d8f7dd3`：整批写入 `versions/<内容哈希>/`，`tools/lexicon_versions.py` 整文件回滚；编码过期时闸门自动失效 | B1 |
 
 ### D. 内容与包
 
@@ -98,7 +118,7 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 | D1 | 合并 `persona/laozhuang` | 分支先拉到 `dev`，再迁入卡片；两套测试全绿后才进 `dev` | — |
 | D2 | `laozhuang-en` 语气重写 | 用原文对应表达替换占位，不靠中文回译 | D1 |
 | D3 | 文言语料随包发布 | 仅限公有领域原文（《道德经》《庄子》）；仓库体积评估后再定 | 所有者确认 |
-| D4 | `tools/build_assoc.py` | 新克隆无联想边时能由卡片重建；可复现 | B1（可复用 PMI） |
+| D4 | `tools/build_assoc.py` | **已完成** `5296c9c`：由卡片重建 `origin="cooccur"` 候选边，扇出封顶，重建逐字节一致 | B1（可复用 PMI） |
 | D5 | 通知协作者目录改名 | Gemini / Astra 的脚本不再引用 `personas/feynman`、`personas/laozhuang` | — |
 
 ### E. 更远
@@ -118,7 +138,8 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 3. **《道德经》《庄子》原文是否随仓库发布**：公版合法，但会明显增大仓库体积；
    不发布则老庄包与费曼包一致——只有卡片，语料自备。
 
-另外 C1 的「提升阈值」需要一个具体数字，得等 A4/A5 有基线之后才能定，不预设。
+C1 的提升阈值目前取 `MIN_F1_GAIN = 0.0005`（暂定）：A4/A5 的基线只够证明切分集不回归，
+不足以校准具体数字；有更多人工切分样本后应重新标定，代码里只承认这一个常量。
 
 ## 6. 已知的坑
 
@@ -128,6 +149,15 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
   的正文在 `phenomenon`、`force_invariant`、`pattern` 等字段里。任何「按 `text` 判断」
   的代码都会静默丢卡——`_already_english` 就踩过，丢了 21 张。
 - **`data/assoc/` 与 `data/lexicon/` 都不入库。** 新克隆只有卡片，没有边。不要假设它们存在。
+- **未知词串会整段粘连。** FMM 把不认识的 CJK 连续段合成一个 token（≤6 字整段保留），
+  所以「相邻词对」永远由已知词构成；想促销生词，先得让它能被切开。按字符偏移回指时
+  一律用 `segment_spans`，别用 `str.find`——粘连跨空白会让偏移对不上（B2 踩过）。
+- **召回扩展的邻居只能加分，不能进分母。** 把邻居算进覆盖分母会稀释原问题，
+  确认集曾因此 11→9；`subject` 只含原查询 token（B3）。
+- **重建词表后必须重跑 `tools/code_cards.py`。** 闸门用 `terms_digest` 对账，
+  编码与词表不一致时自动失效（不拒答、也不假装验证过）。
+- **每次构建都会快照。** `data/lexicon/versions/` 会随重建累积；回滚用
+  `tools/lexicon_versions.py activate`，旧版本可以手工删，不删也不影响正确性。
 - **确认集已污染。** 旧的 `heldout_voice` 等集合已进过训练语料，不能再用作评估证据（见 A5）。
 - **训练语料红线**：中英必须一一对应；英文只能用费曼原话，禁止中文回译。
 - **`.gitignore` 是最后一道，不是第一道。** 提交前仍然要 `git status` 亲眼看。
