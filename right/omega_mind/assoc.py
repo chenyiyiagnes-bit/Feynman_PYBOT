@@ -30,8 +30,8 @@ from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set
 # map says more than "these two are alike". "limit_of" is a derivation move —
 # one theory is another one's degenerate case — and points from the special
 # case to the general one.
-SPOKEN = ("same_equation", "boundary", "limit_of", "same_mechanism",
-          "premise")
+SPOKEN = ("same_equation", "boundary", "tension", "limit_of",
+          "same_mechanism", "premise")
 KINDS = SPOKEN + ("same_domain",)
 ORIGINS = ("human", "cooccur")
 
@@ -131,8 +131,8 @@ def problems(edge: Edge) -> List[str]:
     if edge.origin == "human" and edge.kind in SPOKEN:
         if not edge.mechanism.strip():
             out.append("spoken edge needs a mechanism")
-        if edge.kind in ("same_mechanism", "same_equation", "boundary") \
-                and not edge.difference.strip():
+        if edge.kind in ("same_mechanism", "same_equation", "boundary",
+                         "tension") and not edge.difference.strip():
             out.append(f"{edge.kind} needs the strongest difference")
         if edge.kind == "same_equation" and not _mapping_pairs(edge.mapping):
             out.append("same_equation needs a symbol mapping")
@@ -267,7 +267,8 @@ def _render(edge: Edge, card_id: str, other: str, kind: str,
         mapping = invert_mapping(mapping, sep=", " if language == "en" else "、")
     if language == "en":
         if not mechanism or (kind in ("same_mechanism", "same_equation",
-                                      "boundary") and not difference):
+                                      "boundary", "tension")
+                             and not difference):
             return None
         if kind == "same_equation" and not mapping:
             return None
@@ -287,6 +288,10 @@ def _render(edge: Edge, card_id: str, other: str, kind: str,
             if kind == "boundary":
                 return (f"Following on from \"{name}\", don't mix them up: "
                         f"{difference}")
+            if kind == "tension":
+                return (f"Following on from \"{name}\": it looks "
+                        f"contradictory — {mechanism}. It isn't once you add: "
+                        f"{difference}")
             if kind == "limit_of":
                 return (f"Following on from \"{name}\": this is its limit "
                         f"when {condition}: {mechanism}")
@@ -301,6 +306,9 @@ def _render(edge: Edge, card_id: str, other: str, kind: str,
                     f"Where it parts: {difference}")
         if kind == "boundary":
             return f"Don't confuse it with \"{name}\": {difference}"
+        if kind == "tension":
+            return (f"This looks like it contradicts \"{name}\": "
+                    f"{mechanism}. It doesn't once you add: {difference}")
         if kind == "limit_of":
             return (f"This is the limit of \"{name}\" when {condition}: "
                     f"{mechanism}")
@@ -315,6 +323,9 @@ def _render(edge: Edge, card_id: str, other: str, kind: str,
                     f"符号对上是：{mapping}。差别是：{difference}")
         if kind == "boundary":
             return f"接着刚才那张《{name}》，别混了：{difference}"
+        if kind == "tension":
+            return (f"接着刚才的《{name}》——看着矛盾：{mechanism}；"
+                    f"不矛盾，缺的条件是：{difference}")
         if kind == "limit_of":
             return (f"接着刚才的《{name}》——这是它在{condition}时的极限："
                     f"{mechanism}")
@@ -326,6 +337,9 @@ def _render(edge: Edge, card_id: str, other: str, kind: str,
                 f"把符号对上：{mapping}。差别是：{difference}")
     if kind == "boundary":
         return f"别和《{name}》混了：{difference}"
+    if kind == "tension":
+        return (f"这和《{name}》看着矛盾：{mechanism}。"
+                f"不矛盾，缺的条件是：{difference}")
     if kind == "limit_of":
         return f"这是《{name}》在{condition}时的极限：{mechanism}"
     return f"这条结论的前提在《{name}》：{mechanism}"

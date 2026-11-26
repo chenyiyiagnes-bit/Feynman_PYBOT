@@ -96,6 +96,12 @@ class TestEdgeSchema(unittest.TestCase):
         ok = _edge(kind="limit_of", condition="ζ≫1", condition_en="zeta >> 1")
         self.assertEqual(assoc.problems(ok), [])
 
+    def test_tension_needs_the_missing_condition(self):
+        e = _edge(kind="tension", difference="", difference_en="")
+        self.assertTrue(any("difference" in p for p in assoc.problems(e)))
+        ok = _edge(kind="tension", mechanism="一条说可逆，一条说熵增")
+        self.assertEqual(assoc.problems(ok), [])
+
     def test_english_mapping_may_not_contain_chinese(self):
         bad = _edge(kind="same_equation", mapping="x↔q",
                     mapping_en="x↔电荷")
@@ -222,6 +228,15 @@ class TestSentence(unittest.TestCase):
         self.assertIn("一般理论", line)
         self.assertIn("ζ≫1", line)
         self.assertIsNone(graph.sentence("y", titles={"x": "特例"}))
+
+    def test_tension_states_the_missing_condition(self):
+        edge = _edge(kind="tension", mechanism="一条说可逆，一条说熵增",
+                     difference="可逆说的是全部微观自由度")
+        line = assoc.AssocGraph([edge]).sentence("x", titles={"y": "乙卡"})
+        self.assertIn("看着矛盾", line)
+        self.assertIn("乙卡", line)
+        self.assertIn("缺的条件", line)
+        self.assertIn("全部微观自由度", line)
 
     def test_continuity_line_continues_the_previous_card(self):
         graph = assoc.AssocGraph([_edge()])
@@ -561,6 +576,7 @@ class TestCommittedEdges(unittest.TestCase):
         self.assertIn("boundary", kinds)
         self.assertIn("same_equation", kinds)
         self.assertIn("limit_of", kinds)
+        self.assertIn("tension", kinds)
 
 
 if __name__ == "__main__":
