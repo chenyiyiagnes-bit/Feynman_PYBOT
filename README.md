@@ -38,6 +38,9 @@ python3 scripts/chat.py --debug
 
 # 列出仓库里的人设
 python3 scripts/chat.py --list
+
+# 装好先自检：Python 版本、人设能否加载、卡片数、桥状态
+python3 tools/doctor.py
 ```
 
 不需要 API key、不需要联网。对话状态默认保存在 `~/.feynman_pybot/<id>.mind_state.json`，

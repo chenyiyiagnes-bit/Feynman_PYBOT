@@ -49,5 +49,30 @@ class TestGoldenRetrieval(unittest.TestCase):
                         result.base_reply)
 
 
+EN_GOLDEN = [
+    ("What is an atom?", "feynman_kb_en:flp-i-01"),
+    ("Why is the sky blue?", "feynman_kb_en:opt-012"),
+    ("Who are you?", "feynman_kb_en:self-001"),
+]
+
+
+class TestEnglishGolden(unittest.TestCase):
+    """English mode answers from the English side of the same cards."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.engine = build("feynman", language="en", personas_root=PERSONAS,
+                           enable_bridge=False)
+
+    def test_english_questions(self):
+        for query, want_source in EN_GOLDEN:
+            with self.subTest(query=query):
+                result = self.engine.turn(query, now=1000.0)
+                self.assertEqual(result.source, want_source)
+                chinese = sum(1 for ch in result.base_reply if "一" <= ch <= "鿿")
+                self.assertLess(chinese, len(result.base_reply) * 0.2,
+                                result.base_reply)
+
+
 if __name__ == "__main__":
     unittest.main()
