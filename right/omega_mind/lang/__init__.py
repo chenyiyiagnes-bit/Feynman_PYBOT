@@ -46,11 +46,23 @@ class LanguageCore:
             (key, tokens) for key, tokens in data.get("terms", ()))
         self._bridge: Tuple[Tuple[str, str], ...] = tuple(
             (key, tokens) for key, tokens in data.get("bridge", ()))
+        self._lexicon = frozenset(self._build_lexicon(data))
+        self._lexicon_max = max((len(w) for w in self._lexicon), default=1)
 
     @staticmethod
     def _compile(row: Dict[str, Any]) -> Pattern[str]:
         flags = re.I if row.get("ignore_case") else 0
         return re.compile(row["pattern"], flags)
+
+    @staticmethod
+    def _build_lexicon(data: Dict[str, Any]) -> set:
+        """Words the segmenter knows, from the rule file's lexicon and bridge
+        table. Expansion ``terms`` are left out on purpose: they carry whole
+        question phrases ("费曼是谁") that are useful for retrieval but are not
+        words."""
+        words = set(data.get("lexicon", ()))
+        words.update(key for key, _ in data.get("bridge", ()))
+        return {word for word in words if len(word) >= 2}
 
     # -- segmentation -----------------------------------------------------
 
@@ -80,6 +92,88 @@ class LanguageCore:
                 continue
             out.append(self.stem(tok))
         return out
+
+    # -- word segmentation ------------------------------------------------
+
+    def segment(self, text: str) -> List[str]:
+        """Cut text into words without an outside dependency.
+
+        This is the one entry point a caller should use when it wants *words*
+        rather than index tokens: the left brain's typesetter, the vault
+        miner and any tool that has to line up with the index. It is a pure
+        function of the rule file, so two callers on the same profile cannot
+        disagree, and a missing word table surfaces as a rule error instead of
+        a silent fallback.
+        """
+        text = (text or "").strip()
+        if not text:
+            return []
+        if self._cjk is None:
+            return self._tokens_en(text.lower())
+        out: List[str] = []
+        pos = 0
+        length = len(text)
+        while pos < length:
+            ch = text[pos]
+            if self._cjk.fullmatch(ch):
+                word = self._longest_word(text, pos)
+                if word:
+                    out.append(word)
+                    pos += len(word)
+                else:
+                    out.append(ch)
+                    pos += 1
+                continue
+            match = self._ascii.match(text.lower(), pos)
+            if match:
+                out.append(match.group(0))
+                pos = match.end()
+                continue
+            pos += 1
+        return self._join_unknown_runs(out)
+
+    def _join_unknown_runs(self, tokens: List[str]) -> List[str]:
+        """Glue dictionary misses back into words.
+
+        Forward maximum matching leaves an unseen name as one character per
+        token ("木","块"). A run of characters that are neither particles nor
+        lexicon words is most likely a word the table does not have yet, so it
+        is kept whole up to six characters; particles (``unigram_stop``) break
+        the run, which is what keeps "浮在水面上" from becoming one token.
+        Longer runs are cut into two-character pieces so no unbounded string
+        reaches a caller.
+        """
+        out: List[str] = []
+        run: List[str] = []
+
+        def flush() -> None:
+            if not run:
+                return
+            text = "".join(run)
+            if len(text) <= 6:
+                out.append(text)
+            else:
+                out.extend(text[i:i + 2] for i in range(0, len(text), 2))
+            run.clear()
+
+        for token in tokens:
+            if (len(token) == 1 and self._cjk is not None
+                    and self._cjk.fullmatch(token) and token not in self._unigram_stop):
+                run.append(token)
+                continue
+            flush()
+            out.append(token)
+        flush()
+        return out
+
+    def _longest_word(self, text: str, pos: int) -> str:
+        """Longest dictionary word starting at ``pos`` (forward maximum match)."""
+        limit = min(self._lexicon_max, len(text) - pos)
+        for size in range(limit, 1, -1):
+            candidate = text[pos:pos + size]
+            if candidate in self._lexicon:
+                return candidate
+        return ""
 
     def unigrams(self, text: str) -> List[str]:
         """Single CJK characters as weak topical evidence (zh only)."""

@@ -58,6 +58,72 @@ class GoldenEquivalence(unittest.TestCase):
                 self.assertEqual(kb._stem_en(word), expected)
 
 
+class Segmentation(unittest.TestCase):
+    """``segment()`` is the shared word-level entry point for both brains."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.zh = lang.load("zh")
+        cls.en = lang.load("en")
+
+    def test_empty_input(self) -> None:
+        self.assertEqual(self.zh.segment(""), [])
+        self.assertEqual(self.zh.segment("   "), [])
+
+    def test_lexicon_word_beats_characters(self) -> None:
+        self.assertEqual(self.zh.segment("物理学家"), ["物理学家"])
+
+    def test_particles_break_a_run(self) -> None:
+        words = self.zh.segment("浮在水面上的木块")
+        self.assertIn("木块", words)
+        self.assertIn("的", words)
+        self.assertIn("在", words)
+
+    def test_unknown_run_stays_together(self) -> None:
+        self.assertEqual(self.zh.segment("木块"), ["木块"])
+
+    def test_long_unknown_run_is_chunked(self) -> None:
+        words = self.zh.segment("超导磁悬浮列车跑得快不快")
+        self.assertTrue(all(len(word) <= 2 for word in words if word not in ("不",)))
+
+    def test_ascii_and_digits_survive(self) -> None:
+        self.assertEqual(self.zh.segment("hello 量子 123"),
+                         ["hello", "量子", "123"])
+
+    def test_punctuation_is_dropped(self) -> None:
+        self.assertEqual(self.zh.segment("熵，到底；是什么？"), ["熵", "到底", "是", "什么"])
+
+    def test_english_segments_into_words(self) -> None:
+        self.assertEqual(self.en.segment("What is the scientific method?"),
+                         ["scientific", "method"])
+
+    def test_left_brain_adapter_agrees_with_core(self) -> None:
+        left = _left_segmentation()
+        if left is None:
+            self.skipTest("left brain plugins not importable here")
+        for query in ("熵到底是什么", "物理学家怎么看待权威", "hello 量子 123"):
+            with self.subTest(query=query):
+                self.assertEqual(left.segment(query), self.zh.segment(query))
+
+    def test_left_brain_content_words_drop_stop_characters(self) -> None:
+        left = _left_segmentation()
+        if left is None:
+            self.skipTest("left brain plugins not importable here")
+        self.assertEqual(left.content_words("物理学家怎么看待权威"),
+                         ["物理学家", "怎么", "看待", "权威"])
+
+
+def _left_segmentation():
+    path = ROOT / "left"
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+    try:
+        from plugins import word_segmentation
+    except Exception:  # noqa: BLE001 - the left tree is optional in some checkouts
+        return None
+    return word_segmentation
+
+
 class RuleFiles(unittest.TestCase):
     def test_supported_languages_load(self) -> None:
         self.assertEqual(lang.load("zh").language, "zh")

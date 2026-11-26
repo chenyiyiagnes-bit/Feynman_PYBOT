@@ -533,9 +533,10 @@ def extract_entities(query: str, jargon: Optional[List[str]] = None, limit: int 
     if pseg:
         pairs = [(w.strip(), f) for w, f in pseg.cut(q) if w.strip()]
     else:
-        import re as _re
-        pieces = [p for p in _re.split(r"[，。？！、；：\s,.?!;:]+", q) if p]
-        pairs = [(p, "n") for p in pieces]
+        # jieba 不可用时词边界仍与右脑一致：共用 lang 规则，而不是按标点整段切
+        # （整段切会把"熵到底是什么"当成一个词，实体永远抽不出来）。
+        from plugins.word_segmentation import segment
+        pairs = [(w, "n") for w in segment(q)]
     for word, flag in pairs:
         if len(word) == 1:
             if word not in SINGLE_CHAR_ENTITY:
