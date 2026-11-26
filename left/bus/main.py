@@ -809,6 +809,11 @@ class FeynmanExtendRequest(BaseModel):
     entities: List[str] = []
 
 
+class FeynmanRollbackRequest(BaseModel):
+    """按 run_id 撤销一次抓取。"""
+    run_id: str = ""
+
+
 @app.post("/feynman/extend")
 async def feynman_extend(req: FeynmanExtendRequest, background: BackgroundTasks):
     """旁路爬虫入口。默认关闭；没开开关时直接 403，不偷偷联网。"""
@@ -822,4 +827,33 @@ async def feynman_extend(req: FeynmanExtendRequest, background: BackgroundTasks)
     if not ents:
         raise HTTPException(status_code=400, detail="至少提供一个 2–8 字实体")
     background.add_task(crawl_many, ents, _action_words())
-    return {"queued": ents, "note": "抓取在后台进行；只写 data/domain_extensions.json。"}
+    return {"queued": ents, "note": "抓取在后台进行；只写 data/domain_extensions.json。",
+            "log": "/feynman/extend/log"}
+
+
+@app.get("/feynman/extend/log")
+async def feynman_extend_log(limit: int = 20):
+    """最近抓取记录与状态计数（只读）。默认关闭时同样 403。"""
+    from plugins.domain_crawler import crawl_stats, enabled
+
+    if not enabled():
+        raise HTTPException(status_code=403,
+                            detail="旁路扩展器默认关闭；设 FEYNMAN_ENABLE_EXTENDER=1 并重启后再试。")
+    return await asyncio.to_thread(crawl_stats, limit)
+
+
+@app.post("/feynman/extend/rollback")
+async def feynman_extend_rollback(req: FeynmanRollbackRequest):
+    """按 run_id 撤销一次抓取；其他 run 或基线贡献的边保留。"""
+    from plugins.domain_crawler import enabled, rollback_run
+
+    if not enabled():
+        raise HTTPException(status_code=403,
+                            detail="旁路扩展器默认关闭；设 FEYNMAN_ENABLE_EXTENDER=1 并重启后再试。")
+    run_id = (req.run_id or "").strip()
+    if not run_id:
+        raise HTTPException(status_code=400, detail="缺少 run_id")
+    result = await asyncio.to_thread(rollback_run, run_id)
+    if not result["ok"]:
+        raise HTTPException(status_code=404, detail=f"没有这次抓取：{run_id}")
+    return result

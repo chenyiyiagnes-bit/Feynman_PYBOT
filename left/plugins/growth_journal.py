@@ -110,6 +110,21 @@ def session_traces(sessions: Iterable[Dict], limit: int = MAX_SESSIONS) -> List[
     return rows[:limit]
 
 
+def crawl_summary(ext_data: Dict) -> List[dict]:
+    """旁路抓取的确定性摘要：只按实体排序，不带时间戳与 URL。"""
+    log = ext_data.get("crawl_log") or {}
+    rows = []
+    for entity in sorted(log):
+        if not _clean(entity):
+            continue
+        record = log[entity] if isinstance(log[entity], dict) else {}
+        status = str(record.get("status") or "ok")
+        actions = [str(a) for a in (record.get("edges") or []) if _clean(a)]
+        rows.append({"entity": str(entity), "status": status,
+                     "edges": actions})
+    return rows
+
+
 def build_journal(vault_stats: Dict, ext_data: Dict, ext_hash: str,
                   topo_stats: Optional[Dict] = None,
                   sessions: Iterable[Dict] = ()) -> Dict:
@@ -118,6 +133,7 @@ def build_journal(vault_stats: Dict, ext_data: Dict, ext_hash: str,
     skeletons = skeleton_preferences(ext_data)
     prototypes = learned_prototypes(ext_data)
     traces = session_traces(sessions)
+    crawls = crawl_summary(ext_data)
     return {
         "version": JOURNAL_VERSION,
         "ext_hash": ext_hash or "00000000",
@@ -131,9 +147,22 @@ def build_journal(vault_stats: Dict, ext_data: Dict, ext_hash: str,
         "learned_edges": edges,
         "skeleton_preferences": skeletons,
         "learned_prototypes": prototypes,
+        "crawl": {
+            "entities": len(crawls),
+            "status_counts": _status_counts(crawls),
+            "rows": crawls,
+        },
         "topology": dict(topo_stats) if topo_stats else {"enabled": False},
         "sessions": traces,
     }
+
+
+def _status_counts(rows: List[dict]) -> Dict[str, int]:
+    counts: Dict[str, int] = {}
+    for row in rows:
+        status = row["status"]
+        counts[status] = counts.get(status, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def render_markdown(journal: Dict) -> str:
@@ -193,4 +222,18 @@ def render_markdown(journal: Dict) -> str:
         ]
     else:
         lines.append("_当前没有活跃会话。_")
+
+    lines += ["", "## 七、旁路抓取（默认关闭，需手动触发）", ""]
+    crawl = journal.get("crawl") or {}
+    counts = crawl.get("status_counts") or {}
+    rows = crawl.get("rows") or []
+    if rows:
+        lines.append(f"- 实体 {crawl.get('entities', 0)}｜状态 "
+                     + " / ".join(f"{k} {v}" for k, v in counts.items()))
+        lines += [
+            f"- `{r['entity']}` → {r['status']}｜{'、'.join(r['edges']) or '无边'}"
+            for r in rows
+        ]
+    else:
+        lines.append("_还没有抓取记录。_")
     return "\n".join(lines).rstrip() + "\n"

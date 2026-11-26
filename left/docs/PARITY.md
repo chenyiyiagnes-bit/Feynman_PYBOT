@@ -163,9 +163,9 @@ v2.0 安装器从 **5781 行**开始；`FILES` 字典的正文到 6111 行，611
 | P6.5 ext_hash 与扩展库 | `plugins/domain_expander.py` | 原文哈希漏掉 `edge_scores`/`skeleton_scores`，且时间戳参与哈希导致每次都漂；这里 8 位指纹覆盖四个字段、排序去重、时间戳排除；空库固定 `00000000`，种子链与旧基线逐字节一致；写入走临时文件 + `os.replace`，读-改-写共用 `RLock` |
 | P6.6 受控进化闭环 | `plugins/evolution_loop.py`、`bus/main.py`（`/feynman/feedback`） | 原文隐式信号拿单句四槽相干度冒充跨轮相干度；这里显式 👍 +0.30 / 👎 −0.45、钳位 [0.15,1.5]、跌破剪枝；隐式只看同 session 的实体延续或 `|Δphase| ≤ 8°`，换话题才轻微衰减；GC 按分数排序；学到的乘子只在 `source=="user"` 的路径上生效 |
 | P6.1 第四模式前端 | `frontend/dashboard.py` | 原文前端按 `sentence`/`slots`/`skeleton_type` 等不存在的字段渲染；这里对齐真实响应 `printed_collapse`、`paths[0]["glyphs"]`、`skeleton["pattern_type"]`、`sources`、`session`、`ext_hash`；新增问句输入、会话开关/新会话、👍/👎、经验乘子与 ext_hash 展示；首屏不自动排版 |
-| P6.3 旁路爬虫 | `plugins/domain_crawler.py`、`bus/main.py`（`/feynman/extend`） | 原文爬虫被截断且默认自动跑；这里默认 `FEYNMAN_ENABLE_EXTENDER=0`，手动触发、一次 ≤5 实体、5s 超时、单实体缓存；只用中文维基摘要，只写扩展库，摘要含去世/追悼标记整条丢弃，抓取日志不参与哈希 |
+| P6.3 旁路爬虫 | `plugins/domain_crawler.py`、`bus/main.py`（`/feynman/extend`、`/feynman/extend/log`、`/feynman/extend/rollback`）、`right/scripts/import_crawl_candidates.py` | 原文爬虫被截断且默认自动跑；这里默认 `FEYNMAN_ENABLE_EXTENDER=0`，手动触发、一次 ≤5 实体（去重）、5s 超时、请求间隔 250ms、429/5xx 只重试一次并尊重 Retry-After；只访问允许名单内的维基域名，消歧义页转搜索、中文条目优先、纯英文实体走英文站并取中文 langlinks；摘要按小句过滤去世/追悼标记，全删光才整条丢弃；否定/条件句跳过，名词化搭配不算动作；缓存落盘 `data/crawl_cache.json` 且按状态区分 TTL；每次抓取留 run_id 与 `edge_provenance`，可按 run 回滚；爬虫共现实体只经右脑脚本转成 `same_domain` 隔离候选，永不直接说话 |
 
-验收：7 个测试套件 72 项全部通过（`test_feynman_typesetter` 21、`test_feynman_entities_memory` 17、`test_feynman_abstract` 6、`test_domain_expander` 8、`test_evolution_loop` 11、`test_frontend_contract` 2、`test_domain_crawler` 7）；全模块 `py_compile` 通过。已知限制：抽象句的"后果"槽仍按语体相位选取，可能与实体无直接语义关系；爬虫只补原型与共现边，不自动加分，分数仍只由显式反馈驱动。
+验收：7 个测试套件 84 项全部通过（`test_feynman_typesetter` 21、`test_feynman_entities_memory` 17、`test_feynman_abstract` 6、`test_domain_expander` 8、`test_evolution_loop` 11、`test_frontend_contract` 2、`test_domain_crawler` 19）；全模块 `py_compile` 通过。已知限制：抽象句的"后果"槽仍按语体相位选取，可能与实体无直接语义关系；爬虫只补原型与共现边，不自动加分，分数仍只由显式反馈驱动；爬虫实体到右脑卡片只生成 `same_domain` 隔离候选（`assoc_candidates_web.json`），须逐条代审后才能成边。
 
 
 ## P7 四层增量落地（2026-11-24，对照 `PYBOT量子算法4_20261124-2232.md`）
