@@ -27,13 +27,17 @@ personas/laozhuang-en/   老庄 · 英文
 
 ## 2. 现在做到哪了
 
-已推 `dev`（`9f4aa1d persona: one hard skeleton, single-language packages`），CI 全绿。
+已推 `dev`（最新 `c214b70 laozhuang: split into laozhuang-zh and laozhuang-en packages`），CI 全绿。
 
 - `FeynmanKB` 按包装载单一语言；`source_prefix` 用包 id（`feynman-zh:flp-i-01`）。
-- 英文卡从引擎目录搬进 `personas/feynman-en/knowledge`（293 张）；
-  中文包 302 张。旧的「双语叠加」路径只留给直接调引擎的测试，包内不再触发。
-- `laozhuang-zh` 有 `persona.json`，**没有卡片**。
-- `laozhuang-en` 有 `persona.json`，英文语气是**占位**，也没有卡片。
+  注意：`right/omega_mind/feynman_kb.py` 内部**仍然**同时持有 `docs`/`docs_en`
+  两套索引（见 F1），包层面已只喂一种语言，引擎层还没拆干净。
+- `feynman-zh` 302 张卡，`feynman-en` 293 张（英文卡在包内，不在引擎目录）。
+- `laozhuang-zh` 29 张卡，`laozhuang-en` 18 张卡（`lz-en-NNN` ↔ `lz-zh-NNN` 一一对应）。
+  两包的 26 个 cubie、baselines/taus/triggers 已按新结构迁入，`validate_persona`
+  零警告；`laozhuang-en` 的 voice 仍是占位（D2）。
+- 语料、`readings/`、`corpus/` 只在本机，不入库；`tests/test_laozhuang_package.py`
+  （9 项）专门守这条和两包结构。
 - 英文联想边本地生成过 89 条（不入库，`data/assoc/` 被忽略）。
 
 2026-11-26 这一轮做完 A1–A5、B1–B4、C1–C3、D4（提交 `03b642e`…`5296c9c`）：
@@ -115,9 +119,9 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 
 | # | 任务 | 验收标准 | 依赖 |
 |---|---|---|---|
-| D1 | 合并 `persona/laozhuang` | **已完成**：不 merge 旧分支（其 content 只有 `TASK.md` 是新东西，`persona.json`/`README` 反而是旧版），TASK 按新结构重写进 `personas/laozhuang-zh/`；旧分支留档 | — |
-| D2 | `laozhuang-en` 语气重写 | **已决定：占位先留**，中文卡定稿后按原文对应表达重写，不靠中文回译 | D1 |
-| D3 | 文言语料随包发布 | **已决定：不随包发布**，与费曼包一致——仓库只放卡片，语料自备；已写进 README/TASK | 所有者确认 |
+| D1 | 合并 `persona/laozhuang` | **已完成** `c214b70`：不 merge 旧分支；内容（26 cubie × 2、29+18 张卡）迁入 `laozhuang-zh`/`laozhuang-en`，语料与 readings 留在本机；旧分支留档 | — |
+| D2 | `laozhuang-en` 语气重写 | **占位先留**：英文包 voice 维持 `prefixes_en`/`endings_en` 占位；中文卡定稿后按原文对应表达重写，不靠中文回译。英文卡已是直译对应，可直接用 | D1 |
+| D3 | 文言语料随包发布 | **已决定：不随包发布**，与费曼包一致——仓库只放卡片，语料自备；已写进 README/TASK，`tests/test_laozhuang_package.py` 守着 | 所有者确认 |
 | D4 | `tools/build_assoc.py` | **已完成** `5296c9c`：由卡片重建 `origin="cooccur"` 候选边，扇出封顶，重建逐字节一致 | B1（可复用 PMI） |
 | D5 | 通知协作者目录改名 | Gemini / Astra 的脚本不再引用 `personas/feynman`、`personas/laozhuang` | — |
 
@@ -127,6 +131,14 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 |---|---|---|
 | E1 | 人格 = 阈值与偏好 | 让语料决定「什么算答得上、遇边界补一句还是闭嘴、偏爱机制还是反例」，而不是落在词汇表上 |
 | E2 | `knowledge.corpus` 接左脑 vault | 目前没有消费方，缺一个 `tools/build_vault.py` |
+
+### F. 右脑按包拆分（下一个窗口的主任务）
+
+| # | 任务 | 验收标准 | 依赖 |
+|---|---|---|---|
+| F1 | `FeynmanKB` 一实例一语言 | `feynman_kb.py` 不再同时维护 `docs`+`docs_en`、不再无条件加载 zh/en 两套语言核心；语言从包 `persona.json` 读，查询不回退到另一种语言；`tests` 与 `right/omega_mind/tests` 全绿，`feynman-zh`/`feynman-en`/`laozhuang-zh`/`laozhuang-en` 四包经 `app/runtime.build()` 都能建引擎 | — |
+| F2 | 派生状态按包隔离 | `data/assoc/`、`data/lexicon/`、`data/kb_learned/`、`snapshots/` 只落在各自包目录（或 `PYBOT_STATE_DIR` 下的包子目录），互不可见 | F1 |
+| F3 | 去写死默认 | `right/omega_mind/` 里不出现 `laozhuang`、`feynman` 作为默认包名/id 的字面量；路径由调用方传入 | F1 |
 
 ## 5. 已拍板的三件事（2026-11-26，所有者）
 
