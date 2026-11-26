@@ -620,14 +620,29 @@ def _chat_section(rec: dict) -> Tuple[str, str, str]:
     return src, section, "\n".join(parts).strip()
 
 
-def iter_sections(corpus_path: Path = CORPUS_PATH, trusted: bool = False):
+def iter_sections(corpus_path: Path = CORPUS_PATH, trusted: bool = False,
+                  corpora: Optional[Iterable[Tuple[Path, bool]]] = None):
     """(source, section, text)；只保留费曼署名作品的干净段落。
 
     trusted=True 用于已人工登记来源的集成语料：跳过"署名作品"白名单，
     但排除词、噪声、去世词与长度/Latin 过滤照旧。两种行格式都认：
     旧格式直接读 source/section/text，会话格式取 assistant 正文（见
     `_chat_section`），按行自动识别。
+
+    corpora 给了就按 [(路径, trusted), ...] 逐个读，每个来源用自己的白名单
+    判据——审计库已逐条核过，书库仍走署名作品过滤。重复路径只读一次，
+    不存在的路径跳过。
     """
+    if corpora is not None:
+        seen = set()
+        for path, flag in corpora:
+            path = Path(path)
+            key = str(path.resolve()) if path.exists() else str(path)
+            if key in seen:
+                continue
+            seen.add(key)
+            yield from iter_sections(path, trusted=flag)
+        return
     if not corpus_path.is_file():
         return
     with corpus_path.open(encoding="utf-8") as fh:
@@ -738,7 +753,8 @@ def build_vault(corpus_path: Path = CORPUS_PATH, limit_per_slot: int = 60,
                 p8: bool = False, trusted: bool = False,
                 slot_limits: Optional[Dict[str, int]] = None,
                 consequence_inventory: Optional[Path] = None,
-                edge_supplement: Optional[Path] = None) -> dict:
+                edge_supplement: Optional[Path] = None,
+                corpora: Optional[Iterable[Tuple[Path, bool]]] = None) -> dict:
     """consequence_inventory：P9 策展库存文件。给了就整槽替换后果字粒
     （条目须带 slot=consequence、word、来源与出处），其余槽与默认路径不变。
 
@@ -770,7 +786,8 @@ def build_vault(corpus_path: Path = CORPUS_PATH, limit_per_slot: int = 60,
         kind: {"freq": 0, "phases": [], "provenance": []} for kind, _ in SKELETON_DEFS
     }
 
-    for src, section, text in iter_sections(corpus_path, trusted=trusted):
+    for src, section, text in iter_sections(corpus_path, trusted=trusted,
+                                            corpora=corpora):
         sections += 1
         src_tag = f"{src}｜{section[:24]}"
         for sent in sentences(text):
@@ -1161,6 +1178,17 @@ def dump_vault(vault: dict, path: Path = VAULT_PATH) -> Path:
     return path
 
 
+def _parse_corpora(argv) -> List[Tuple[Path, bool]]:
+    """--corpus 走署名作品白名单，--trusted-corpus 跳过白名单；都可重复。"""
+    corpora: List[Tuple[Path, bool]] = []
+    args = list(argv)
+    for i, arg in enumerate(args):
+        if arg not in ("--corpus", "--trusted-corpus") or i + 1 >= len(args):
+            continue
+        corpora.append((Path(args[i + 1]), arg == "--trusted-corpus"))
+    return corpora
+
+
 if __name__ == "__main__":
     import sys
 
@@ -1169,10 +1197,12 @@ if __name__ == "__main__":
     corpus = CORPUS_PATH
     if "--corpus" in sys.argv:
         corpus = Path(sys.argv[sys.argv.index("--corpus") + 1])
+    corpora = _parse_corpora(sys.argv[1:])
     out = VAULT_PATH
     if "--out" in sys.argv:
         out = Path(sys.argv[sys.argv.index("--out") + 1])
-    v = build_vault(corpus_path=corpus, p8=p8, trusted=trusted)
+    v = build_vault(corpus_path=corpus, p8=p8, trusted=trusted,
+                    corpora=corpora or None)
     p = dump_vault(v, out)
     print(f"✅ 铸字完成：{p}")
     print(f"   段落 {v['sections']}，句子 {v['sentences']}")

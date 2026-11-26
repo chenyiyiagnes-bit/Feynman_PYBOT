@@ -271,12 +271,19 @@ def test_real_vault_is_corpus_grounded():
     assert stats["cooccurrence_pairs"] >= 50, stats["cooccurrence_pairs"]
     for slot, offset in stats["slot_offsets"].items():
         assert -25.0 <= offset <= 25.0, (slot, offset)
-    feynman_sources = ("费曼", "费恩曼", "QED", "Surely")
+    # 字粒出处必须落在费曼本人的作品上。审计库用几十种英文篇目标签（口述史、
+    # FLP 选章、各场讲座），逐项白名单不现实；反过来守红线：讲费曼的书、
+    # 书评、讣告、他人著作一律不许出现，且每个字粒都要有出处。
+    from plugins.feynman_vault import EXCLUDED_SOURCE_MARKERS
+
     checked = 0
     for slot, items in real.by_slot.items():
         for g in items:
             assert g["sources"], (slot, g["word"])
-            assert any(any(m.lower() in s.lower() for m in feynman_sources) for s in g["sources"]), g
+            assert not any(
+                m.lower() in s.lower()
+                for s in g["sources"] for m in EXCLUDED_SOURCE_MARKERS
+            ), g
             if slot == "entity":
                 assert not g["word"].endswith(("性", "化")), g["word"]
             checked += 1

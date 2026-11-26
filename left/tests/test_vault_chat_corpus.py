@@ -102,6 +102,37 @@ def test_chat_row_without_meta_lang_defaults_to_zh():
         assert len(list(iter_sections(corpus, trusted=True))) == 1
 
 
+def test_multi_corpus_applies_trusted_per_source():
+    with tempfile.TemporaryDirectory() as tmp:
+        chat = Path(tmp) / "chat.jsonl"
+        books = Path(tmp) / "books.jsonl"
+        _write(chat, [_row("zh", ZH, work_name="私人录音", span="aip__001:1-2")])
+        books.write_text(json.dumps({
+            "source": "费曼传", "section": "第一章", "text": ZH,
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        corpora = [(chat, True), (books, False)]
+        got = list(iter_sections(corpora=corpora))
+        assert len(got) == 1 and got[0][0] == "私人录音", got
+
+
+def test_multi_corpus_dedupes_paths_and_skips_missing():
+    with tempfile.TemporaryDirectory() as tmp:
+        chat = Path(tmp) / "chat.jsonl"
+        _write(chat, [_row("zh", ZH)])
+        corpora = [(chat, True), (chat, True), (Path(tmp) / "absent.jsonl", True)]
+        assert len(list(iter_sections(corpora=corpora))) == 1
+
+
+def test_cli_parses_repeated_corpus_flags():
+    from plugins.feynman_vault import _parse_corpora
+
+    got = _parse_corpora(["--corpus", "a.jsonl", "--corpus", "b.jsonl",
+                          "--trusted-corpus", "c.jsonl"])
+    assert got == [(Path("a.jsonl"), False), (Path("b.jsonl"), False),
+                   (Path("c.jsonl"), True)], got
+    assert _parse_corpora([]) == []
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):

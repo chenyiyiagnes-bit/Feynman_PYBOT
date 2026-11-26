@@ -74,4 +74,13 @@ python plugins/feynman_vault.py
 （按 `\n` 拼接多轮），来源取 `meta.work_name`、段落取 `meta.span_id`，且只收
 `meta.lang == "zh"` 的行；噪声、去世词、长度与拉丁比例过滤两种格式相同。
 
+一份语料一个口径：`--corpus` 走"费曼署名作品"白名单（书库用），
+`--trusted-corpus` 跳过白名单（已逐条审过的库用），两个都可重复：
+
+```sh
+python plugins/feynman_vault.py \
+  --trusted-corpus .../base_library_audited.jsonl \
+  --corpus .../cpt_zh.jsonl
+```
+
 模块级实现与原文的对照、以及所有偏离原因，见 `docs/PARITY.md`。
