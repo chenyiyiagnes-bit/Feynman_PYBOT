@@ -199,7 +199,7 @@ def main(argv: list[str] | None = None) -> int:
         if text == "/challenge":
             session = engine.challenge(reset=True)
             if not session.available():
-                print(("知识库里没有可教学单元，先检查 ~/Projects/feynman-open/knowledge"
+                print(("知识库里没有可教学单元，先检查人设包的 knowledge/ 目录"
                        if engine.language == "zh" else
                        "No teachable units in the knowledge base — check the corpus."))
                 challenge_on = False

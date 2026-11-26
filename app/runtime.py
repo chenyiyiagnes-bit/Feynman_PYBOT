@@ -106,13 +106,18 @@ def assoc_path_for(persona: Persona) -> Path:
     return (persona.root / "data" / "assoc" / "assoc_edges.jsonl").resolve()
 
 
-def build(target: Union[str, Path] = "feynman-zh",
+def build(target: Union[str, Path],
           language: Optional[str] = None,
           enable_bridge: Optional[bool] = None,
           state_path: Optional[Union[str, Path]] = None,
           personas_root: Union[str, Path] = DEFAULT_PERSONAS,
           clock=None) -> MindEngine:
-    """Build a mind for one persona. ``enable_bridge=None`` follows the env flag."""
+    """Build a mind for one persona.
+
+    The package is never defaulted: the skeleton names no persona, so every
+    caller says which package it wants. ``enable_bridge=None`` follows the
+    env flag.
+    """
     persona = load(resolve_persona(target, personas_root))
     package_language = persona.language or "zh"
     if language is not None and language != package_language:

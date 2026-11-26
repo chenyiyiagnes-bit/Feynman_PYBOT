@@ -141,7 +141,10 @@ def _is_weak(episode: Any) -> bool:
     if not retrieval:
         return False
     source = getattr(episode, "source", "")
-    if not source.startswith("feynman_kb"):
+    # A card answer is "<package>:[<language>:]<card id>"; a soft hit is
+    # "<package>_soft:<card id>". The package name is the package's own, so
+    # this check must not name one.
+    if ":" not in source:
         return False
     if "soft" in source:
         return True

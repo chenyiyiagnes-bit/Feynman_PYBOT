@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -348,6 +349,27 @@ class TestSurpriseTrigger(unittest.TestCase):
             text="不对，其实它是听见了楼下的动静，想去看看。",
             reply="", source="feynman_kb:no_match", tags=[])
         self.assertFalse(Dreamer().due(self._memory([correction])))
+
+
+class TestWeakAnswers(unittest.TestCase):
+    """Weakness is a property of any package, not of the literal "feynman_kb"."""
+
+    def test_a_soft_hit_in_any_package_is_weak(self):
+        for source in ("feynman-zh_soft:flp-i-01", "laozhuang-en_soft:lz-en-001"):
+            episode = types.SimpleNamespace(
+                source=source, retrieval={"score": 0.5, "margin": 0.2})
+            self.assertTrue(reflect._is_weak(episode), source)
+
+    def test_a_low_score_in_any_package_is_weak(self):
+        episode = types.SimpleNamespace(source="laozhuang-zh:lz-zh-001",
+                                        retrieval={"score": 0.1})
+        self.assertTrue(reflect._is_weak(episode))
+
+    def test_a_confident_card_answer_is_not_weak(self):
+        for source in ("feynman-zh:flp-i-01", "laozhuang-en:lz-en-001"):
+            episode = types.SimpleNamespace(
+                source=source, retrieval={"score": 0.5, "margin": 0.2})
+            self.assertFalse(reflect._is_weak(episode), source)
 
 
 if __name__ == "__main__":
