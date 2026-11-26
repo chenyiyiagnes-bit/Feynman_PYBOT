@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from .config import BOUNDS, DIMENSIONS, PersonaConfig
-from .cube import HOME_OF, CubeState, Move, Pos, parse_move
+from .cube import HOME_OF, CubeState, Move, Pos, _rotate, parse_move
 
 # A quarter-turn boost of at most +20% for a cubie standing on the front face
 # after having been moved there, decaying by 5% per extra turn on stage until
@@ -120,7 +120,10 @@ SENSITIVITY_GAIN = 1.35
 
 
 def front_names(cube: CubeState) -> Set[str]:
-    return {name for pos, name in cube.occupancy.items() if pos[2] == 1}
+    """Cubies on the front face *as currently framed*. A reframe moves this
+    set without moving a single cubie."""
+    return {name for pos, name in cube.occupancy.items()
+            if cube.view(pos)[2] == 1}
 
 
 def displacement(cube: CubeState) -> int:
@@ -220,7 +223,7 @@ class CubeFeedback:
         delta = 0 if self.last_displaced is None else displaced - self.last_displaced
         self.last_displaced = displaced
         front = sum(1 for pos, name in cube.occupancy.items()
-                    if pos[2] == 1 and HOME_OF.get(name) != pos)
+                    if cube.view(pos)[2] == 1 and HOME_OF.get(name) != pos)
         self.signal = CubeSignal(displacement=displaced / 26.0,
                                  delta=delta,
                                  front_load=front / 9.0)
@@ -268,9 +271,11 @@ class CubeFeedback:
         """
         depth = 0
         verbosity = 0.0
+        back = -cube.orientation % 4
         for slot in FRONT_CORNERS:
-            name = cube.cubie_at(slot)
-            if not name or HOME_OF.get(name) == slot:
+            body = _rotate(slot, "y", back)
+            name = cube.cubie_at(body)
+            if not name or HOME_OF.get(name) == body:
                 continue
             step, delta = CORNER_WEIGHTS.get(name, (0, 0.0))
             depth += step

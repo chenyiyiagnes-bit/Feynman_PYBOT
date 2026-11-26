@@ -94,6 +94,42 @@ _HEDGE = {
 }
 _HEDGE_MARGIN = 0.06
 
+# Proactive interference: when a new subject arrives while most of the cube
+# is still displaced, the mind is carrying the last subject into this one.
+# The confidence line widens a little and the hedge may fire outside
+# ``careful`` — but only once per shift, never more than this many turns
+# apart, and only when the cube is actually loaded.
+_INTERFERENCE_DISPLACEMENT = 0.35
+_INTERFERENCE_MARGIN = 0.04
+_HEDGE_COOLDOWN = 2
+
+
+def hedge_applies(margin: Optional[float], posture: str,
+                  interference: bool = False,
+                  limit: float = _HEDGE_MARGIN) -> bool:
+    """Whether the near-tie hedge belongs on this answer.
+
+    A clean cube and a confident posture give exactly the old behaviour:
+    only ``careful`` with a margin inside the line. Interference widens the
+    line and lets the hedge through outside ``careful`` — a style sentence,
+    never a change to the answer.
+    """
+    if margin is None:
+        return False
+    if interference:
+        limit += _INTERFERENCE_MARGIN
+    return margin < limit and (posture == "careful" or interference)
+
+# Retrieval inhibition: a card spoken within this many turns is demoted in
+# the next lookup (see FeynmanKB.INHIBIT_FACTOR). Inhibition only breaks
+# near-ties; a question whose only card is that one still gets it.
+INHIBIT_TURNS = 3
+
+# A recast is a reframing, and the cube is reoriented with it: same facts,
+# different face in front. One reframe per few turns, so the frame settles
+# instead of spinning.
+REFRAME_COOLDOWN = 3
+
 # A curious mind may ask one question, and then has to listen for a while.
 # Three turns is long enough that a question reads as interest rather than
 # as an interview.
@@ -249,6 +285,14 @@ class MindEngine:
         # ask, but not every turn: an engine that interrogates the user is
         # not curious, it is tiresome.
         self._last_question_turn: int = -10 ** 9
+        # Cards answered in the last few turns, with the turn number. The
+        # next lookup demotes them a little (retrieval inhibition).
+        self._recent_cards: Dict[str, int] = {}
+        # When the hedge last fired. Proactive interference reads the
+        # previous card from ``_last_card`` and the load from the cube.
+        self._last_hedge_turn: int = -10 ** 9
+        # When the cube was last reframed (a recast turns the whole cube).
+        self._last_reframe_turn: int = -10 ** 9
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -512,6 +556,30 @@ class MindEngine:
         pattern = _CONFUSION_EN if self.language == "en" else _CONFUSION_ZH
         return bool(pattern.match(stripped))
 
+    def _inhibit_set(self, text: str = "") -> set:
+        """Cards answered so recently that repeating them would circle.
+
+        Re-asking the very same question is not circling: the user wants the
+        same answer, so inhibition is suspended for an identical repeat.
+        """
+        if self._last_query is not None and text.strip() == self._last_query.strip():
+            return set()
+        cutoff = self.turn_index - INHIBIT_TURNS
+        return {cid for cid, turn in self._recent_cards.items() if turn > cutoff}
+
+    def _note_card(self, source: str) -> None:
+        """Remember the card just spoken, for retrieval inhibition."""
+        if not source.startswith("feynman_kb"):
+            return
+        prefix, _, card_id = source.partition(":")
+        if not card_id or "_soft" in prefix:
+            return
+        self._recent_cards[card_id] = self.turn_index
+        if len(self._recent_cards) > 12:
+            for old in sorted(self._recent_cards,
+                              key=self._recent_cards.get)[:-12]:
+                del self._recent_cards[old]
+
     def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None):
         """Left brain by language. Chinese and English never mix in one reply."""
         if policy is None:
@@ -531,6 +599,13 @@ class MindEngine:
                     self._recast_seen.add(previous)
                     self.last_retrieval = {"source": again[1],
                                            "recast": again[0]}
+                    # A recast is a reframe: the cube turns in the mind's
+                    # hands so the next turn is seen from a different face.
+                    # Nothing physical moves; only what counts as front.
+                    if (self.turn_index - self._last_reframe_turn
+                            >= REFRAME_COOLDOWN):
+                        self.cube.reframe(1)
+                        self._last_reframe_turn = self.turn_index
                     return again[0], again[1]
         else:
             self._recast_seen.clear()
@@ -565,6 +640,7 @@ class MindEngine:
                 previous_card=self._continuity_card(),
                 scale=True,
                 curiosity=policy.posture == "explore",
+                inhibit=self._inhibit_set(text),
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source
@@ -583,6 +659,7 @@ class MindEngine:
                 previous_card=self._continuity_card(),
                 scale=True,
                 curiosity=policy.posture == "explore",
+                inhibit=self._inhibit_set(text),
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source
@@ -594,10 +671,25 @@ class MindEngine:
         if not reply or not _match_language(reply, self.language):
             reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
         # A guarded mind flags a near-tie instead of pretending to be sure.
+        # Proactive interference widens the line: a new subject arriving while
+        # the cube is still loaded from the last one gets the same hedge even
+        # outside ``careful``. It never changes which card answered or what
+        # the card says.
         margin = self.last_retrieval.get("margin")
-        if (policy.posture == "careful" and source.startswith("feynman_kb")
-                and margin is not None and margin < _HEDGE_MARGIN):
+        interference = (
+            source.startswith("feynman_kb")
+            and self._last_card is not None
+            and ":" in source
+            and source.split(":", 1)[1] != self._last_card
+            and self.cube_feedback.signal.displacement
+            >= _INTERFERENCE_DISPLACEMENT
+            and self.turn_index - self._last_hedge_turn >= _HEDGE_COOLDOWN)
+        if (source.startswith("feynman_kb")
+                and hedge_applies(margin, policy.posture, interference)):
             reply = reply + _HEDGE[self.language]
+            self.last_retrieval["hedge"] = True
+            self._last_hedge_turn = self.turn_index
+        self._note_card(source)
         return reply, source
 
     def _personal_reply(self, text: str):
@@ -819,6 +911,9 @@ class MindEngine:
             "left_brain": self.last_left_brain,
             "retrieval": self.last_retrieval,
             "last_question_turn": self._last_question_turn,
+            "recent_cards": dict(self._recent_cards),
+            "last_hedge_turn": self._last_hedge_turn,
+            "last_reframe_turn": self._last_reframe_turn,
             "challenge": (self.challenge_session.snapshot()
                           if self.challenge_session is not None else {}),
             "pybot": self._pybot_snapshot(),
@@ -956,6 +1051,10 @@ class MindEngine:
         engine.last_retrieval = dict(data.get("retrieval") or {})
         engine._last_question_turn = int(data.get("last_question_turn",
                                                   -10 ** 9))
+        engine._recent_cards = {str(k): int(v) for k, v in
+                                (data.get("recent_cards") or {}).items()}
+        engine._last_hedge_turn = int(data.get("last_hedge_turn", -10 ** 9))
+        engine._last_reframe_turn = int(data.get("last_reframe_turn", -10 ** 9))
         challenge = data.get("challenge") or {}
         if challenge:
             engine.challenge().restore(challenge)
@@ -997,5 +1096,8 @@ class MindEngine:
         self.last_retrieval = {}
         self.challenge_session = None
         self._last_question_turn = -10 ** 9
+        self._recent_cards = {}
+        self._last_hedge_turn = -10 ** 9
+        self._last_reframe_turn = -10 ** 9
         if self.store_path and self.store_path.exists():
             self.store_path.unlink()

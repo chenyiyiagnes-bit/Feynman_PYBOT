@@ -309,6 +309,10 @@ class Lookup:
     # real data: a genuine near-tie between two cards, or the existence of a
     # confirmed premise edge below the answered card.
     question: Optional[str] = None
+    # Cards this lookup deliberately demoted because they were just spoken
+    # (retrieval inhibition). An audit field: the answer was chosen, not
+    # merely found.
+    inhibited: Tuple[str, ...] = ()
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -322,6 +326,7 @@ class Lookup:
             "association": self.association,
             "scale": self.scale,
             "question": self.question,
+            "inhibited": list(self.inhibited),
         }
 
 
@@ -329,6 +334,10 @@ class Lookup:
 # few hundredths of each other. The hedge (engine) and the clarifying
 # question (below) share the threshold so they cannot disagree.
 QUESTION_MARGIN = 0.06
+
+# Retrieval inhibition: a card just spoken is demoted, not banned. Small on
+# purpose — it should break near-ties, never outvote clear evidence.
+INHIBIT_FACTOR = 0.94
 
 
 def _question_for(found: "Lookup", titles: Dict[str, str], language: str,
@@ -1002,7 +1011,8 @@ class FeynmanKB:
                associate: bool = False,
                previous_card: Optional[str] = None,
                scale: bool = False,
-               curiosity: bool = False) -> Lookup:
+               curiosity: bool = False,
+               inhibit: Iterable[str] = ()) -> Lookup:
         """Retrieve one answer plus the score, runner-up margin and how many
         candidates were considered. ``limit`` is what makes the margin
         observable: with limit=1 there is no runner-up to compare against.
@@ -1020,7 +1030,7 @@ class FeynmanKB:
         """
         found = self._lookup(text, language=language, min_score=min_score,
                              limit=limit, prefer_kinds=prefer_kinds,
-                             detail=detail)
+                             detail=detail, inhibit=inhibit)
         if scale:
             # A curated magnitude question goes straight to the card its
             # anchor was written for; ordinary retrieval loses these
@@ -1179,7 +1189,8 @@ class FeynmanKB:
     def _lookup(self, text: str, language: str = "zh",
                 min_score: Optional[float] = None, limit: int = 3,
                 prefer_kinds: Iterable[str] = (),
-                detail: str = "normal") -> Lookup:
+                detail: str = "normal",
+                inhibit: Iterable[str] = ()) -> Lookup:
         prefix = "feynman_kb_en" if language == "en" else "feynman_kb"
         threshold = self.MIN_SCORE if min_score is None else min_score
         # Search's own min_score would drop the soft band before lookup can
@@ -1189,6 +1200,20 @@ class FeynmanKB:
         floor = min(threshold, self.SOFT_SCORE) if soft_ok else threshold
         hits = self.search(text, language=language, limit=limit,
                            min_score=floor, prefer_kinds=prefer_kinds)
+        # Retrieval inhibition: a card spoken in the last few turns is less
+        # likely to be selected again, so a near-tie resolves to the other
+        # card instead of circling. This never turns a confident answer into
+        # a miss: the demotion only applies when the demoted top still clears
+        # the gate, so the worst case is the runner-up taking over — exactly
+        # what the phenomenon says should happen.
+        blocked = {str(card_id) for card_id in inhibit}
+        inhibited: Tuple[str, ...] = ()
+        if blocked and len(hits) > 1 and hits[0][0] * INHIBIT_FACTOR >= threshold:
+            demoted = [(score * INHIBIT_FACTOR if doc.id in blocked else score,
+                        doc) for score, doc in hits]
+            demoted.sort(key=lambda pair: pair[0], reverse=True)
+            inhibited = tuple(doc.id for _score, doc in hits if doc.id in blocked)
+            hits = demoted
         alternatives = tuple((doc.id, score) for score, doc in hits[:3])
         if not hits or hits[0][0] < threshold:
             if hits:
@@ -1204,6 +1229,7 @@ class FeynmanKB:
                         considered=len(hits),
                         matched=self._matched_terms(text, doc, language),
                         alternatives=alternatives,
+                        inhibited=inhibited,
                     )
                 # A user-taught restatement must not veto the corpus card it
                 # restates: a near-tie across the learned/corpus boundary is
@@ -1214,7 +1240,7 @@ class FeynmanKB:
                 if tie is not None:
                     return tie
             return Lookup(None, f"{prefix}:no_match", considered=len(hits),
-                          alternatives=alternatives)
+                          alternatives=alternatives, inhibited=inhibited)
         score, doc = hits[0]
         margin = score - hits[1][0] if len(hits) > 1 else None
         return Lookup(
@@ -1225,6 +1251,7 @@ class FeynmanKB:
             considered=len(hits),
             matched=self._matched_terms(text, doc, language),
             alternatives=alternatives,
+            inhibited=inhibited,
         )
 
     @staticmethod
