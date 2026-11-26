@@ -6,7 +6,7 @@ assistant 正文，meta 里的来源/体裁写进 source/section 便于追溯）
 
 用法：
     python scripts/build_p8_corpus.py \
-        --library /Users/yiyichen/Documents/Codex/2026-11-15/su01-feynman-mind/outputs/feynman_mind_corpus_integrated/base_library_integrated.jsonl \
+        --library ~/path/to/base_library_integrated.jsonl \
         --out data/p8_corpus_integrated_zh.jsonl
 """
 

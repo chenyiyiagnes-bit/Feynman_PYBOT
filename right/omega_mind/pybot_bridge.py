@@ -21,11 +21,9 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 # Where a local checkout of huggingface/pybot may live, in priority order.
-# ``OMEGA_PYBOT_PATH`` wins; the rest are this project's own vendor dir and
-# the copy already downloaded on this machine.
+# ``OMEGA_PYBOT_PATH`` wins; the rest are this project's own vendor dir.
 _CANDIDATE_PATHS = [
     Path(__file__).resolve().parents[1] / "vendor" / "pybot",
-    Path("/Users/yiyichen/Projects/pi-clean/workspace/projects/pybot"),
 ]
 
 

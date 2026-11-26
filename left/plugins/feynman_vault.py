@@ -25,12 +25,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-CORPUS_PATH = Path(
-    os.getenv("QBOT_FEYNMAN_CORPUS", "/Users/yiyichen/Desktop/费曼物理_文字版/corpus/cpt_zh.jsonl")
-)
-KNOWLEDGE_DIR = Path(
-    os.getenv("QBOT_FEYNMAN_KNOWLEDGE", str(Path.home() / "Projects/feynman-open/knowledge"))
-)
+# Everything here is data you must supply yourself; env vars win, and the
+# defaults are repo-relative so a checkout never points at someone's desktop.
+CORPUS_PATH = Path(os.getenv("QBOT_FEYNMAN_CORPUS", "data/cpt_zh.jsonl"))
+KNOWLEDGE_DIR = Path(os.getenv("QBOT_FEYNMAN_KNOWLEDGE", "data/knowledge"))
 VAULT_PATH = Path(os.getenv("QBOT_FEYNMAN_VAULT", "data/feynman_style_vault.json"))
 
 AUTHORED_SOURCE_MARKERS = (
