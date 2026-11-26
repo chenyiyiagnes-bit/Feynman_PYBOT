@@ -61,8 +61,14 @@ python3 tools/validate_persona.py personas/mybot/persona.json
 python3 scripts/chat.py --persona mybot
 ```
 
+手头的笔记可以直接转成卡片（按标题或空行切分，不改写原文）：
+
+```bash
+python3 tools/import_cards.py 我的笔记.md -o personas/mybot/knowledge/notes.jsonl --tags 我的主题
+```
+
 知识卡格式见 `personas/mybot/knowledge/README.md`：一行一张，`title`/`text`/`tags`
-就够；命不中就不答，不会编。
+就够；检索靠标题和标签，所以标题要写别人真会搜的词；命不中就不答，不会编。
 
 ## 两套示例人设
 
