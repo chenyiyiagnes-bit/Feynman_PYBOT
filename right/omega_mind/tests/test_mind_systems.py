@@ -623,17 +623,28 @@ class TestEnglishKnowledge(unittest.TestCase):
                 self.assertNotEqual(row.get("source_language"), "zh", name)
                 self.assertIsNone(row.get("translation_of"), name)
                 continue
+            layer = row.get("layer", "base")
+            self.assertIn(layer, ("base", "learned"), row["id"])
             support = row.get("support") or []
             sourced = any(isinstance(item, dict) and item.get("source")
                           for item in support)
-            if sourced:
-                # Rewritten from an English source. The old zh-translation
-                # marks are the wrong bloodline and must not remain.
+            if layer == "learned":
+                # Modern knowledge the model learned. It is not a translation
+                # of his words, and it has to say so.
+                self.assertIsNone(row.get("translation_of"), row["id"])
+                self.assertIsNone(row.get("source_language"), row["id"])
+                note = " ".join(
+                    f"{item.get('source', '')} {item.get('note', '')}"
+                    for item in support if isinstance(item, dict))
+                self.assertIn("model-learned", note.lower(), row["id"])
+            elif sourced:
+                # Base card with an English source. Absence of layer means
+                # base. Zh-translation marks must not remain.
                 self.assertIsNone(row.get("translation_of"), row["id"])
                 self.assertIsNone(row.get("source_language"), row["id"])
             else:
-                # No English source was checked. Leave the old marks so the
-                # gap stays visible.
+                # Still unclassified. Leave the old marks so the gap stays
+                # visible.
                 self.assertEqual(row.get("translation_of"), row["id"], name)
                 self.assertEqual(row.get("source_language"), "zh", name)
 

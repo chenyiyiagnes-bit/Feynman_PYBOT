@@ -4,12 +4,19 @@ One package, one language. The Chinese package is `personas/feynman-zh/`; run
 them separately — the runtime never mixes the two.
 
 - Cards: `knowledge/*.jsonl`. The 293 rows in the thirteen teaching files
-  are meant to come from Feynman's English (lectures, books, talks), not
-  from a translation of `feynman-zh`. Where a card was rewritten that way,
-  `translation_of` and `source_language` are gone and a `support` note names
-  the English source. Cards with no English source checked were left as they
-  were, and those still carry the old translation marks. The nine `web-*`
-  rows are a separate file.
+  are English. A card has a `layer`:
+  - `base` — Feynman's own life, words, lectures, and books. This is the
+    foundation. A missing `layer` means `base`, so older rewritten cards are
+    not retagged one by one.
+  - `learned` — modern knowledge the mental model has acquired, not a passage
+    from his corpus. Every such card sets `"layer": "learned"` and a `support`
+    note that says so. It is not written as if he had said it.
+  Where a base card was rewritten from an English source, `translation_of`
+  and `source_language` are gone and `support` names the source. A card that
+  still cannot be sourced or classified would keep the old translation marks.
+  The nine `web-*` rows are a separate file. The loader does not branch on
+  `layer`; it keeps the row. Runtime cards a user teaches later live in
+  `data/kb_learned/` and are a different mechanism.
 - `knowledge/verified_facts.jsonl` holds the nine `web-*` quotes already
   stored in `feynman-zh` (same ids, titles, text, and URLs). Those rows were
   English to begin with. The Chinese audit note on them is rewritten in
