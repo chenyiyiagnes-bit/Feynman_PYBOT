@@ -3,9 +3,9 @@
  "source": "scripts/data/assoc_candidates.json",
  "reviewed_by": "Claude（代用户审）",
  "counts": {
-  "reject": 164,
+  "reject": 163,
   "already": 10,
-  "promote": 26
+  "promote": 27
  },
  "decisions": [
   {
@@ -536,9 +536,10 @@
   {
    "a": "rel-lt-time",
    "b": "rel-simultaneity-dilation",
-   "score": 19.198,
-   "verdict": "reject",
-   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+   "score": null,
+   "verdict": "promote",
+   "kind": "premise",
+   "reason": "时间膨胀源于两个惯性系对'同时'的切分不同，正是同时性相对性那条卡"
   },
   {
    "a": "opt-015",
@@ -725,9 +726,9 @@
   {
    "a": "card-003",
    "b": "move-007",
-   "score": 17.417,
+   "score": null,
    "verdict": "reject",
-   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+   "reason": "方法卡与思维卡的同一原则（怀疑权威但只信证据），重复"
   },
   {
    "a": "beyond-002",
@@ -1408,5 +1409,487 @@
    "verdict": "reject",
    "reason": "只共享词形或泛用词，没有可写出的机制"
   }
- ]
+ ],
+ "widening": {
+  "date": "2026-11-26",
+  "reviewed_by": "Claude（代用户审）",
+  "note": "人工审核扩边：在未覆盖卡之间按内容写确认边；kind 由审核时决定，写不进语料的事实一律不连；传记/记忆/时间线卡不强连",
+  "batches": [
+   {
+    "edges": 17,
+    "focus": "色散、动生感生、场量子化、相对论、统计物理入口"
+   },
+   {
+    "edges": 18,
+    "focus": "力学/热学/电磁/波动守则卡之间的量与前提"
+   },
+   {
+    "edges": 9,
+    "focus": "路径积分、擦除信息、类比与守则"
+   },
+   {
+    "edges": 5,
+    "focus": "电容器能量、宇宙学视界、思维方法"
+   }
+  ],
+  "edges_total": 148,
+  "coverage": {
+   "docs": 302,
+   "covered": 182,
+   "uncovered": 120,
+   "uncovered_breakdown": "biography 49、persona_memory 40、persona_core 9、fact 9、beyond_1946 4、其余 9 张为单张守则/索引/重复卡"
+  },
+  "decisions": [
+   {
+    "a": "opt-009",
+    "b": "wave-refraction-dispersion",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "彩虹分色需要折射率随颜色变，这正是色散的定义，卡片正文讲的就是这一点"
+   },
+   {
+    "a": "wave-refraction-dispersion",
+    "b": "opt-011",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "斯涅尔定律的 sinθ 与速度关系可由最短时间原理推出，属于同一条定律的两层说法"
+   },
+   {
+    "a": "flp-ii-17",
+    "b": "em-induction-motion",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "这一章要求先分清运动回路与时变场，恰好就是动生/感生两种电动势的分界"
+   },
+   {
+    "a": "qed-008",
+    "b": "part-010",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "场量子化后，两点之间的作用就是交换虚光子，part-010 的'场是一切的底'要靠这一步落地"
+   },
+   {
+    "a": "sm-008",
+    "b": "em-dielectric-conductor",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "屏蔽与极化都是材料电荷重排把长程作用变短程；导体/电介质/等离子体三种实现方式不同"
+   },
+   {
+    "a": "thermo-temp-avgke",
+    "b": "flp-i-01",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "温度即原子平均平动动能，这条结论的前提就是'物质由不停运动的原子组成'"
+   },
+   {
+    "a": "math-comp-008",
+    "b": "mk-order-magnitude-precision",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "心算立方根靠的是先定主项 12³ 再补一阶小量，与估算/精确计算分工是同一件事"
+   },
+   {
+    "a": "part-008",
+    "b": "part-007",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "希格斯机制给 W、Z 和费米子质量，前提是电磁与弱已并成同一个规范结构"
+   },
+   {
+    "a": "qed-008",
+    "b": "work-001",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "交换虚光子画下来就是一个顶点两条线，费曼图这套工具的前提是这种交换图像"
+   },
+   {
+    "a": "astro-mass-horizon",
+    "b": "grav-003",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "史瓦西半径随质量线性增长，所以由 r_s 反推'密度随质量下降'要先有 r_s=2GM/c²"
+   },
+   {
+    "a": "rel-gps-effects",
+    "b": "rel-lt-time",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "GPS 的 -7µs 来自狭义时间膨胀，+45µs 来自引力势，两个分支都能从已有卡片接上"
+   },
+   {
+    "a": "opt-004",
+    "b": "wave-polarization-intensity",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "单光子过偏振片的透过概率就是马吕斯定律，偏振与强度分界卡是它的前提"
+   },
+   {
+    "a": "thermo-free-energy",
+    "b": "sm-001",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "F=−kT ln Z，判自发用 F 的前提是配分函数这个概念"
+   },
+   {
+    "a": "thermo-specific-latent",
+    "b": "sm-003",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "相变时温度不变、热量转为序参量增长，正是相变那条卡的说法"
+   },
+   {
+    "a": "mk-signal-noise",
+    "b": "move-003",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "两条都要求先写下可被证伪的观测再看数据；一条量化成信噪比，一条只问有没有这样的观测"
+   },
+   {
+    "a": "C_OSCILLATE",
+    "b": "wave-resonance-beat",
+    "score": null,
+    "verdict": "promote",
+    "kind": "boundary",
+    "reason": "共振放大与拍是两件事：一个是驱动频率贴近本征频率，一个是两个相近频率叠加的周期强弱"
+   },
+   {
+    "a": "q-spin-rotation",
+    "b": "part-009",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "自旋仍是转动对称对应的角动量，只是不来自小球自转；part-009 讲对称性与守恒律，正是它的根"
+   },
+   {
+    "a": "mech-work-energy",
+    "b": "thermo-heat-internal",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "功和热都是能量转移的记账，ΔU=Q+W 与 W=∫F·dx 是同一本账；差别在状态量与路径量"
+   },
+   {
+    "a": "mech-force-momentum",
+    "b": "mech-centripetal",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "匀速圆周运动速度方向变即动量变，向心力是 dp/dt 的径向分量"
+   },
+   {
+    "a": "thermo-temp-pressure",
+    "b": "thermo-temp-avgke",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "等温压缩压强升温度不变，前提是把温度当平均动能"
+   },
+   {
+    "a": "em-ohm-resistance",
+    "b": "em-charge-current",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "R=V/I 中的 I 是电荷流量，先有电荷与电流的区分"
+   },
+   {
+    "a": "em-field-energy-density",
+    "b": "em-b-h",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "介质中能量密度是 ½B·H，须先分清 B 与 H"
+   },
+   {
+    "a": "wave-refraction-dispersion",
+    "b": "wave-freq-wavelength",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "频率由光源定住不变，色散才表现为 λ 与 v 同变"
+   },
+   {
+    "a": "wave-amplitude-intensity",
+    "b": "wave-polarization-intensity",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都是振幅平方再乘几何因子；一个乘 1，一个乘 cos²θ"
+   },
+   {
+    "a": "wave-resonance-beat",
+    "b": "wave-linear-nonlinear",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "拍与共振叠加都依赖线性，非线性会生出新频率"
+   },
+   {
+    "a": "mk-time-mean",
+    "b": "move-002",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "先估算用的就是 τ~L/v 这类特征时间，但要说明它不是统计平均"
+   },
+   {
+    "a": "mech-friction-heat",
+    "b": "thermo-heat-internal",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "摩擦热是 f 乘相对位移，属于做功转内能"
+   },
+   {
+    "a": "mech-elastic-plastic",
+    "b": "mech-kinetic-potential",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "弹簧势能只在弹性区成立，过屈服点后不再适用"
+   },
+   {
+    "a": "mech-kinetic-potential",
+    "b": "mech-work-energy",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "动能与势能由功定义，功是更基本的一层"
+   },
+   {
+    "a": "flp-ii-01",
+    "b": "em-charge-current",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "梳子吸纸屑要先分清净电荷、极化与接地，即电荷与电流之别"
+   },
+   {
+    "a": "math-comp-005",
+    "b": "q-superposition-mixture",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "2ⁿ 状态爆炸源于叠加，经典机器只能逐个存振幅"
+   },
+   {
+    "a": "math-comp-002",
+    "b": "move-001",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都要先有能看见的画面再写符号；一条讲微积分教学，一条讲概念入口"
+   },
+   {
+    "a": "ethic-001",
+    "b": "move-007",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都把可检查证据放权威前；一个直说不知道，一个要求怀疑有理由"
+   },
+   {
+    "a": "method-001",
+    "b": "move-001",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都把大问题压到能改动的小对象；一条是提问法，一条是入口"
+   },
+   {
+    "a": "math-comp-001",
+    "b": "opt-017",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都先加振幅再平方；干涉是几个波源，路径积分是所有路径"
+   },
+   {
+    "a": "math-comp-004",
+    "b": "sm-005",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "擦一位信息的 kT ln2 来自状态数二变一，熵减转成热"
+   },
+   {
+    "a": "math-comp-007",
+    "b": "mk-signal-noise",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "先看结果再定判据什么都显得特别；一条是车牌，一条是噪声门槛"
+   },
+   {
+    "a": "mech-work-energy",
+    "b": "flp-iii-17",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "能量守恒来自时间平移不变，E 状态量、功路径量的根在这里"
+   },
+   {
+    "a": "mech-torque-energy",
+    "b": "mech-kinetic-potential",
+    "score": null,
+    "verdict": "promote",
+    "kind": "boundary",
+    "reason": "力矩和功同量纲易混；力矩是依赖支点的矢量，功是标量"
+   },
+   {
+    "a": "mech-pressure-force",
+    "b": "mech-elastic-plastic",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都把强度量与广延量分开；压强对力，应力对应变"
+   },
+   {
+    "a": "q-tunneling-barrier",
+    "b": "wave-amplitude-intensity",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "2κL 来自振幅平方，振幅先按 e^(−κL) 衰减"
+   },
+   {
+    "a": "astro-luminosity-flux",
+    "b": "wave-amplitude-intensity",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都在分源发放与接收量；一个按 4πd² 摊开，一个按振幅平方"
+   },
+   {
+    "a": "q-entangle-signal",
+    "b": "q-superposition-mixture",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "局域测量各自随机，因为测量按振幅平方挑结果"
+   },
+   {
+    "a": "em-capacitor-battery",
+    "b": "em-field-energy-density",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "电容器存的就是板间 ½ε0E² 的体积分，Q=CV 是记账"
+   },
+   {
+    "a": "cosmo-parent-universe-002",
+    "b": "cosmo-horizon-001",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "R_H 与 r_s 数值相等来自弗里德曼方程，不能据此说宇宙是黑洞"
+   },
+   {
+    "a": "move-004",
+    "b": "math-comp-002",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都把结论的画面放推导前；一个是讲课顺序，一个是微积分入口"
+   },
+   {
+    "a": "move-008",
+    "b": "math-comp-003",
+    "score": null,
+    "verdict": "promote",
+    "kind": "same_mechanism",
+    "reason": "都把符号当工具看方程形状；一条判同构，一条选记号"
+   },
+   {
+    "a": "mk-signal-noise",
+    "b": "ethic-001",
+    "score": null,
+    "verdict": "promote",
+    "kind": "premise",
+    "reason": "不说无依据的话，落实为先定判据再看信号"
+   },
+   {
+    "a": "comp-001",
+    "b": "math-comp-006",
+    "score": null,
+    "verdict": "reject",
+    "reason": "两张卡讲同一次 1959 年《底部还有很大空间》演讲，是重复不是联系"
+   },
+   {
+    "a": "math-comp-003",
+    "b": "move-008",
+    "score": null,
+    "verdict": "reject",
+    "reason": "已在 move-008 侧记为 same_mechanism，避免同对重复登记"
+   },
+   {
+    "a": "qed-010",
+    "b": "wave-refraction-dispersion",
+    "score": null,
+    "verdict": "reject",
+    "reason": "c 的普适与介质色散确有边界关系，但 qed-010 是反思层'无边可反思'的固定测试夹具，保持无边以免测试失真"
+   },
+   {
+    "a": "flp-map-001",
+    "b": "",
+    "score": null,
+    "verdict": "reject",
+    "reason": "讲义地图只是索引，没有可被支撑的物理主张，不连"
+   },
+   {
+    "a": "work-002",
+    "b": "",
+    "score": null,
+    "verdict": "reject",
+    "reason": "研究兴趣陈述，与具体卡片没有可验证的支撑或对照关系，不连"
+   },
+   {
+    "a": "beyond-001",
+    "b": "",
+    "score": null,
+    "verdict": "reject",
+    "reason": "1946 年时间范围守则，属时间线而非物理内容，不连"
+   },
+   {
+    "a": "beyond-002",
+    "b": "",
+    "score": null,
+    "verdict": "reject",
+    "reason": "同上，挑战者号属事后范围，不连"
+   },
+   {
+    "a": "beyond-003",
+    "b": "",
+    "score": null,
+    "verdict": "reject",
+    "reason": "同上，讲义出版属事后范围，不连"
+   },
+   {
+    "a": "beyond-004",
+    "b": "",
+    "score": null,
+    "verdict": "reject",
+    "reason": "同上，加州理工任职属事后范围，不连"
+   }
+  ],
+  "decisions_count": 57,
+  "promoted": 48,
+  "rejected": 9
+ }
 }
