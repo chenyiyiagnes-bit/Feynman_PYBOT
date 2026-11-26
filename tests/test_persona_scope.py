@@ -33,9 +33,9 @@ class TestStatePaths(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.dict(os.environ, {runtime.STATE_DIR_ENV: tmp}):
                 feynman = runtime.load(
-                    runtime.resolve_persona("feynman"))
+                    runtime.resolve_persona("feynman-zh"))
                 laozhuang = runtime.load(
-                    runtime.resolve_persona("laozhuang"))
+                    runtime.resolve_persona("laozhuang-zh"))
                 self.assertNotEqual(runtime.learned_dir_for(feynman),
                                     runtime.learned_dir_for(laozhuang))
                 for persona in (feynman, laozhuang):
@@ -46,7 +46,7 @@ class TestStatePaths(unittest.TestCase):
                                   str(runtime.learned_dir_for(persona)))
 
     def test_assoc_path_lives_under_the_persona(self):
-        for name in ("feynman", "laozhuang"):
+        for name in ("feynman-zh", "laozhuang-zh"):
             persona = runtime.load(runtime.resolve_persona(name))
             path = runtime.assoc_path_for(persona)
             self.assertTrue(path.is_relative_to(persona.root))
@@ -57,13 +57,13 @@ class TestBuildWiring(unittest.TestCase):
     def test_build_scopes_kb_data_to_the_persona(self):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.dict(os.environ, {runtime.STATE_DIR_ENV: tmp}):
-                engine = runtime.build("feynman")
+                engine = runtime.build("feynman-zh")
                 self.assertEqual(engine.kb.learned_dir,
-                                 Path(tmp) / "feynman" / "kb_learned")
+                                 Path(tmp) / "feynman-zh" / "kb_learned")
                 self.assertTrue(engine.kb.assoc_path.is_relative_to(
-                    ROOT / "personas" / "feynman"))
+                    ROOT / "personas" / "feynman-zh"))
                 self.assertEqual(engine.kb.dir,
-                                 ROOT / "personas" / "feynman" / "knowledge")
+                                 ROOT / "personas" / "feynman-zh" / "knowledge")
 
     def test_two_engines_never_share_learned_or_edges(self):
         """Same cards, two ids: each mind gets its own overlay and edge file."""
@@ -72,8 +72,8 @@ class TestBuildWiring(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "personas"
-            source = ROOT / "personas" / "feynman"
-            for name in ("feynman", "copycat"):
+            source = ROOT / "personas" / "feynman-zh"
+            for name in ("feynman-zh", "copycat"):
                 target = root / name
                 target.mkdir(parents=True)
                 shutil.copytree(source / "knowledge", target / "knowledge")
@@ -86,7 +86,7 @@ class TestBuildWiring(unittest.TestCase):
             state = Path(tmp) / "state"
             with mock.patch.dict(os.environ, {runtime.STATE_DIR_ENV: str(state)}):
                 engines = {name: runtime.build(name, personas_root=root)
-                           for name in ("feynman", "copycat")}
+                           for name in ("feynman-zh", "copycat")}
                 for name, engine in engines.items():
                     self.assertEqual(engine.kb.learned_dir.resolve(),
                                      (state / name / "kb_learned").resolve())
@@ -94,7 +94,7 @@ class TestBuildWiring(unittest.TestCase):
                         engine.kb.assoc_path.resolve(),
                         (root / name / "data" / "assoc"
                          / "assoc_edges.jsonl").resolve())
-                self.assertNotEqual(engines["feynman"].kb.learned_dir,
+                self.assertNotEqual(engines["feynman-zh"].kb.learned_dir,
                                     engines["copycat"].kb.learned_dir)
 
 

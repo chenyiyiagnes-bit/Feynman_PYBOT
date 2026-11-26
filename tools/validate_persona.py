@@ -1,7 +1,7 @@
 """Validate a persona.json against contracts/persona.md.
 
 Usage:
-    python3 tools/validate_persona.py personas/feynman/persona.json
+    python3 tools/validate_persona.py personas/feynman-zh/persona.json
 
 Exit code 0 = valid. Warnings do not fail the run.
 """
@@ -64,9 +64,18 @@ def validate(path: Path) -> tuple[list[str], list[str]]:
             errors.append(f"baselines[{dim}] must be within [0, 1]")
 
     voice = data.get("voice") or {}
-    for key in ("prefixes_zh", "endings_zh", "prefixes_en", "endings_en"):
+    # One package = one language. The other language's shell is optional and
+    # unused; requiring both would force a translator into every package.
+    lang = data.get("language") if data.get("language") in ("zh", "en") else "zh"
+    for key in (f"prefixes_{lang}", f"endings_{lang}"):
         if not isinstance(voice.get(key), list) or not voice.get(key):
-            errors.append(f"voice.{key} must be a non-empty list")
+            errors.append(f"voice.{key} must be a non-empty list ({lang} package)")
+    for other in (k for k in ("zh", "en") if k != lang):
+        for key in (f"prefixes_{other}", f"endings_{other}"):
+            if key in voice and voice[key]:
+                warnings.append(
+                    f"voice.{key} is set but this is a {lang} package; "
+                    "it will never be used")
 
     cubies = data.get("cubies") or []
     if len(cubies) != 26:

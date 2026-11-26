@@ -12,7 +12,7 @@ from bridge import persona as persona_mod
 from bridge.responder import ENV_FLAG, LeftResponder
 
 ROOT = Path(__file__).resolve().parents[1]
-FEYNMAN = ROOT / "personas" / "feynman" / "persona.json"
+FEYNMAN = ROOT / "personas" / "feynman-zh" / "persona.json"
 
 
 class TestDefaultOff(unittest.TestCase):

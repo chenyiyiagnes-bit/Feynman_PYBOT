@@ -15,23 +15,23 @@ PERSONAS = ROOT / "personas"
 
 class TestLoadRealPersonas(unittest.TestCase):
     def test_feynman_loads(self):
-        p = persona_mod.load(PERSONAS / "feynman" / "persona.json")
-        self.assertEqual(p.id, "feynman")
+        p = persona_mod.load(PERSONAS / "feynman-zh" / "persona.json")
+        self.assertEqual(p.id, "feynman-zh")
         self.assertEqual(len(p.cubies), 26)
         self.assertEqual(p.baselines["dopamine"], 0.60)
         self.assertTrue(p.switches["jargon_aversion"])
         self.assertIn("corner_shame", p.disable_cubies)
 
     def test_laozhuang_loads(self):
-        p = persona_mod.load(PERSONAS / "laozhuang" / "persona.json")
-        self.assertEqual(p.id, "laozhuang")
+        p = persona_mod.load(PERSONAS / "laozhuang-zh" / "persona.json")
+        self.assertEqual(p.id, "laozhuang-zh")
         self.assertEqual(len(p.cubies), 26)
         self.assertLess(p.baselines["cortisol"], 0.12)
 
     def test_discover_finds_both(self):
         found = persona_mod.discover(PERSONAS)
-        self.assertIn("feynman", found)
-        self.assertIn("laozhuang", found)
+        self.assertIn("feynman-zh", found)
+        self.assertIn("laozhuang-zh", found)
 
 
 class TestRejectsBadPersonas(unittest.TestCase):
@@ -44,7 +44,7 @@ class TestRejectsBadPersonas(unittest.TestCase):
         return Path(tmp.name)
 
     def _base(self):
-        return json.loads((PERSONAS / "feynman" / "persona.json").read_text(encoding="utf-8"))
+        return json.loads((PERSONAS / "feynman-zh" / "persona.json").read_text(encoding="utf-8"))
 
     def test_missing_dimension(self):
         data = self._base()

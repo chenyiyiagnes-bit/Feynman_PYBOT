@@ -13,8 +13,8 @@
 ## 目录
 
 ```
-personas/<id>/persona.json   人设定义（格式见 contracts/persona.md）
-personas/<id>/knowledge/     该人设的知识卡
+personas/<id>/persona.json   一个包的人设定义（见 contracts/persona.md）
+personas/<id>/knowledge/     该包的知识卡（只有该语言）
 app/                         装配层：人设 → 可运行的 MindEngine
 bridge/                      右脑 → 左脑的映射层
 contracts/                   接口与人设格式契约
@@ -28,14 +28,16 @@ tests/                       合并层测试
 ## 快速上手
 
 ```bash
-# 费曼，中文，读 personas/feynman/knowledge 的卡片回答
+# 费曼，中文，读 personas/feynman-zh/knowledge 的卡片回答
 python3 scripts/chat.py
 
-# 换人设
-python3 scripts/chat.py --persona laozhuang
+# 换包（一个包一种语言）
+python3 scripts/chat.py --persona laozhuang-zh
 
-# 英文模式 / 看每句答案来自哪张卡
-python3 scripts/chat.py --lang en
+# 换语言 = 换包
+python3 scripts/chat.py --persona feynman-en
+
+# 看每句答案来自哪张卡
 python3 scripts/chat.py --debug
 
 # 列出仓库里的人设
@@ -56,7 +58,8 @@ python3 tools/doctor.py
 python3 tools/new_persona.py mybot --name 我的角色
 
 # 或从已调好的人设改个名（保留基线、口头禅、触发器）
-python3 tools/new_persona.py mybot --from feynman
+python3 tools/new_persona.py mybot --from feynman-zh --lang zh
+python3 tools/new_persona.py mybot-en --from feynman-en --lang en
 
 # 往 personas/mybot/knowledge/ 放 jsonl 卡片，然后
 python3 tools/validate_persona.py personas/mybot/persona.json

@@ -25,7 +25,7 @@ from omega_mind.feynman_kb import FeynmanKB
 
 
 REPO = Path(__file__).resolve().parents[3]
-PERSONA_EDGES = (REPO / "personas" / "feynman" / "data" / "assoc"
+PERSONA_EDGES = (REPO / "personas" / "feynman-zh" / "data" / "assoc"
                  / "assoc_edges.jsonl")
 
 

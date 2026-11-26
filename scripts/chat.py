@@ -41,7 +41,7 @@ def show_state(engine) -> str:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--persona", default="feynman",
+    parser.add_argument("--persona", default="feynman-zh",
                         help="persona id under personas/ (default: feynman)")
     parser.add_argument("--lang", choices=("zh", "en"), default=None,
                         help="reply language (default: persona file)")

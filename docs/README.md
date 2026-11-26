@@ -11,7 +11,7 @@
 ## 按目的找
 
 - **想跑起来**：`README.md` 快速上手 → `python3 tools/doctor.py` 自检
-- **想做人设**：`contracts/persona.md` → `tools/new_persona.py` → `personas/laozhuang/README.md` 的交付清单
+- **想做人设**：`contracts/persona.md` → `tools/new_persona.py` → `personas/laozhuang-zh/README.md` 的交付清单
 - **想喂知识**：`personas/<id>/knowledge/README.md` 或 `tools/import_cards.py`
 - **想改桥**：`docs/bridge.md` 先读「已知限制」，再改 `contracts/`
 - **想看测试怎么跑**：`README.md` 的测试一节；CI 在 `.github/workflows/tests.yml`

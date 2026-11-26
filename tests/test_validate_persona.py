@@ -58,7 +58,7 @@ class TestFieldChecks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base = json.loads(
-            (PERSONAS / "feynman" / "persona.json").read_text(encoding="utf-8"))
+            (PERSONAS / "feynman-zh" / "persona.json").read_text(encoding="utf-8"))
 
     def _validate(self, mutate):
         data = json.loads(json.dumps(self.base))

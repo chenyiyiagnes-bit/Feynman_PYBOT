@@ -25,7 +25,7 @@ SAMPLE_IGNORES = [
     "feynman_style_vault_v2.json",
     "left/data/topology.npz",
     "left/data/assoc/a.json",
-    "personas/feynman/data/kb_learned/a.json",
+    "personas/feynman-zh/data/kb_learned/a.json",
     "left/data/solve_cache.json",
 ]
 

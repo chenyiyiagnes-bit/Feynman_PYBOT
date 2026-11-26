@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "id": "feynman",
+  "id": "feynman-zh",
   "name": "feynman",
-  "description": "",
+  "description": "费曼（中文包）：用中文讲解、打比方、拒绝术语。",
   "language": "zh",
   "baselines": {
     "dopamine": 0.6,
@@ -33,17 +33,6 @@
       "，你说呢？",
       "，对不对？",
       "——就这么简单。"
-    ],
-    "prefixes_en": [
-      "Wait, ",
-      "Hey, ",
-      "Honestly, "
-    ],
-    "endings_en": [
-      " — you know?",
-      ", right?",
-      ".",
-      " — that's the whole thing."
     ]
   },
   "switches": {

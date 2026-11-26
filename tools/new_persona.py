@@ -56,7 +56,7 @@ PERSONA_README = """\
 
 
 def scaffold(persona_id: str, name: str, base: str, root: Path,
-             dry_run: bool = False) -> Path:
+             dry_run: bool = False, lang: str = "zh") -> Path:
     target = root / persona_id / "persona.json"
     if target.exists() and not dry_run:
         raise SystemExit(f"refusing to overwrite: {target}")
@@ -66,6 +66,12 @@ def scaffold(persona_id: str, name: str, base: str, root: Path,
     data["name"] = name or persona_id
     data["description"] = data.get("description", "")
     data["knowledge"]["kb_dirs"] = ["knowledge"]
+    # One package speaks one language: keep only that language's shell.
+    data["language"] = lang
+    data["voice"] = {k: v for k, v in data.get("voice", {}).items()
+                     if k.endswith(f"_{lang}")}
+    for key in (f"prefixes_{lang}", f"endings_{lang}"):
+        data["voice"].setdefault(key, [])
 
     if dry_run:
         print(json.dumps(data, ensure_ascii=False, indent=2)[:400] + " ...")
@@ -95,15 +101,17 @@ def main(argv=None) -> int:
     parser.add_argument("id", help="persona id, also the directory name")
     parser.add_argument("--name", default="", help="display name (default: id)")
     parser.add_argument("--from", dest="base", default="generic",
-                        help="base persona: generic|feynman|laozhuang (default: generic)")
+                        help="base package: generic|feynman-zh|feynman-en|... (default: generic)")
     parser.add_argument("--root", default=str(ROOT / "personas"),
                         help="personas root (default: personas/)")
+    parser.add_argument("--lang", default="zh", choices=("zh", "en"),
+                        help="package language (default: zh); one package is one language")
     parser.add_argument("--dry-run", action="store_true",
                         help="print the persona.json instead of writing files")
     args = parser.parse_args(argv)
 
     target = scaffold(args.id, args.name, args.base, Path(args.root),
-                      dry_run=args.dry_run)
+                      dry_run=args.dry_run, lang=args.lang)
     if not args.dry_run:
         print(f"created {target.parent}")
         print(f"next: put cards in {target.parent / 'knowledge'}, then")

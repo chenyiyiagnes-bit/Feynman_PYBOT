@@ -15,19 +15,19 @@ from app.runtime import build
 PERSONAS = Path(__file__).resolve().parents[1] / "personas"
 
 GOLDEN = [
-    ("原子是什么？", "feynman_kb:flp-i-01", "原子"),
-    ("我是谁？", "feynman_kb:self-001", "费曼"),
-    ("量子电动力学是什么？", "feynman_kb:qed-001", "QED"),
-    ("为什么天是蓝的？", "feynman_kb:opt-012", "散射"),
-    ("能量守恒是什么？", "feynman_kb:flp-i-04", "能量"),
-    ("你对科学是什么态度？", "feynman_kb:persona-science-001", "科学"),
+    ("原子是什么？", "feynman-zh:flp-i-01", "原子"),
+    ("我是谁？", "feynman-zh:self-001", "费曼"),
+    ("量子电动力学是什么？", "feynman-zh:qed-001", "QED"),
+    ("为什么天是蓝的？", "feynman-zh:opt-012", "散射"),
+    ("能量守恒是什么？", "feynman-zh:flp-i-04", "能量"),
+    ("你对科学是什么态度？", "feynman-zh:persona-science-001", "科学"),
 ]
 
 
 class TestGoldenRetrieval(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.engine = build("feynman", personas_root=PERSONAS, enable_bridge=False)
+        cls.engine = build("feynman-zh", personas_root=PERSONAS, enable_bridge=False)
 
     def test_golden_questions(self):
         for query, want_source, want_word in GOLDEN:
@@ -38,7 +38,7 @@ class TestGoldenRetrieval(unittest.TestCase):
 
     def test_off_domain_abstains(self):
         result = self.engine.turn("今天股票怎么买？", now=1000.0)
-        self.assertFalse(result.source.startswith("feynman_kb"),
+        self.assertFalse(result.source.startswith("feynman-zh"),
                          (result.source, result.base_reply))
         self.assertTrue(result.reply)
 
@@ -50,9 +50,9 @@ class TestGoldenRetrieval(unittest.TestCase):
 
 
 EN_GOLDEN = [
-    ("What is an atom?", "feynman_kb_en:flp-i-01"),
-    ("Why is the sky blue?", "feynman_kb_en:opt-012"),
-    ("Who are you?", "feynman_kb_en:self-001"),
+    ("What is an atom?", "feynman-en:flp-i-01"),
+    ("Why is the sky blue?", "feynman-en:opt-012"),
+    ("Who are you?", "feynman-en:self-001"),
 ]
 
 
@@ -61,7 +61,7 @@ class TestEnglishGolden(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.engine = build("feynman", language="en", personas_root=PERSONAS,
+        cls.engine = build("feynman-en", personas_root=PERSONAS,
                            enable_bridge=False)
 
     def test_english_questions(self):

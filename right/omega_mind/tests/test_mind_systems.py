@@ -573,7 +573,8 @@ class TestEnglishKnowledge(unittest.TestCase):
     def test_overlay_rows_are_provenanced_and_english(self):
         import json
         rows = []
-        for path in sorted((Path(__file__).resolve().parents[1] / "data" / "kb_en").glob("*.jsonl")):
+        for path in sorted((Path(__file__).resolve().parents[3] / "personas"
+                                / "feynman-en" / "knowledge").glob("*.jsonl")):
             for line in path.read_text(encoding="utf-8").splitlines():
                 if line.strip():
                     rows.append((path.name, json.loads(line)))

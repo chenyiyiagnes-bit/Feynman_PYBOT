@@ -73,7 +73,7 @@ def knowledge_dir(persona: Persona) -> Optional[Path]:
 
 def resolve_persona(target: Union[str, Path],
                     personas_root: Union[str, Path] = DEFAULT_PERSONAS) -> Path:
-    """Accept an id ("feynman"), a directory, or the persona.json itself."""
+    """Accept an id ("feynman-zh"), a directory, or the persona.json itself."""
     path = Path(target).expanduser()
     if path.is_file():
         return path
@@ -106,7 +106,7 @@ def assoc_path_for(persona: Persona) -> Path:
     return (persona.root / "data" / "assoc" / "assoc_edges.jsonl").resolve()
 
 
-def build(target: Union[str, Path] = "feynman",
+def build(target: Union[str, Path] = "feynman-zh",
           language: Optional[str] = None,
           enable_bridge: Optional[bool] = None,
           state_path: Optional[Union[str, Path]] = None,
@@ -114,11 +114,18 @@ def build(target: Union[str, Path] = "feynman",
           clock=None) -> MindEngine:
     """Build a mind for one persona. ``enable_bridge=None`` follows the env flag."""
     persona = load(resolve_persona(target, personas_root))
+    package_language = persona.language or "zh"
+    if language is not None and language != package_language:
+        raise PersonaError(
+            f"persona {persona.id!r} is a {package_language!r} package; "
+            f"it cannot answer in {language!r}. Build the other package.")
     cfg = to_config(persona)
     kb_dir = knowledge_dir(persona)
     kb = (FeynmanKB(knowledge_dir=str(kb_dir),
                     learned_dir=str(learned_dir_for(persona)),
-                    assoc_path=str(assoc_path_for(persona)))
+                    assoc_path=str(assoc_path_for(persona)),
+                    language=package_language,
+                    source_prefix=persona.id)
           if kb_dir is not None else FeynmanKB.disabled())
     responder = None
     if enable_bridge is None:
@@ -129,7 +136,7 @@ def build(target: Union[str, Path] = "feynman",
         persona=cfg,
         bridge=PyBotBridge.disabled(),
         kb=kb,
-        language=language or persona.language or "zh",
+        language=package_language,
     )
     if clock is not None:
         kwargs["clock"] = clock

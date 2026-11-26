@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "id": "laozhuang",
+  "id": "laozhuang-zh",
   "name": "老庄",
   "description": "以《道德经》《庄子》为底色的示例人设。草稿，待补知识卡与语料。",
   "language": "zh",
@@ -33,15 +33,6 @@
       "，是吧？",
       "——水自会找到路。",
       "……"
-    ],
-    "prefixes_en": [
-      "Well, ",
-      "Look, "
-    ],
-    "endings_en": [
-      ".",
-      " — the water finds its way.",
-      "..."
     ]
   },
   "switches": {

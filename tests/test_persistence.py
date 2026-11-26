@@ -18,7 +18,7 @@ class TestPersistence(unittest.TestCase):
         self.state = Path(self._tmp.name) / "mind.json"
 
     def test_state_round_trips(self):
-        first = build("feynman", personas_root=PERSONAS,
+        first = build("feynman-zh", personas_root=PERSONAS,
                       enable_bridge=False,
                       state_path=self.state, clock=lambda: 1000.0)
         first.turn("我叫小明", now=1000.0)
@@ -26,7 +26,7 @@ class TestPersistence(unittest.TestCase):
         first.save()
         self.assertTrue(self.state.is_file())
 
-        second = build("feynman", personas_root=PERSONAS,
+        second = build("feynman-zh", personas_root=PERSONAS,
                        enable_bridge=False,
                        state_path=self.state, clock=lambda: 1100.0)
         self.assertEqual(second.turn_index, first.turn_index)
@@ -34,7 +34,7 @@ class TestPersistence(unittest.TestCase):
         self.assertTrue(second.turn("继续", now=1120.0).reply)
 
     def test_no_state_file_builds_fresh(self):
-        engine = build("feynman", personas_root=PERSONAS,
+        engine = build("feynman-zh", personas_root=PERSONAS,
                        enable_bridge=False,
                        state_path=Path(self._tmp.name) / "absent.json")
         self.assertEqual(engine.turn_index, 0)

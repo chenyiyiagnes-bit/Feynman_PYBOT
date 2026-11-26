@@ -29,7 +29,7 @@ class TestScaffold(unittest.TestCase):
         self.assertTrue((self.root / "demo" / "knowledge" / "README.md").is_file())
 
     def test_from_feynman_keeps_tuning(self):
-        scaffold("mini", "", "feynman", self.root)
+        scaffold("mini", "", "feynman-zh", self.root)
         persona = load(self.root / "mini" / "persona.json")
         self.assertAlmostEqual(persona.baselines["dopamine"], 0.60)
         self.assertTrue(persona.switches["jargon_aversion"])

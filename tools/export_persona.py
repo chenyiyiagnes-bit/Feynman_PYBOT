@@ -4,8 +4,8 @@ This is the bridge between the code-first persona definitions and the
 data-first format the released repo uses (``personas/<id>/persona.json``).
 
 Usage:
-    python3 tools/export_persona.py feynman personas/feynman/persona.json
-    python3 tools/export_persona.py laozhuang personas/laozhuang/persona.json
+    python3 tools/export_persona.py feynman personas/feynman-zh/persona.json
+    python3 tools/export_persona.py laozhuang personas/laozhuang-zh/persona.json
 
 The right brain is imported from ``QBOT_RIGHT_ROOT`` (default: ``right/``),
 so this runs both before and after the module is vendored into the repo.
@@ -29,6 +29,11 @@ def _right_root() -> Path:
 
 
 def build(persona_id: str) -> dict:
+    # A package already is the data format: copying it needs no conversion.
+    package = ROOT / "personas" / persona_id / "persona.json"
+    if package.is_file():
+        return json.loads(package.read_text(encoding="utf-8"))
+
     sys.path.insert(0, str(_right_root()))
     from omega_mind.config import get_persona
     from omega_mind.cubies import CUBIES

@@ -10,10 +10,10 @@
 | `schema` | int | 目前为 1 |
 | `id` / `name` | str | 人设标识与显示名 |
 | `description` | str | 可选，一句话介绍（导出工具会带上） |
-| `language` | `"zh"` \| `"en"` | 默认语言；回复内不混语言 |
+| `language` | `"zh"` \| `"en"` | 本包的语言。一个包只有一种语言 |
 | `baselines` | object | 7 维基线：dopamine/cortisol/valence/arousal/affinity/defensiveness/energy；valence ∈ [-1,1]，其余 [0,1] |
 | `taus` | object | 每维的指数衰减时间常数（秒） |
-| `voice` | object | `prefixes_zh/endings_zh/prefixes_en/endings_en` |
+| `voice` | object | 只放本包语言的 `prefixes_<lang>/endings_<lang>` |
 | `switches` | object | `correction_as_curiosity` / `jargon_aversion` / `politeness` |
 | `disable_cubies` | array | 关掉的方块名（如费曼关掉 `corner_shame`） |
 | `override_triggers` | object | 方块名 → 额外正则列表（覆盖默认触发器） |
@@ -21,6 +21,23 @@
 | `cubies` | array | 26 个方块，必须恰好 26 个 |
 | `knowledge` | object | `kb_dirs`（相对本文件）、`corpus`（自备语料路径，可为 null）、`corpus_note`（可选，说明语料来源与许可） |
 | `license` | object | 人设内容与代码各自的许可证 |
+
+## 骨架一个，包很多，一个包一种语言
+
+硬骨架只有一份（`right/`、`app/`、`bridge/`、`left/`）。人设是一个个独立的包，目录名即包名：
+
+```
+personas/feynman-zh/     费曼 · 中文
+personas/feynman-en/     费曼 · 英文
+personas/laozhuang-zh/   老庄 · 中文
+personas/laozhuang-en/   老庄 · 英文
+```
+
+- 每个包的 `persona.json` 里 `language` 固定为 `zh` 或 `en`，`voice` 只放该语言的
+  `prefixes_<lang>` / `endings_<lang>`；另一种语言可以不写。
+- 知识卡也只放该语言。英文包不是「中文包 + 翻译叠加」，而是自带英文卡。
+- 运行时不允许在中文包上请求英文回复（反之亦然），会直接报错：换语言就换包。
+- 想做双语角色，就是建两个包；它们共享骨架，不共享任何软数据（见下表）。
 
 ## 数据归属：一个目录就是一个心智
 
@@ -58,7 +75,7 @@
 
 ## 最小可用人设
 
-复制 `personas/feynman/persona.json`，改四个地方即可变成新角色：
+复制 `personas/feynman-zh/persona.json`，改四个地方即可变成新角色：
 
 1. `baselines` / `taus` —— 性格的温度和恢复速度
 2. `voice` —— 口头禅

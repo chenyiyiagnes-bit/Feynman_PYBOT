@@ -25,7 +25,7 @@ PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 
 def main(argv=None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
-    want = args[args.index("--persona") + 1] if "--persona" in args else "feynman"
+    want = args[args.index("--persona") + 1] if "--persona" in args else "feynman-zh"
     rows = []
 
     def add(status, label, detail=""):

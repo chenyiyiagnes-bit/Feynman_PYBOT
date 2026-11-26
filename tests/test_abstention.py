@@ -27,13 +27,13 @@ ABSTAIN_MARK = "翻翻记忆库"
 class TestAbstention(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.engine = build("feynman", personas_root=PERSONAS, enable_bridge=False)
+        cls.engine = build("feynman-zh", personas_root=PERSONAS, enable_bridge=False)
 
     def test_off_domain_does_not_answer_from_cards(self):
         for query in OFF_DOMAIN:
             with self.subTest(query=query):
                 result = self.engine.turn(query, now=1000.0)
-                self.assertFalse(result.source.startswith("feynman_kb"),
+                self.assertFalse(result.source.startswith("feynman-zh"),
                                  (result.source, result.base_reply))
 
     def test_abstention_says_it_plainly(self):
@@ -43,12 +43,12 @@ class TestAbstention(unittest.TestCase):
                 self.assertIn(ABSTAIN_MARK, reply)
 
     def test_english_off_domain_abstains_too(self):
-        engine = build("feynman", language="en", personas_root=PERSONAS,
+        engine = build("feynman-en", personas_root=PERSONAS,
                        enable_bridge=False)
         for query in ("How do I buy stocks?", "Cook me a steak recipe"):
             with self.subTest(query=query):
                 result = engine.turn(query, now=1000.0)
-                self.assertFalse(result.source.startswith("feynman_kb"),
+                self.assertFalse(result.source.startswith("feynman-zh"),
                                  (result.source, result.base_reply))
 
 

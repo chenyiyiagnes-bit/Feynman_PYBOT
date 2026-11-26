@@ -33,7 +33,7 @@ class TestChatCLI(unittest.TestCase):
     def test_list(self):
         proc = run_chat("", "--list")
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn("feynman", proc.stdout.split())
+        self.assertIn("feynman-zh", proc.stdout)
 
     def test_unknown_persona_exits_nonzero(self):
         proc = run_chat("", "--persona", "nobody", "--no-state")

@@ -92,10 +92,17 @@ def load(path: str | Path) -> Persona:
         if counts[role] != want:
             raise PersonaError(f"{path}: role {role} expected {want}, got {counts[role]}")
 
+    language = str(data.get("language") or "zh")
+    if language not in ("zh", "en"):
+        raise PersonaError(f"{path}: language must be 'zh' or 'en', got {language!r}")
+
     voice = data.get("voice") or {}
-    for key in ("prefixes_zh", "endings_zh", "prefixes_en", "endings_en"):
+    # One package speaks one language: only that language's shell is required.
+    # The other pair may be absent (or empty) and is simply never used.
+    for key in (f"prefixes_{language}", f"endings_{language}"):
         if not isinstance(voice.get(key), list):
-            raise PersonaError(f"{path}: voice.{key} must be a list")
+            raise PersonaError(
+                f"{path}: voice.{key} must be a list ({language} package)")
 
     knowledge = data.get("knowledge") or {}
     if not isinstance(knowledge.get("kb_dirs", []), list):
