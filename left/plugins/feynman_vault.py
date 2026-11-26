@@ -23,7 +23,7 @@ import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 CORPUS_PATH = Path(
     os.getenv("QBOT_FEYNMAN_CORPUS", "/Users/yiyichen/Desktop/费曼物理_文字版/corpus/cpt_zh.jsonl")
@@ -47,8 +47,38 @@ AUTHORED_SOURCE_MARKERS = (
     "Six Easy",
     "费曼物理学讲义英文版",
 )
+# 白名单之外的费曼本人作品：论文、讲座、访谈、短文。书名里不一定带"费曼"，
+# 但都是他写的/讲的；讲他的书、书评、讣告由 EXCLUDED_SOURCE_MARKERS 拦下。
+AUTHORED_SOURCES = (
+    "An Historic Moment in Physics",
+    "An Operator Calculus Having Applications in Quantum Electrodynamics",
+    "Appendix F - Personal observations on the reliability of the Shuttle",
+    "Cargo Cult Science",
+    "Feynman's Lost Lecture",
+    "It's as Simple as One, Two, Three",
+    "Letters（来信：科学与宗教的新假说）",
+    "Los Alamos from Below",
+    "Mathematical Formulation of the Quantum Theory of Electromagnetic Interaction",
+    "Mr. Feynman Goes to Washington",
+    'New Textbooks for the "New" Mathematics',
+    "Plenty of Room at the Bottom",
+    "Simulating Physics with Computers",
+    "Space-Time Approach to Non-Relativistic Quantum Mechanics",
+    "Space-Time Approach to Quantum Electrodynamics",
+    "THE DEVELOPMENT OF THE SPACE-TIME VIEW OF QUANTUM ELECTRODYNAMICS",
+    "The Dignified Professor",
+    "The Problem of Teaching Physics in Latin America",
+    "The Relation of Science and Religion",
+    "The Theory of Positrons",
+    "The Value of Science",
+    "量子电动力学讲义",
+)
+
 EXCLUDED_SOURCE_MARKERS = (
     "费曼传", "书评", "讣告", "读者来信", "百年诞辰", "纪念", "学习法", "思考法", "导读",
+    # 以下几类是别人写的：关于 QED 的书目综述、舞台剧剧评、讲义的合著者与
+    # 致敬文章、书的序言版面；名字里带"费曼/QED"也不能当归他本人的话。
+    "Resource Letter", "舞台剧", "剧评", "合作者", "致敬", "荣休", "前言",
 )
 NOISE_PATTERNS = (
     "ISBN", "图书在版编目", "出版社", "印刷", "定价", "字数", "开本", "印张", "责任编辑",
@@ -593,6 +623,8 @@ def _clean_source(src: str) -> bool:
     low = src.lower()
     if any(m.lower() in low for m in EXCLUDED_SOURCE_MARKERS):
         return False
+    if any(m.lower() in low for m in AUTHORED_SOURCES):
+        return True
     return any(m.lower() in low for m in AUTHORED_SOURCE_MARKERS)
 
 
@@ -654,7 +686,15 @@ def iter_sections(corpus_path: Path = CORPUS_PATH, trusted: bool = False,
             src = str(rec.get("source", ""))
             section = str(rec.get("section", ""))
             text = str(rec.get("text", "")).strip()
-            if not text and isinstance(rec.get("messages"), list):
+            if "zh" in rec or "en" in rec:
+                # 双语配对行：只有中英两侧都在才算数，缺一侧整行不用——
+                # 语料必须一一对应，不拿单语行凑数。
+                en = str(rec.get("en", "")).strip()
+                zh = str(rec.get("zh", "")).strip()
+                if not en or not zh:
+                    continue
+                text = zh
+            elif not text and isinstance(rec.get("messages"), list):
                 src, section, text = _chat_section(rec)
             if not text or (not trusted and not _clean_source(src)):
                 continue

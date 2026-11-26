@@ -123,6 +123,19 @@ def test_multi_corpus_dedupes_paths_and_skips_missing():
         assert len(list(iter_sections(corpora=corpora))) == 1
 
 
+def test_paired_rows_use_zh_and_require_both_sides():
+    with tempfile.TemporaryDirectory() as tmp:
+        corpus = Path(tmp) / "paired.jsonl"
+        _write(corpus, [
+            {"source": "AIP 口述史", "section": "aip#0001", "en": EN, "zh": ZH},
+            {"source": "AIP 口述史", "section": "aip#0002", "en": "", "zh": ZH},
+            {"source": "AIP 口述史", "section": "aip#0003", "en": EN, "zh": ""},
+        ])
+        got = list(iter_sections(corpus, trusted=True))
+        assert len(got) == 1, got
+        assert got[0] == ("AIP 口述史", "aip#0001", ZH), got
+
+
 def test_cli_parses_repeated_corpus_flags():
     from plugins.feynman_vault import _parse_corpora
 
