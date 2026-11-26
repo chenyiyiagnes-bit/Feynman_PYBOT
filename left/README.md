@@ -69,4 +69,9 @@ python plugins/feynman_vault.py
 
 路径可用 `QBOT_FEYNMAN_CORPUS` / `QBOT_FEYNMAN_KNOWLEDGE` / `QBOT_FEYNMAN_VAULT` 覆盖。
 
+语料行格式自动识别两种：旧格式 `{"source","section","text"}`，以及审计库的会话格式
+`{"messages":[系统,用户,助手],"meta":{...}}`。会话格式只取 assistant 正文作费曼的话
+（按 `\n` 拼接多轮），来源取 `meta.work_name`、段落取 `meta.span_id`，且只收
+`meta.lang == "zh"` 的行；噪声、去世词、长度与拉丁比例过滤两种格式相同。
+
 模块级实现与原文的对照、以及所有偏离原因，见 `docs/PARITY.md`。

@@ -596,11 +596,37 @@ def _clean_source(src: str) -> bool:
     return any(m.lower() in low for m in AUTHORED_SOURCE_MARKERS)
 
 
+def _chat_section(rec: dict) -> Tuple[str, str, str]:
+    """会话格式行（{"messages":[...],"meta":{...}}）→ (source, section, text)。
+
+    只有 assistant 的内容是费曼的话；用户提问和系统提示不入样。meta.lang
+    不是中文的行直接返回空串——字库只收中文语料，不靠 Latin 比例间接过滤。
+    """
+    messages = rec.get("messages")
+    if not isinstance(messages, list):
+        return "", "", ""
+    meta = rec.get("meta") or {}
+    if str(meta.get("lang") or "zh") != "zh":
+        return "", "", ""
+    parts = []
+    for msg in messages:
+        if not isinstance(msg, dict) or msg.get("role") != "assistant":
+            continue
+        content = str(msg.get("content") or "").strip()
+        if content:
+            parts.append(content)
+    src = str(meta.get("work_name") or meta.get("source") or "")
+    section = str(meta.get("span_id") or "")
+    return src, section, "\n".join(parts).strip()
+
+
 def iter_sections(corpus_path: Path = CORPUS_PATH, trusted: bool = False):
     """(source, section, text)；只保留费曼署名作品的干净段落。
 
     trusted=True 用于已人工登记来源的集成语料：跳过"署名作品"白名单，
-    但排除词、噪声、去世词与长度/Latin 过滤照旧。
+    但排除词、噪声、去世词与长度/Latin 过滤照旧。两种行格式都认：
+    旧格式直接读 source/section/text，会话格式取 assistant 正文（见
+    `_chat_section`），按行自动识别。
     """
     if not corpus_path.is_file():
         return
@@ -613,6 +639,8 @@ def iter_sections(corpus_path: Path = CORPUS_PATH, trusted: bool = False):
             src = str(rec.get("source", ""))
             section = str(rec.get("section", ""))
             text = str(rec.get("text", "")).strip()
+            if not text and isinstance(rec.get("messages"), list):
+                src, section, text = _chat_section(rec)
             if not text or (not trusted and not _clean_source(src)):
                 continue
             if any(p in text for p in NOISE_PATTERNS):

@@ -83,7 +83,7 @@ v2.0 安装器从 **5781 行**开始；`FILES` 字典的正文到 6111 行，611
 
 | 组件 | 文件 | 作用 |
 |---|---|---|
-| 铸字器 | `plugins/feynman_vault.py` | 从本机 `cpt_zh.jsonl` 中费曼署名作品抽起手式/实体/动作/可观测后果，每颗记 `source｜section`；量出语体相位、逐槽实测偏移、7 类句法骨架、同句 ±5 字共现表；元话语名词（角度/结论/说法/情况…）不进任何槽；可选 `jieba` 词性净化 |
+| 铸字器 | `plugins/feynman_vault.py` | 从本机 `cpt_zh.jsonl` 中费曼署名作品抽起手式/实体/动作/可观测后果，每颗记 `source｜section`；量出语体相位、逐槽实测偏移、7 类句法骨架、同句 ±5 字共现表；元话语名词（角度/结论/说法/情况…）不进任何槽；可选 `jieba` 词性净化；语料行按行自动识别旧格式（`source/section/text`）与审计库会话格式（`messages` + `meta`，取 assistant 正文、来源 `work_name`、段落 `span_id`，只收 `meta.lang == "zh"`） |
 | 引擎 | `plugins/feynman_typesetter.py` | 3⁴=81 条四槽路径、语体旋钮（0–120°）、逐槽实测偏移、术语闸门、跨域纠缠加成、语体相干门、语料骨架渲染、八个心智算子、用户实体注入与原型平滑、纯净度/枪毙路径、留白字粒 |
 | 会话记忆 | `plugins/feynman_memory.py` | 每会话一条带阻尼的复振幅：同向保留（0.85·cosΔθ），相长叠加，上限 2.0；旧方向被抵消到 0.15 以下判退相干；下一轮以 ≤15° 的力度拉回旋钮 |
 | 接口 | `bus/main.py` | `GET /feynman/vault`、`GET /feynman/operators`、`POST /feynman/print`（可选 `user_query` / `session_id`） |
