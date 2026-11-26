@@ -4,12 +4,26 @@
 
 ## 分支
 
-| 谁 | 分支 | worktree |
-|---|---|---|
-| 主负责人（合并层 / 发布） | `main` | `Feynman_PYBOT/` |
-| 右脑联想优化 | `assoc/*` | `Feynman_PYBOT-assoc/` |
+仓库：https://github.com/chenyiyiagnes-bit/Feynman_PYBOT（private，发布时转 public）
 
-`main` 只由主负责人合并。任何人不得直接推 `main`。
+| 分支 | 用途 | 谁能推 |
+|---|---|---|
+| `main` | 稳定 / 发布 | 主负责人 |
+| `dev` | 集成分支，阶段性成果都往这里合 | 两边都可推 |
+| `assoc/*` | 右脑联想优化的特性分支 | 联想优化窗口 |
+
+流程：`assoc/*` → PR 到 `dev` → 主负责人review后合入 → 里程碑时 `dev` → `main`。
+任何人不得直接推 `main`。
+
+## 语料红线
+
+只上传代码、测试、人设 JSON、文档。以下一律不进仓库：
+
+- 任何语料原文件（`*.jsonl` 的原文库、`p8_corpus_*`、`cpt_zh.jsonl`）
+- 由语料派生的大产物（字库 `feynman_style_vault*.json`、拓扑 `*.npz`）
+- 运行时状态（`*.state.json`、`snapshots/`、`data/kb_learned/`、`data/assoc/`）
+
+`.gitignore` 已覆盖这些路径；提交前用 `git status` 再扫一眼。
 
 ## 文件所有权
 
