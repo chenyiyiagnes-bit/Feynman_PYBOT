@@ -14,6 +14,7 @@ inactive when the caller does not say which card was chosen. Both are honest
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set
@@ -62,13 +63,31 @@ class CodedCards:
 _CACHE: Dict[str, Optional[CodedCards]] = {}
 
 
+def _stale(directory: Path) -> bool:
+    """True when the coding was made from a different word list.
+
+    A rebuild changes ``terms.json`` first; until ``code_cards.py`` runs again
+    the token ids point at words that may have moved. Checking that is the
+    difference between a gate and a guess.
+    """
+    manifest = directory / "cards.coded.manifest.json"
+    terms = directory / "terms.json"
+    if not manifest.is_file() or not terms.is_file():
+        return True
+    data = json.loads(manifest.read_text(encoding="utf-8"))
+    digest = hashlib.sha256(terms.read_bytes()).hexdigest()[:16]
+    return data.get("terms_digest") != digest
+
+
 def load(lexicon_dir: Optional[str | Path]) -> Optional[CodedCards]:
     if lexicon_dir is None:
         return None
-    path = Path(lexicon_dir) / "cards.coded.jsonl"
+    directory = Path(lexicon_dir)
+    path = directory / "cards.coded.jsonl"
     key = str(path)
     if key not in _CACHE:
-        _CACHE[key] = CodedCards(path) if path.is_file() else None
+        usable = path.is_file() and not _stale(directory)
+        _CACHE[key] = CodedCards(path) if usable else None
     return _CACHE[key]
 
 

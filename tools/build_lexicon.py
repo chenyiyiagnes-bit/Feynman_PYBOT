@@ -170,7 +170,31 @@ def term_counts(core, cards: Sequence[Dict]) -> Tuple[Counter, Dict[str, int], D
     return df, tf, categories, sources
 
 
-def sorted_terms(core, cards: Sequence[Dict]) -> List[Dict]:
+def load_promotions(directory: Path) -> List[Dict]:
+    """Terms a ``promote_terms.py`` run accepted, with their provenance.
+
+    A promotion is a decision, so a full rebuild keeps it; the log is still
+    derived data and never committed, and a fresh clone simply has none.
+    """
+    path = Path(directory) / "promotions.jsonl"
+    if not path.is_file():
+        return []
+    rows = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("status") != "promoted" or not row.get("term"):
+            continue
+        rows.append({"term": str(row["term"]),
+                     "cards": list(row.get("sources") or ()),
+                     "card_count": int(row.get("cards") or 0),
+                     "reason": row.get("reason", "")})
+    return sorted(rows, key=lambda row: row["term"])
+
+
+def sorted_terms(core, cards: Sequence[Dict],
+                 promotions: Sequence[Dict] = ()) -> List[Dict]:
     df, tf, categories, sources = term_counts(core, cards)
     total = len(cards) or 1
     rows = []
@@ -192,6 +216,20 @@ def sorted_terms(core, cards: Sequence[Dict]) -> List[Dict]:
             "cards": sorted(sources[term])[:MAX_CARDS_PER_TERM],
             "card_count": len(sources[term]),
         })
+    present = {row["term"] for row in rows}
+    for row in promotions:
+        if row["term"] in present:
+            continue
+        # Promoted terms had no independent df of their own — the compound
+        # never appears as a token, which is the whole point of promoting it.
+        rows.append({
+            "term": row["term"], "df": 0, "tf": 0, "idf": 0.0,
+            "category": "promoted",
+            "cards": list(row.get("cards") or ())[:MAX_CARDS_PER_TERM],
+            "card_count": int(row.get("card_count") or 0),
+            "promoted": True, "reason": row.get("reason", ""),
+        })
+        present.add(row["term"])
     rows.sort(key=lambda row: (-row["df"], row["term"]))
     return rows
 
@@ -251,6 +289,51 @@ def dump_lines(rows: Iterable[Dict]) -> str:
                    for row in rows)
 
 
+def version_id(manifest: Dict, terms: Sequence[Dict], edges: Sequence[Dict]) -> str:
+    """Name a build by what it contains, not when it ran.
+
+    The same cards and the same rules rebuild to the same id, so a version
+    can be rebuilt, recognised, and rolled back to without bookkeeping.
+    """
+    payload = json.dumps(
+        {"manifest": {key: manifest[key] for key in
+                      ("tool_version", "language", "profile", "source_digest",
+                       "min_df", "min_pair")},
+         "terms": terms, "edges": edges},
+        ensure_ascii=False, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()[:12]
+
+
+def write(out_dir: Path, terms: Sequence[Dict], edges: Sequence[Dict],
+          manifest: Dict) -> Dict:
+    """Write one whole build: top level (active) plus a version snapshot."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    terms_text = json.dumps({"version": TOOL_VERSION, "language": manifest["language"],
+                             "profile": manifest["profile"], "terms": list(terms)},
+                            ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    edges_text = dump_lines(edges)
+    manifest = dict(manifest)
+    manifest["version"] = version_id(manifest, terms, edges)
+    manifest_text = json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+
+    version_dir = out_dir / "versions" / manifest["version"]
+    version_dir.mkdir(parents=True, exist_ok=True)
+    for name, text in (("terms.json", terms_text), ("edges.jsonl", edges_text),
+                       ("manifest.json", manifest_text)):
+        (version_dir / name).write_text(text, encoding="utf-8")
+    for name, text in (("terms.json", terms_text), ("edges.jsonl", edges_text),
+                       ("manifest.json", manifest_text)):
+        (out_dir / name).write_text(text, encoding="utf-8")
+    (out_dir / "current.json").write_text(
+        json.dumps({"version": manifest["version"],
+                    "source_digest": manifest["source_digest"],
+                    "built": manifest["built"]},
+                   ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8")
+    return manifest
+
+
 def build(persona_dir: Path, out_dir: Path | None = None,
           language: str | None = None, profile: str | None = None,
           built: str | None = None) -> Dict:
@@ -268,17 +351,11 @@ def build(persona_dir: Path, out_dir: Path | None = None,
     if not cards:
         raise SystemExit(f"{knowledge_dir} has no cards")
 
-    terms = sorted_terms(core, cards)
+    out_dir = Path(out_dir) if out_dir else persona_dir / "data" / "lexicon"
+    terms = sorted_terms(core, cards, load_promotions(out_dir))
     edges = sorted_edges(core, cards, terms)
 
     out_dir = Path(out_dir) if out_dir else persona_dir / "data" / "lexicon"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "terms.json").write_text(
-        json.dumps({"version": TOOL_VERSION, "language": language,
-                    "profile": profile, "terms": terms},
-                   ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-        encoding="utf-8")
-    (out_dir / "edges.jsonl").write_text(dump_lines(edges), encoding="utf-8")
     manifest = {
         "tool": "tools/build_lexicon.py",
         "tool_version": TOOL_VERSION,
@@ -294,10 +371,7 @@ def build(persona_dir: Path, out_dir: Path | None = None,
         "source_digest": digest(knowledge_dir),
         "note": "derived from knowledge/*.jsonl; never committed",
     }
-    (out_dir / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-        encoding="utf-8")
-    return manifest
+    return write(out_dir, terms, edges, manifest)
 
 
 def main(argv: List[str] | None = None) -> int:

@@ -8,6 +8,7 @@ the answer came from.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import tempfile
@@ -41,6 +42,12 @@ def write_coded(directory: Path) -> Path:
     (directory / "cards.coded.jsonl").write_text(
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in CODED),
         encoding="utf-8")
+    terms = (directory / "terms.json")
+    terms.write_text(json.dumps({"terms": [{"term": "电子"}, {"term": "配对"}]}),
+                     encoding="utf-8")
+    digest = hashlib.sha256(terms.read_bytes()).hexdigest()[:16]
+    (directory / "cards.coded.manifest.json").write_text(
+        json.dumps({"terms_digest": digest}), encoding="utf-8")
     return directory
 
 
