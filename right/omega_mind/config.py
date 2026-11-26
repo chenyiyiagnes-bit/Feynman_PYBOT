@@ -70,6 +70,7 @@ class PersonaConfig:
     correction_as_curiosity: bool = False
     jargon_aversion: bool = False
     politeness: float = 1.0
+    prefer_examples: bool = False
 
     # Which rule profile inside the package's language the mind reads with
     # ("default" / "classical"). The persona package declares it; the CLI and
@@ -117,6 +118,7 @@ def persona_from_data(data: Mapping) -> PersonaConfig:
             setattr(cfg, attr, list(values))
     switches = data.get("switches") or {}
     cfg.correction_as_curiosity = bool(switches.get("correction_as_curiosity", False))
+    cfg.prefer_examples = switches.get("prefer_examples") is True
     cfg.jargon_aversion = bool(switches.get("jargon_aversion", False))
     try:
         cfg.politeness = float(switches.get("politeness", 1.0))

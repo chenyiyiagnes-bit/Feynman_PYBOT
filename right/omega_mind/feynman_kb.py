@@ -21,7 +21,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from . import assoc, lang, spreading
+from . import assoc, dialogue, evidence, lang, ranking, review, spreading
 from .learner import LearnedStore, card_row, normalize
 from .paths import learned_dir_for
 
@@ -252,6 +252,8 @@ class Lookup:
     # neighbour (see assoc.py). It is never part of the answer and never
     # changes the source.
     association: Optional[str] = None
+    association_edge: Optional[dict] = None
+    diagnostics: dict = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -263,6 +265,8 @@ class Lookup:
             "alternatives": [[card_id, round(score, 4)]
                              for card_id, score in self.alternatives],
             "association": self.association,
+            "association_edge": self.association_edge,
+            **self.diagnostics,
         }
 
 
@@ -402,6 +406,12 @@ class FeynmanKB:
         self.language = language or "zh"
         self._language_explicit = language is not None
         self.docs: List[Doc] = []
+        self.by_id: Dict[str, Doc] = {}
+        self._bm25 = None
+        self._review_stamp = None
+        self._reviewed_ids = set()
+        self._review_aliases = set()
+        self._corpus_weights = {}
         self.idf: Dict[str, float] = {}
         # Off unless asked for: OMEGA_SPREADING=1 or an explicit argument.
         # The bonus is small and gated, but it still needs golden-net proof
@@ -430,6 +440,7 @@ class FeynmanKB:
         # source, so its absence must not change any answer.
         self.lexicon_dir: Optional[Path] = Path(lexicon_dir) if lexicon_dir else None
         self._edge_cache: Dict[str, Dict[str, List[Tuple[str, float]]]] = {}
+        self.managed_package = source_prefix is not None
         self.source_prefix = source_prefix or "feynman_kb"
         self.learned: Optional[LearnedStore] = None
         self.aliases: Dict[str, List[str]] = {}
@@ -583,6 +594,8 @@ class FeynmanKB:
 
     def _rebuild_idf(self) -> None:
         self.idf = self._build_idf(self.docs)
+        self.by_id = {doc.id: doc for doc in self.docs}
+        self._bm25 = None
 
     def topic_for(self, text: str, language: Optional[str] = None) -> str:
         """Coarse topic of a user utterance: the kind of the nearest card.
@@ -622,9 +635,10 @@ class FeynmanKB:
                 if doc is not None:
                     docs.append(doc)
         self.docs = docs
+        self._corpus_weights = {doc.id: dict(doc.weights) for doc in docs}
         self._source_rows = source_rows
         self.dir = path
-        self.idf = self._build_idf(docs)
+        self._rebuild_idf()
         self._spread = None
         self._load_learned()
         self.mode = f"{self.source_prefix}:{len(docs)}"
@@ -658,7 +672,8 @@ class FeynmanKB:
                 if doc is not None:
                     docs.append(doc)
         self.docs = docs
-        self.idf = self._build_idf(docs)
+        self._corpus_weights = {doc.id: dict(doc.weights) for doc in docs}
+        self._rebuild_idf()
         self.dir = path
         self._spread = None
         self.dropped_rows = dropped
@@ -687,6 +702,10 @@ class FeynmanKB:
             return None
         return LearnedStore(directory)
 
+    def uses_review(self) -> bool:
+        default = "1" if self.managed_package else "0"
+        return os.getenv("OMEGA_REVIEW_LEARNING", default) != "0"
+
     def _load_learned(self) -> None:
         """Append user-taught cards and aliases on top of the read-only corpus.
 
@@ -701,7 +720,8 @@ class FeynmanKB:
         docs = self.docs
         known = {doc.id for doc in docs}
         added = 0
-        for row in store.cards:
+        reviewed = self._review_decisions(store)
+        for row in [*store.cards, *(d["row"] for d in reviewed if "row" in d)]:
             if row.get("id") in known:
                 continue
             doc = self._row_to_doc("learned_cards", row,
@@ -713,7 +733,11 @@ class FeynmanKB:
             added += 1
         if added:
             self._rebuild_idf()
-        for card_id, phrase in store.alias_items():
+        if not self.uses_review():
+            for card_id, phrase in store.alias_items():
+                self._apply_alias(card_id, phrase)
+        self._review_aliases = {tuple(d["alias"]) for d in reviewed if "alias" in d}
+        for card_id, phrase in sorted(self._review_aliases):
             self._apply_alias(card_id, phrase)
 
     def _apply_alias(self, card_id: str, phrase: str) -> None:
@@ -805,21 +829,21 @@ class FeynmanKB:
         """
         if self.learned is None:
             return
-        live = [d for d in self.docs if not d.id.startswith("learned-")]
-        known = {doc.id for doc in live}
-        for row in self.learned.cards:
-            if row.get("id") in known:
-                continue
-            doc = self._row_to_doc("learned_cards", row, language=self.language)
-            if doc is None:
-                continue
-            live.append(doc)
-            known.add(doc.id)
-        self.docs = live
-        for card_id, phrase in self.learned.alias_items():
-            self._apply_alias(card_id, phrase)
+        keep = self.unreviewed_aliases()
+        self.docs = [doc for doc in self.docs if doc.id in self._corpus_weights]
+        for doc in self.docs:
+            doc.weights = dict(self._corpus_weights[doc.id])
+        self.aliases = {}
         self._rebuild_idf()
+        self._load_learned()
+        for card_id, phrases in keep.items():
+            for phrase in phrases:
+                self._apply_alias(card_id, phrase)
         self._spread = None
+
+    def unreviewed_aliases(self) -> dict:
+        return {cid: [phrase for phrase in phrases if (cid, phrase) not in self._review_aliases]
+                for cid, phrases in self.aliases.items()}
 
     def note_hit(self, card_id: str) -> None:
         if self.learned is not None and card_id.startswith("learned-"):
@@ -952,7 +976,7 @@ class FeynmanKB:
     def search(self, text: str, limit: int = 3,
                language: Optional[str] = None,
                min_score: Optional[float] = None,
-               prefer_kinds: Iterable[str] = ()) -> List[Tuple[float, Doc]]:
+               prefer_kinds: Iterable[str] = (), *, public_only: bool = False) -> List[Tuple[float, Doc]]:
         """Search this package's index.
 
         A request in another language is a miss, not a translation: the
@@ -964,6 +988,10 @@ class FeynmanKB:
         language = self.language
         docs = self.docs
         idf = self.idf
+        if public_only:
+            docs = [doc for doc in docs if self.public_doc(doc)]
+            if len(docs) != len(self.docs):
+                idf = self._build_idf(docs)
         if not docs:
             return []
         if language == "en" and (_EN_EPISODIC.search(text)
@@ -971,7 +999,8 @@ class FeynmanKB:
             return []
         if language != "en" and _ZH_EPISODIC.search(text):
             return []
-        expanded = self.core.bridge(self.core.expand(text))
+        query_text = self.core.query_text(text)
+        expanded = self.core.bridge(self.core.expand(query_text))
         query = set(self.core.tokens(expanded))
         if not query:
             return []
@@ -1086,7 +1115,8 @@ class FeynmanKB:
                 boosted.append((score, doc))
             scored = boosted
         if self.spreading and scored:
-            index = self._spread_index(docs)
+            index = (self._spread_index(docs) if len(docs) == len(self.docs)
+                     else spreading.npmi_neighbors(docs))
             subject = set(qweight)
             spread: List[Tuple[float, Doc]] = []
             for score, doc in scored:
@@ -1134,29 +1164,129 @@ class FeynmanKB:
             self._spread = spreading.npmi_neighbors(docs)
         return self._spread
 
+    def _review_decisions(self, store):
+        self._review_stamp = self._review_mtime(store)
+        try:
+            decisions = review.active(review.read(store))
+        except (OSError, ValueError, KeyError, TypeError):
+            decisions = []
+        self._reviewed_ids = {str(decision["row"]["id"])
+                              for decision in decisions if "row" in decision}
+        return decisions
+
+    @staticmethod
+    def _review_mtime(store):
+        if store is not None:
+            try:
+                return (store.dir / review.FILE).stat().st_mtime_ns
+            except OSError:
+                pass
+        return None
+
+    def refresh_review(self) -> None:
+        if self._review_mtime(self.learned) != self._review_stamp:
+            self.reload_learned()
+
+    def public_doc(self, doc: Doc) -> bool:
+        row = doc.row or {}
+        if (row.get("source_class") == "user_claim"
+                or row.get("origin") in ("dream_gap", "dream_correction")
+                or (doc.kind == "learned_card" and doc.id.startswith("learned-"))):
+            return doc.id in self._reviewed_ids
+        return True
+
+    def rank_candidates(self, text: str, limit: int, *, public_only: bool = False):
+        legacy = self.search(text, limit=limit, min_score=0, public_only=public_only)
+        if self._bm25 is None:
+            self._bm25 = ranking.BM25(self.docs, self.core)
+        terms = self.core.tokens(self.core.bridge(self.core.expand(self.core.query_text(text))))
+        allowed = {doc.id for doc in self.docs if self.public_doc(doc)} if public_only else None
+        bm25 = self._bm25.rank(terms, limit, allowed)
+        return legacy, bm25, ranking.fuse(legacy, bm25, limit)
+
     def lookup(self, text: str, language: Optional[str] = None,
                min_score: Optional[float] = None, limit: int = 3,
                prefer_kinds: Iterable[str] = (),
                detail: str = "normal",
-               associate: bool = False) -> Lookup:
+               associate: bool = False, *, public_only: bool = False,
+               mode: str = "legacy", structured: bool = False,
+               prefer_examples: bool = False) -> Lookup:
         """Retrieve one answer plus the score, runner-up margin and how many
-        candidates were considered. ``limit`` is what makes the margin
-        observable: with limit=1 there is no runner-up to compare against.
+        candidates were considered. Admission always compares the two best
+        eligible cards, even when the caller asks for a single candidate.
 
         ``associate=True`` appends at most one hand-confirmed association
         remark. It is chosen *after* the answer is fixed and never touches
         the source or the score.
         """
+        if (language is not None and language != self.language) or (
+                self.language == "en" and _CJK.search(text)):
+            return Lookup(None, f"{self.source_root}:no_match")
+        if public_only and evidence.hypothetical_measurement(text, self.language):
+            return Lookup(None, f"{self.source_root}:no_match",
+                          diagnostics={"decision": "hypothetical_measurement"})
         found = self._lookup(text, language=language, min_score=min_score,
                              limit=limit, prefer_kinds=prefer_kinds,
-                             detail=detail)
+                             detail=detail, public_only=public_only)
+        intent = evidence.intent_for(text, self.language)
+        diagnostics = {"intent": intent, "mode": mode}
+        ranked = []
+        if mode in ("shadow", "rrf"):
+            legacy, bm25, fused = self.rank_candidates(text, max(2, limit), public_only=public_only)
+            diagnostics["candidates"] = {
+                "legacy": [doc.id for _, doc in legacy],
+                "bm25": [doc.id for _, doc in bm25], "rrf": fused}
+            ranked = [self.by_id[cid] for cid in fused]
+            # Fusion may choose between audited candidates that also clear the
+            # lexical gate. It cannot promote a BM25-only card into speech.
+            eligible = {doc.id: score for score, doc in legacy
+                        if score >= (self.MIN_SCORE if min_score is None else min_score)}
+            if mode == "rrf" and found.text and ranked:
+                for doc in ranked:
+                    if (doc.id in eligible and eligible[doc.id] >= found.score - self.SOFT_MARGIN
+                            and evidence.compose(doc, intent, detail, prefer_examples)[0]):
+                        rivals = [score for score, other in legacy if other.id != doc.id]
+                        margin = eligible[doc.id] - max(rivals) if rivals else None
+                        found = Lookup(doc.answer_for(detail), f"{self.source_root}:{doc.id}",
+                                       eligible[doc.id], margin, found.considered,
+                                       self._matched_terms(text, doc), found.alternatives)
+                        break
+        doc = self.by_id.get(found.source.partition(":")[2]) if found.text else None
+        if doc is not None:
+            revision = dialogue.card_revision(doc)
+            diagnostics.update(card_id=doc.id, revision=revision)
+            start = doc.answer_for("rich").find(found.text)
+            if start >= 0:
+                diagnostics["card_evidence"] = {
+                    "span": [start, start + len(found.text)],
+                    "provenance": ("reviewed_local" if doc.id in self._reviewed_ids else "card_summary"),
+                }
+        if structured and doc is not None:
+            viable = [self.by_id[cid] for cid, score in found.alternatives
+                      if cid in self.by_id and score >= found.score - self.SOFT_MARGIN]
+            if evidence.conflict_among([doc, *viable]):
+                diagnostics["decision"] = "conflict"
+                return replace(found, text=None, source=f"{self.source_root}:no_match",
+                               diagnostics=diagnostics)
+            if evidence.structured_card(doc):
+                plan, reason = evidence.compose(doc, intent, detail, prefer_examples)
+                if not plan:
+                    diagnostics["decision"] = reason
+                    return replace(found, text=None, source=f"{self.source_root}:no_match",
+                                   diagnostics=diagnostics)
+                diagnostics.pop("card_evidence", None)
+                diagnostics["evidence_plan"] = plan
+                found = replace(found, text=" ".join(part["text"] for part in plan))
+        if not found.text:
+            diagnostics.setdefault("decision", "no_evidence")
         if associate and found.text:
-            return replace(found, association=self._association_for(
-                found, language))
-        return found
+            matched = self._association_for(found, language)
+            if matched is not None:
+                found = replace(found, association=matched.text, association_edge=matched.provenance())
+        return replace(found, diagnostics=diagnostics)
 
     def _association_for(self, found: Lookup,
-                         language: Optional[str]) -> Optional[str]:
+                         language: Optional[str]) -> Optional[assoc.Match]:
         prefix = self.source_root + ":"
         if not found.source.startswith(prefix):
             return None
@@ -1172,18 +1302,92 @@ class FeynmanKB:
         # about it, and the runner-up may be the same subject restated.
         skip = {card_id}
         skip.update(other for other, _score in found.alternatives)
-        return graph.sentence(card_id, language=language, titles=titles,
-                              exclude=skip)
+        return graph.select(card_id, language=language, titles=titles,
+                            exclude=skip)
 
     def _assoc_graph(self) -> Optional[assoc.AssocGraph]:
         if self._assoc is None:
-            self._assoc = assoc.load(self.assoc_path)
+            path = self.assoc_path
+            if path is None and self.dir is not None:
+                path = self.dir.parent / "data" / "assoc" / "assoc_edges.jsonl"
+            self._assoc = assoc.load(path) if path is not None else assoc.AssocGraph([])
         return self._assoc
+
+    def follow_up(self, card_id: str, kind: str, target: str,
+                  spoken: Tuple[str, ...]) -> Optional[str]:
+        passage, _ = self.follow_up_evidence(card_id, kind, target, spoken)
+        return passage
+
+    def follow_up_evidence(self, card_id: str, kind: str, target: str,
+                           spoken: Tuple[str, ...]):
+        """Select a passage or an audited relation for a grounded follow-up."""
+        card = self.by_id.get(card_id)
+        if card is None:
+            return None, None
+        core = self.core
+        cue = {"why": core.explanation, "boundary": core.condition,
+               "rephrase": core.example}[kind]
+        body = card.answer_for("rich")
+        passages = re.split(r"(?<=[。！？])\s*|(?<=[.!?])\s+|\n+", body)
+        passages = [passage.strip() for passage in passages if passage.strip()]
+        relevant = None
+        if target:
+            # For a conditional, short Chinese nouns may be a single
+            # character. Use the condition itself, not the generic tail
+            # ("那该怎么办"), as weak evidence alongside the bigrams.
+            if kind == "boundary":
+                target = re.split(r"[，,；;]", target, maxsplit=1)[0]
+            terms = set(core.tokens(target))
+            chars = set(core.unigrams(target)) if kind == "boundary" else set()
+
+            def overlap(passage: str) -> Tuple[int, int]:
+                matched = len(terms.intersection(core.tokens(passage)))
+                if matched >= 2 and matched * 2 >= len(terms):
+                    return matched, 0
+                intro, colon, _ = passage.partition("：")
+                if chars and colon and target[0] in intro and core.example.search(intro):
+                    # A one-character reference must name the example's
+                    # subject (苗), not just share its condition (干、水).
+                    shared = len(chars.intersection(core.unigrams(passage)))
+                    if shared >= 2:
+                        return 0, shared
+                return 0, 0
+
+            passages = [passage for passage in passages
+                        if any(overlap(passage)) and cue.search(passage)]
+            passages.sort(key=overlap, reverse=True)
+            if kind == "boundary":
+                # An example can introduce a conditional after a colon.
+                # Quote the condition itself when the introduction is extra.
+                for i, passage in enumerate(passages):
+                    _, colon, condition_text = passage.partition("：")
+                    if colon and cue.search(condition_text):
+                        passages[i] = condition_text.strip()
+            selected = next((p for p in passages if p not in spoken), None)
+            if selected:
+                return selected, None
+
+            def relevant(line: str) -> bool:
+                return overlap(line)[0] > 0
+
+        edge_kind = {"why": "premise", "boundary": "boundary",
+                     "rephrase": "same_mechanism"}[kind]
+        graph = self._assoc_graph()
+        titles = {doc.id: doc.title for doc in self.docs}
+        match = graph.select(
+            card_id, language=self.language, titles=titles,
+            kinds=(edge_kind,), spoken=spoken, relevant=relevant)
+        if match is not None:
+            return match.text, match.provenance()
+        if target:
+            return None, None
+        return next((p for p in passages if cue.search(p) and p not in spoken
+                     and (kind != "rephrase" or not any(p in s for s in spoken))), None), None
 
     def _lookup(self, text: str, language: Optional[str] = None,
                 min_score: Optional[float] = None, limit: int = 3,
                 prefer_kinds: Iterable[str] = (),
-                detail: str = "normal") -> Lookup:
+                detail: str = "normal", public_only: bool = False) -> Lookup:
         # A package names its own source; there is no cross-package index to
         # borrow a prefix from.
         prefix = self.source_root
@@ -1193,8 +1397,8 @@ class FeynmanKB:
         # withholding ("be careful / say nothing"), so it stays strict.
         soft_ok = min_score is None or min_score <= self.MIN_SCORE
         floor = min(threshold, self.SOFT_SCORE) if soft_ok else threshold
-        hits = self.search(text, language=language, limit=limit,
-                           min_score=floor, prefer_kinds=prefer_kinds)
+        hits = self.search(text, language=language, limit=max(2, limit),
+                           min_score=floor, prefer_kinds=prefer_kinds, public_only=public_only)
         alternatives = tuple((doc.id, score) for score, doc in hits[:3])
         if not hits or hits[0][0] < threshold:
             if hits:
@@ -1237,7 +1441,7 @@ class FeynmanKB:
                        language: Optional[str] = None) -> Tuple[str, ...]:
         """Query tokens that hit this card — the evidence behind the answer."""
         core = self.core
-        tokens = set(core.tokens(core.bridge(core.expand(text))))
+        tokens = set(core.tokens(core.bridge(core.expand(core.query_text(text)))))
         shared = sorted(tok for tok in tokens if tok in doc.weights)
         return tuple(shared[:10])
 

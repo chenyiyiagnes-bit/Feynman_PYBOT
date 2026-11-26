@@ -46,7 +46,7 @@ def main(argv=None) -> int:
     parser.add_argument("--lang", choices=("zh", "en"), default=None,
                         help="reply language (default: persona file)")
     parser.add_argument("--bridge", action="store_true",
-                        help="enable the left-brain typesetter (needs OMEGA_LEFT_BRIDGE data)")
+                        help="format selected evidence with the left brain")
     parser.add_argument("--state", default=None,
                         help="state file to save between runs")
     parser.add_argument("--no-state", action="store_true",
@@ -71,10 +71,10 @@ def main(argv=None) -> int:
 
     if args.bridge:
         responder = engine.left_responder
-        if responder is None or not responder.available():
+        if responder is None or not responder.evidence_available():
             reason = (responder.last_error if responder is not None
                       else "LeftResponder not constructed")
-            print(f"桥未启用：{reason}（需要 OMEGA_LEFT_BRIDGE 数据，见 docs/bridge.md）")
+            print(f"证据排版不可用：{reason}（见 docs/bridge.md）")
 
     persona = load(resolve_persona(args.persona))
     speaker = persona.name or args.persona

@@ -2,10 +2,8 @@
 
 Default OFF. Set ``OMEGA_LEFT_BRIDGE=1`` to enable.
 
-When disabled — or when anything at all goes wrong (missing vault, missing
-dependencies, an exception inside the typesetter) — ``reply()`` returns None
-and the caller falls back to its normal path. That is the whole contract:
-**the bridge may not break a conversation it cannot improve.**
+Knowledge packages use ``plan_evidence()`` to lay out selected passages.
+The standalone typesetter uses ``reply()`` with its own vault.
 """
 
 from __future__ import annotations
@@ -85,6 +83,37 @@ class LeftResponder:
         return self._vault
 
     # -- public --------------------------------------------------------------
+
+    def evidence_available(self) -> bool:
+        if not self.enabled:
+            return False
+        try:
+            layout = importlib.import_module("left.plugins.evidence_layout")
+            if not callable(layout.plan_breaks):
+                self.last_error = "evidence layout has no planner"
+                return False
+        except Exception as exc:  # noqa: BLE001 - readiness must degrade gracefully
+            self.last_error = f"evidence layout unavailable: {exc}"
+            return False
+        self.last_error = None
+        return True
+
+    def plan_evidence(self, evidence: str, *, source: str, language: str,
+                      detail: str, dialogue_act: str,
+                      candidates: tuple[int, ...]) -> tuple[int, ...]:
+        """Select from the caller's verified pauses in a sourced passage."""
+        if not self.enabled or not source or not evidence or not candidates:
+            return ()
+        try:
+            layout = importlib.import_module("left.plugins.evidence_layout")
+            plan = layout.plan_breaks(
+                evidence, language=language, detail=detail,
+                dialogue_act=dialogue_act, candidates=candidates)
+        except Exception as exc:  # noqa: BLE001 - display is optional
+            self.last_error = f"evidence layout failed: {exc}"
+            return ()
+        self.last_error = None
+        return plan
 
     @staticmethod
     def _jargon_aversion(persona) -> bool:

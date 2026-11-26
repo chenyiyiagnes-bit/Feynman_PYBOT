@@ -28,6 +28,7 @@ shape, not meaning. Source files are local only and never enter the repo.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import hashlib
 import json
 import sys
@@ -100,6 +101,7 @@ def check(root: Optional[Path] = None,
     report = {"root": str(root), "packages": {}}
     for manifest in sorted(root.glob("*/persona.json")):
         name = manifest.parent.name
+        language = feynman_kb.package_language(manifest.parent)
         if package and name != package:
             continue
         knowledge = manifest.parent / "knowledge"
@@ -107,7 +109,7 @@ def check(root: Optional[Path] = None,
             continue
         package_row = {"cards": 0, "with_support": 0, "valid": 0,
                        "unverified": 0, "missing": 0, "invalid": [],
-                       "missing_ids": []}
+                       "missing_ids": [], "reviewed": 0, "translation_markers": 0}
         for file in sorted(knowledge.glob("*.jsonl")):
             if file.name in feynman_kb.SKIP_FILES:
                 continue
@@ -122,6 +124,9 @@ def check(root: Optional[Path] = None,
                 card_id = str(row.get("id") or f"{file.stem}:{lineno}")
                 block = f"{name}:{file.stem}:{card_id}"
                 package_row["cards"] += 1
+                if row.get("translation_of") or row.get("source_language") not in (
+                        None, "", language):
+                    package_row["translation_markers"] += 1
                 support = row.get("support")
                 if support is None:
                     package_row["missing"] += 1
@@ -142,6 +147,9 @@ def check(root: Optional[Path] = None,
                     package_row["unverified"] += 1
                 else:
                     package_row["valid"] += 1
+                    if all(entry.get("reviewed_by") and entry.get("quote_sha256")
+                           for entry in support):
+                        package_row["reviewed"] += 1
         report["packages"][name] = package_row
     return report
 
@@ -152,7 +160,8 @@ def render(report: dict, list_missing: bool = False) -> str:
         lines.append(
             f"{name:<16} cards {row['cards']:>4}  supported {row['with_support']:>4}"
             f"  valid {row['valid']:>4}  unverified {row['unverified']:>4}"
-            f"  missing {row['missing']:>4}  invalid {len(row['invalid'])}")
+            f"  missing {row['missing']:>4}  invalid {len(row['invalid'])}"
+            f"  reviewed {row['reviewed']}  translation markers {row['translation_markers']}")
         for problem in row["invalid"][:20]:
             lines.append(f"      INVALID {problem['card']}: {problem['problem']}")
         if list_missing:
@@ -160,6 +169,29 @@ def render(report: dict, list_missing: bool = False) -> str:
                 lines.append(f"      missing  {block}")
     return "\n".join(lines)
 
+
+
+def pilot(package: Path, questions: Path, limit: int) -> list[dict]:
+    """Prioritize human review with a fixed query list, without editing cards."""
+    from omega_mind.dialogue import card_revision
+    from omega_mind.golden_queries import for_package
+
+    kb = feynman_kb.FeynmanKB(knowledge_dir=str(package / "knowledge"),
+                              source_prefix=package.name)
+    suite = json.loads(questions.read_text(encoding="utf-8"))
+    counts = Counter(cid for case in suite["cases"] if case.get("language") == kb.language
+                     for cid in case["acceptable"] if cid in kb.by_id)
+    golden, _ = for_package(package.name, package.parent)
+    counts.update(cid for _, language, acceptable in golden if language == kb.language
+                  for cid in acceptable if cid in kb.by_id)
+    physics = {"physics_guardrail", "physics_card", "lecture_card", "physics_edge", "teachable_unit"}
+    ordered = sorted((doc for doc in kb.docs if doc.id in counts and doc.kind in physics
+                      and not doc.row.get("support")),
+                     key=lambda doc: (-counts[doc.id], doc.id))
+    return [{"id": doc.id, "title": doc.title, "revision": card_revision(doc),
+             "query_count": counts[doc.id], "current_source": doc.row.get("source"),
+             "status": "needs_source_and_review"}
+            for doc in ordered[:limit]]
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -170,8 +202,25 @@ def main(argv=None) -> int:
     parser.add_argument("--list-missing", action="store_true",
                         help="print every card still without support")
     parser.add_argument("--json", metavar="PATH", help="write the full report")
+    parser.add_argument("--pilot", type=int, metavar="N",
+                        help="emit up to N unannotated cards prioritized for review")
+    parser.add_argument("--queries", type=Path,
+                        default=ROOT / "tests" / "data" / "confirm_set_v1.json")
     args = parser.parse_args(argv)
 
+    if args.pilot is not None:
+        if not args.package or args.pilot <= 0:
+            parser.error("--pilot requires a positive count and --package")
+        root = Path(args.root) if args.root else feynman_kb.PACKAGES_ROOT
+        if not (root / args.package / "persona.json").is_file():
+            parser.error("package not found")
+        body = json.dumps(pilot(root / args.package, args.queries, args.pilot),
+                          ensure_ascii=False, indent=2) + "\n"
+        if args.json:
+            Path(args.json).write_text(body, encoding="utf-8")
+        else:
+            print(body, end="")
+        return 0
     report = check(root=args.root, package=args.package)
     print(render(report, list_missing=args.list_missing))
     if args.json:

@@ -18,6 +18,7 @@ Deleting ``data/kb_learned`` rolls every repair back, as it always could.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tempfile
 import time
@@ -257,7 +258,7 @@ def _package_of(kb: FeynmanKB) -> Optional[str]:
     return package.name if (package / "persona.json").is_file() else None
 
 
-def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
+def golden_ok(kb: FeynmanKB, *, public_only: bool = False) -> Tuple[bool, List[str]]:
     """The same net the tests use: no repair may flip a known answer.
 
     A package that ships ``evals/golden.json`` is checked against its own
@@ -266,6 +267,10 @@ def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
     questions — those cards are not in this index, and every one of them
     would "fail"). Only a KB built without a package at all (tests, one-off
     scripts) falls back to the merged net, filtered by language.
+
+    ``public_only`` audits what a stranger may see: for a managed package the
+    learned overlay (corrections, taught cards) is skipped, so the gate cannot
+    be satisfied by content the reviewer never approved.
     """
     failures: List[str] = []
     prefix = kb.source_root
@@ -275,25 +280,22 @@ def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
         if not golden and not negatives:
             return (True, [])
     else:
-        golden = tuple(row for row in GOLDEN if row[1] == kb.language)
-        negatives = tuple(row for row in NEGATIVES if row[1] == kb.language)
-    golden = tuple(row for row in golden if row[1] == kb.language)
-    negatives = tuple(row for row in negatives if row[1] == kb.language)
+        golden, negatives = GOLDEN, NEGATIVES
     for query, language, acceptable in golden:
         if language != kb.language:
-            continue  # the other package's cards are not in this index
-        _, source = kb.answer(query)
-        if not source.startswith(prefix + ":"):
-            failures.append(f"{query} -> {source}")
             continue
-        card = source[len(prefix) + 1:]
+        result = kb.lookup(query, public_only=public_only, structured=public_only)
+        if not result.source.startswith(prefix + ":"):
+            failures.append(f"{query} -> {result.source}")
+            continue
+        card = result.source[len(prefix) + 1:]
         if card not in acceptable:
             failures.append(f"{query} -> {card}")
     for query, language in negatives:
         if language != kb.language:
             continue
-        text, _ = kb.answer(query)
-        if text is not None:
+        if kb.lookup(query, public_only=public_only,
+                     structured=public_only).text is not None:
             failures.append(f"{query} -> answered")
     return (not failures, failures)
 
@@ -311,7 +313,7 @@ def _trial_kb(kb: FeynmanKB, store: LearnedStore) -> Optional[FeynmanKB]:
                           profile=kb.profile,
                           lexicon_dir=(str(kb.lexicon_dir)
                                        if kb.lexicon_dir else None),
-                          source_prefix=kb.source_prefix,
+                          source_prefix=(kb.source_prefix if kb.managed_package else None),
                           spreading=kb.spreading)
     except Exception:
         return None
@@ -470,7 +472,7 @@ def _trial_copy(kb: FeynmanKB, store: LearnedStore
             language=kb.language,
             profile=kb.profile,
             lexicon_dir=(str(kb.lexicon_dir) if kb.lexicon_dir else None),
-            source_prefix=kb.source_prefix,
+            source_prefix=(kb.source_prefix if kb.managed_package else None),
             spreading=kb.spreading)
     except Exception:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -488,9 +490,15 @@ def _card_by_body(store: LearnedStore, body: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+_EN_CORRECTION = re.compile(
+    r"^\s*(?:no[,!]|that's (?:wrong|not right)|that is (?:wrong|not right)|"
+    r"you (?:misunderstood|got (?:it|that) wrong)|correction\s*:)", re.I)
+
+
 def _clean_correction(text: str) -> str:
     """Drop the "不对，其实…" wrapper so the stored answer reads cleanly."""
-    body = text.strip()
+    body = _EN_CORRECTION.sub("", text.strip(), count=1).lstrip(" ,.:!")
+    body = re.sub(r"^actually[, ]+", "", body, flags=re.I)
     for marker in sorted(CORRECTION_MARKERS, key=len, reverse=True):
         if body.startswith(marker):
             body = body[len(marker):].lstrip("，,。.！!？? 　")
@@ -576,7 +584,7 @@ def _mint_correction(kb: FeynmanKB, store: LearnedStore, question: str,
 
 def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
           cortisol: float = 0.0, today: Optional[str] = None,
-          prior: Any = None) -> AuditReport:
+          prior: Any = None, *, review_only: bool = False) -> AuditReport:
     """Look over one dream's episodes and repair what went wrong.
 
     ``batch`` is captured before consolidation flips ``dreamed``; the caller
@@ -623,6 +631,8 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
     corrections: List[Tuple[Any, Any]] = []
     previous_of: Dict[int, Any] = {}
     for prev, nxt in zip(sequence, sequence[1:]):
+        if getattr(prev, "user", None) != getattr(nxt, "user", None):
+            continue
         previous_of[id(nxt)] = prev
         if id(nxt) not in batch_ids:
             continue
@@ -631,13 +641,14 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
             continue
         prev_source = str(getattr(prev, "source", "") or "")
         prev_text = str(getattr(prev, "text", "") or "").strip()
-        if _is_miss(prev_source) or _is_weak(prev):
-            if any(mark in follow for mark in CORRECTION_MARKERS):
-                corrections.append((prev, nxt))
-            if prev_text and (
-                    any(mark in follow for mark in CORRECTION_MARKERS)
-                    or similarity(normalize(follow),
-                                  normalize(prev_text)) >= SAME_FOLLOWUP):
+        explicit = (any(follow.startswith(mark) for mark in CORRECTION_MARKERS)
+                    or bool(_EN_CORRECTION.match(follow)))
+        weak = _is_miss(prev_source) or _is_weak(prev)
+        if explicit and (weak or (review_only and prev_source.startswith(kb.source_root + ":"))):
+            corrections.append((prev, nxt))
+        if weak:
+            if prev_text and (explicit or similarity(normalize(follow),
+                                                     normalize(prev_text)) >= SAME_FOLLOWUP):
                 # A miss followed by "不对" or by the same question again is
                 # one failure with two turns, not two nights of it.
                 finding = _record(history, prev_text, "broken_followup",
@@ -653,6 +664,21 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
     _write_queue(store, report.findings, today)
 
     report.read_only = cortisol > MAX_CORTISOL
+    if review_only:
+        from .review import queue_candidate
+
+        for prev, nxt in corrections[:MAX_CORRECTIONS]:
+            question = str(getattr(prev, "text", "")).strip()
+            correction = _clean_correction(str(getattr(nxt, "text", "")))
+            if question and CORRECTION_MIN_TEXT <= len(correction) <= CORRECTION_MAX_TEXT:
+                candidate = queue_candidate(store, "correction",
+                                            {"question": question, "text": correction,
+                                             "previous_source": prev.source})
+                report.actions.append(Action("correction_candidate", candidate or "",
+                                             question, False, "pending review"))
+        for finding in report.findings[:MAX_ACTIONS]:
+            queue_candidate(store, "gap", {"question": finding.question})
+        return report
     # Baseline: the shelf must already pass before any repair may touch it.
     gate_ok, gate_failures = golden_ok(kb)
     report.gate_ok = gate_ok

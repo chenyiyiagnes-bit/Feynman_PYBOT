@@ -92,9 +92,13 @@ class TestGoldenRetrieval(unittest.TestCase):
         wide = real_kb("zh").lookup("什么是阻尼", limit=3)
         self.assertIsNotNone(wide.margin)
         self.assertLess(wide.margin, 0.05)
+        # Admission always compares the two best eligible cards, even when
+        # the caller asks for only one: the margin is how a near-tie is
+        # noticed, so it cannot depend on the page size.
         narrow = real_kb("zh").lookup("什么是阻尼", limit=1)
-        self.assertIsNone(narrow.margin)
-        self.assertEqual(narrow.considered, 1)
+        self.assertAlmostEqual(narrow.margin, wide.margin, places=9)
+        self.assertEqual(narrow.source, wide.source)
+        self.assertEqual(narrow.considered, 2)
 
     def test_lookup_exposes_score_and_source(self):
         found = real_kb("zh").lookup("什么是扩散")

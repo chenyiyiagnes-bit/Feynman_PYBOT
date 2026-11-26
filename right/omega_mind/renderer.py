@@ -5,7 +5,8 @@ Rules:
   may be replaced).
 - A prefix is used at most twice per rolling five turns.
 - The same prefix is never used twice in a row.
-- Consecutive identical outputs are impossible: endings are cycled LRU.
+- Statements can vary their endings. Questions and literal replies keep
+  their original punctuation and may repeat.
 """
 
 from __future__ import annotations
@@ -56,8 +57,13 @@ class Renderer:
         self.applied: List[Tuple[int, str]] = []  # (turn, prefix) for tests/inspection
 
     def render(self, base_reply: str, directive: StyleDirective, turn: int,
-               language: str = "zh", posture: str = "answer") -> str:
+               language: str = "zh", posture: str = "answer", *,
+               preserve: bool = False) -> str:
         base = base_reply.strip()
+        if preserve or base.endswith(("？", "?")):
+            self._last_reply = base
+            self._recent.setdefault(language, deque(maxlen=50)).append(base)
+            return base
         # A guarded turn drops the familiar ornaments: no catchphrase and no
         # playful ending. The facts are unchanged; only the shell tightens.
         careful = posture == "careful"

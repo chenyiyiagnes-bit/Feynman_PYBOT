@@ -22,7 +22,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set
 
 # Spoken kinds, strongest first. "same_domain" is filing, not explanation;
 # it stays in the data so the graph is complete, but it is never said aloud.
@@ -53,6 +53,11 @@ class Edge:
     origin: str = "human"
     mechanism_en: str = ""
     difference_en: str = ""
+    language: str = ""
+    mapping: tuple[tuple[str, str], ...] = ()
+    relation: str = ""
+    source: str = ""
+    misconceptions: tuple[str, ...] = ()
 
     def to_row(self) -> dict:
         row = {"a": self.a, "b": self.b, "kind": self.kind,
@@ -62,6 +67,11 @@ class Edge:
             value = getattr(self, key)
             if value:
                 row[key] = value
+        if self.language:
+            row.update(language=self.language, mapping=[list(pair) for pair in self.mapping],
+                       relation=self.relation, source=self.source)
+            if self.misconceptions:
+                row["misconceptions"] = list(self.misconceptions)
         return row
 
     @property
@@ -80,7 +90,17 @@ def problems(edge: Edge) -> List[str]:
         out.append(f"unknown kind {edge.kind!r}")
     if edge.origin not in ORIGINS:
         out.append(f"unknown origin {edge.origin!r}")
-    if edge.origin == "human" and edge.kind in SPOKEN:
+    if edge.language:
+        if edge.language not in ("zh", "en"):
+            out.append("unknown edge language")
+        if edge.origin == "human" and edge.kind in SPOKEN:
+            if not (edge.source.strip() and edge.relation.strip() and edge.mapping
+                    and all(a.strip() and b.strip() for a, b in edge.mapping)):
+                out.append("typed edge needs a source, a relation and matched variables")
+            if len({a for a, _ in edge.mapping}) != len(edge.mapping) or len(
+                    {b for _, b in edge.mapping}) != len(edge.mapping):
+                out.append("typed edge variable mapping must be one to one")
+    if edge.origin == "human" and edge.kind in SPOKEN and edge.language != "en":
         if not edge.mechanism.strip():
             out.append("spoken edge needs a mechanism")
         if edge.kind in ("same_mechanism", "boundary") \
@@ -93,7 +113,7 @@ def problems(edge: Edge) -> List[str]:
     # The two languages are parallel branches, not a translation pair in
     # either direction: a spoken edge carries prose for both, and the English
     # prose may never borrow Chinese characters.
-    if edge.origin == "human" and edge.kind in SPOKEN:
+    if edge.origin == "human" and edge.kind in SPOKEN and edge.language != "zh":
         if not edge.mechanism_en.strip():
             out.append("spoken edge needs an English mechanism")
         if edge.kind in ("same_mechanism", "boundary") \
@@ -104,6 +124,19 @@ def problems(edge: Edge) -> List[str]:
         if _CJK.search(value):
             out.append(f"{field_name} must be English")
     return out
+
+
+@dataclass(frozen=True)
+class Match:
+    text: str
+    edge: Edge
+
+    def provenance(self) -> dict:
+        edge = self.edge
+        return {"id": edge.key, "from": edge.a, "to": edge.b,
+                "kind": edge.kind, "origin": edge.origin,
+                "mapping": [list(pair) for pair in edge.mapping],
+                "relation": edge.relation, "source": edge.source}
 
 
 class AssocGraph:
@@ -128,24 +161,37 @@ class AssocGraph:
 
     def sentence(self, card_id: str, language: str = "zh",
                  titles: Optional[Mapping[str, str]] = None,
-                 exclude: Iterable[str] = ()) -> Optional[str]:
+                 exclude: Iterable[str] = (), **selection) -> Optional[str]:
+        match = self.select(card_id, language, titles, exclude, **selection)
+        return match.text if match is not None else None
+
+    def select(self, card_id: str, language: str = "zh",
+                 titles: Optional[Mapping[str, str]] = None,
+                 exclude: Iterable[str] = (), *,
+                 kinds: Sequence[str] = SPOKEN,
+                 spoken: Sequence[str] = (),
+                 relevant: Optional[Callable[[str], bool]] = None) -> Optional[Match]:
         """At most one confirmed line about ``card_id``, or None.
 
         Kind priority is fixed (same_mechanism, boundary, premise); ties keep
         file order, so the first hand-written edge wins deterministically.
+        A follow-up may restrict the kind, match a topic and skip lines
+        already spoken.
         ``exclude`` names cards the answer is already about (the caller
         passes the other top hits) — never explain what the user asked for.
         """
         skip: Set[str] = set(exclude)
         titles = titles or {}
-        for kind in SPOKEN:
+        for kind in kinds:
             for edge in self.confirmed(card_id):
-                if edge.kind != kind:
+                if edge.kind != kind or (edge.language and edge.language != language):
                     continue
                 other = edge.b if edge.a == card_id else edge.a
                 # A boundary edge exists to say "this is not that". It must
                 # speak even when the other card is the runner-up — that is
                 # exactly the confusion it was written for.
+                if titles and other not in titles:
+                    continue
                 if other in skip and kind != "boundary":
                     continue
                 if kind != "same_mechanism" and edge.a != card_id:
@@ -153,8 +199,10 @@ class AssocGraph:
                 line = _render(edge, card_id, other, kind, language, titles)
                 cap = (MAX_SENTENCE_CHARS_EN if language == "en"
                        else MAX_SENTENCE_CHARS)
-                if line and len(line) <= cap:
-                    return line
+                if (line and len(line) <= cap
+                        and (relevant is None or relevant(line))
+                        and not any(line in text for text in spoken)):
+                    return Match(line, edge)
         return None
 
 
@@ -208,6 +256,20 @@ def load(path: Optional[Path] = None) -> AssocGraph:
         except json.JSONDecodeError:
             dropped += 1
             continue
+        if not isinstance(row, dict):
+            dropped += 1
+            continue
+        mapping = row.get("mapping", [])
+        if (not isinstance(mapping, list) or any(
+                not isinstance(pair, list) or len(pair) != 2
+                or any(not isinstance(name, str) for name in pair) for pair in mapping)):
+            dropped += 1
+            continue
+        misconceptions = row.get("misconceptions", [])
+        if not isinstance(misconceptions, list) or any(
+                not isinstance(item, str) or not item.strip() for item in misconceptions):
+            dropped += 1
+            continue
         edge = Edge(
             a=str(row.get("a", "")),
             b=str(row.get("b", "")),
@@ -217,6 +279,11 @@ def load(path: Optional[Path] = None) -> AssocGraph:
             origin=str(row.get("origin", "human")),
             mechanism_en=str(row.get("mechanism_en", "")),
             difference_en=str(row.get("difference_en", "")),
+            language=str(row.get("language", "")),
+            mapping=tuple((a, b) for a, b in mapping),
+            relation=str(row.get("relation", "")),
+            source=str(row.get("source", "")),
+            misconceptions=tuple(misconceptions),
         )
         if problems(edge):
             dropped += 1

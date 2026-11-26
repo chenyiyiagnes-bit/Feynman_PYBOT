@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import os
+from pathlib import Path
 import select
 import sys
 
@@ -12,7 +14,7 @@ from .config import LEGACY_PERSONA_IDS, PACKAGES_ROOT, get_persona
 from .cube import render_net
 from .engine import LANGUAGES, MindEngine, has_cjk
 from .feynman_kb import DEFAULT_DIRS, FeynmanKB, package_language
-from .paths import learned_dir_for
+from .paths import default_state_path, learned_dir_for
 from .profiler import format_profile, profile_corpus
 from .view import render_ascii
 
@@ -81,11 +83,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="omega_mind")
     parser.add_argument("--persona", default="generic",
                         help="'generic' (no cards), or a package id under personas/")
-    parser.add_argument("--save", default="mind_state.json")
+    parser.add_argument("--save", help="explicit state file path")
     parser.add_argument("--load", action="store_true", help="resume from --save if it exists")
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--lang", choices=LANGUAGES, default=None,
-                        help="reply language mode (default: saved or zh)")
+                        help="reply language mode (default: package language, saved language or zh)")
     parser.add_argument("--serve", type=int, metavar="PORT", default=None,
                         help="run HTTP/WebSocket server instead of the CLI")
     parser.add_argument("--profile", action="store_true",
@@ -106,12 +108,17 @@ def main(argv: list[str] | None = None) -> int:
         # profile and derived state, exactly like app.runtime.build() does.
         kb = FeynmanKB.for_package(package.name, root=package.parent,
                                    learned_dir=str(learned_dir_for(package.name)))
+        if args.save is None:
+            # State belongs to one persona, in the shared state directory —
+            # not in the checkout (the repo is public) and not in the cwd.
+            args.save = str(default_state_path(package.name))
     else:
         # 'generic' means no cards, not "the first package on disk".
         kb = FeynmanKB.disabled()
+        if args.save is None:
+            args.save = str(default_state_path("generic"))
     language = _package_language(package, args.lang)
 
-    import os
     if args.load and os.path.exists(args.save):
         engine = MindEngine.load(args.save, persona=persona, language=language,
                                  kb=kb)
@@ -135,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"OmegaMind · persona={persona.name} · lang={engine.language} · "
           "/state /save /reset /cube /turn /memory /relations /dream "
-          "/profile /challenge /lang /exit")
+          "/profile /challenge /analogy /lang /exit")
     print(f"[kb] {engine.kb.mode} · [pybot] {engine.bridge.mode}")
     challenge_on = False
     hinted: set[str] = set()
@@ -242,6 +249,16 @@ def main(argv: list[str] | None = None) -> int:
                 if dream.audit and not dream.audit.get("error"):
                     print("  " + reflect_summary(dream.audit, engine.language))
             continue
+        if text.startswith("/analogy "):
+            session = engine.challenge(reset=True)
+            prompt = session.open_analogy(text.partition(" ")[2].strip())
+            if prompt is None:
+                print("这张卡目前没有可练习的已审核类比。" if engine.language == "zh"
+                      else "This card doesn't have a reviewed analogy to practice.")
+            else:
+                print(prompt)
+            challenge_on = prompt is not None
+            continue
         if text == "/challenge":
             session = engine.challenge(reset=True)
             if not session.available():
@@ -263,14 +280,23 @@ def main(argv: list[str] | None = None) -> int:
                       else "（离开挑战模式）")
                 continue
             if text == "/next":
-                print(session.next_unit())
+                prompt = session.next_unit()
+                if prompt is not None:
+                    print(prompt)
+                else:
+                    challenge_on = False
                 continue
+            practicing_analogy = session.analogy is not None
             grade = session.submit(text)
             print(grade.feedback)
+            if practicing_analogy and session.analogy is None:
+                if grade.revealed:
+                    print(grade.revealed)
+                challenge_on = False
             if args.verbose:
                 print(f"  verdict={grade.verdict} score={grade.score} "
                       f"matched={grade.matched} missing={grade.missing}")
-            if session.unit is None and grade.verdict == "strong":
+            if not practicing_analogy and session.unit is None and grade.verdict == "strong":
                 print(session.next_unit())
             continue
 

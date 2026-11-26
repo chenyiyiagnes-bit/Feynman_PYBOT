@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
+from .dialogue import normalized
 from .feynman_kb import Doc, FeynmanKB, _stem_en, _tokens
 
 
@@ -116,6 +117,7 @@ class ChallengeSession:
         self.units: List[Doc] = kb.teachable_units(language=self.language)
         self.index = -1
         self.unit: Optional[Doc] = None
+        self.analogy = None
         self.tries = 0
         self.done = 0
         # unit id -> {"asked": int, "strong": int}. A unit answered strongly is
@@ -134,6 +136,7 @@ class ChallengeSession:
             "done": self.done,
             "active": self.unit.id if self.unit is not None else None,
             "language": self.language,
+            "analogy": self.analogy.key if self.analogy is not None else None,
             "mastery": {uid: dict(counts) for uid, counts in self.mastery.items()},
         }
 
@@ -149,6 +152,10 @@ class ChallengeSession:
                        "strong": int(v.get("strong", 0))}
             for uid, v in raw.items() if isinstance(v, dict)
         }
+        self.analogy = None
+        if data.get("analogy") and data.get("language") == self.language:
+            self.analogy = next((edge for edge in self.kb._assoc_graph().edges
+                                 if edge.key == data["analogy"] and self._eligible_edge(edge)), None)
         active = data.get("active")
         self.unit = next((d for d in self.units if d.id == active), None) \
             if active else None
@@ -170,7 +177,57 @@ class ChallengeSession:
     def _mastered(self, unit_id: str) -> bool:
         return self.mastery.get(unit_id, {}).get("strong", 0) > 0
 
+    def _eligible_edge(self, edge) -> bool:
+        return (edge.origin == "human" and edge.kind == "same_mechanism"
+                and edge.language == self.language and bool(edge.mapping)
+                and edge.a in self.kb.by_id and edge.b in self.kb.by_id)
+
+    def open_analogy(self, card_id: str) -> Optional[str]:
+        edge = next((edge for edge in self.kb._assoc_graph().confirmed(card_id)
+                     if self._eligible_edge(edge)), None)
+        if edge is None:
+            return None
+        self.analogy, self.unit, self.tries = edge, None, 0
+        first, second = (self.kb.by_id[cid].title for cid in (edge.a, edge.b))
+        if self.language == "en":
+            return f"What corresponds between {first} and {second}? Explain the shared relation and where the analogy breaks."
+        return f"在{first}和{second}里，哪些变量相对应？说说共同的关系，以及这个类比在哪里失效。"
+
+    def _grade_analogy(self, answer: str) -> Grade:
+        edge = self.analogy
+        items = [*(" ".join(pair) for pair in edge.mapping), edge.relation,
+                 edge.difference_en if self.language == "en" else edge.difference]
+        norm = normalized(answer)
+        matched = [" ".join(pair) for pair in edge.mapping
+                   if all(normalized(term) in norm for term in pair)]
+        matched.extend(part for part in items[-2:] if normalized(part) in norm)
+        wrong = any(normalized(phrase) in norm for phrase in edge.misconceptions)
+        score = len(matched) / len(items) if not wrong else 0
+        verdict = "strong" if score == 1 else "partial" if score >= .5 else "weak"
+        zh = self.language == "zh"
+        feedback = ({
+            "strong": "变量、关系和适用范围都讲到了。",
+            "partial": "再补一补变量对应、共同关系或适用范围。",
+            "weak": "先找出对应的变量，再解释它们怎么相互影响。",
+        } if zh else {
+            "strong": "You covered the variables, the shared relation and where it breaks.",
+            "partial": "Keep going. Check the variables, the shared relation and its limits.",
+            "weak": "Start with the matching variables, then explain how they interact.",
+        })[verdict]
+        self.tries += 1
+        self._affect(verdict)
+        grade = Grade(verdict, round(score, 2), matched,
+                      [part for part in items if part not in matched], feedback)
+        if verdict == "strong":
+            self.done += 1
+            self.analogy = None
+        elif self.tries >= 2:
+            grade.revealed = "。".join(items) if zh else ". ".join(items)
+            self.analogy = None
+        return grade
+
     def next_unit(self) -> Optional[str]:
+        self.analogy = None
         if not self.units:
             return None
         # Serve an unmastered card first; once all are mastered, keep cycling
@@ -191,6 +248,8 @@ class ChallengeSession:
         return self.engine.say(f"{lead}{question}")
 
     def submit(self, answer: str) -> Grade:
+        if self.analogy is not None:
+            return self._grade_analogy(answer)
         if self.unit is None:
             self.next_unit()
         assert self.unit is not None
@@ -231,6 +290,19 @@ class ChallengeSession:
             strong, partial = 0.55, 0.3
         else:
             strong, partial = 0.5, 0.28
+        rubric = unit.get("mechanism_rubric")
+        if isinstance(rubric, dict):
+            # Explicit phrases are authored in the unit's own language. A
+            # known misconception overrides term overlap, even at full score.
+            norm = normalized(answer)
+            misconceptions = [p for p in rubric.get("misconceptions", [])
+                              if isinstance(p, str) and normalized(p)]
+            required = [p for p in rubric.get("required", [])
+                        if isinstance(p, str) and normalized(p)]
+            if any(normalized(phrase) in norm for phrase in misconceptions):
+                score = min(score, partial / 2)
+            elif required and not all(normalized(phrase) in norm for phrase in required):
+                score = min(score, (strong + partial) / 2)
         if score >= strong:
             verdict = "strong"
         elif score >= partial:
