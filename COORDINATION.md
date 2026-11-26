@@ -49,3 +49,15 @@
 - `python3 -m unittest discover -s right/omega_mind/tests` 全绿
 - 不提交任何 `*.state.json`、`snapshots/`、`data/kb_learned/`、`data/assoc/`
 - 不提交语料
+
+## 上传权：只有一个
+
+本机所有会话共用同一套 GitHub 凭据，因此**不需要每个 BOT 自己有账号**。
+
+| 角色 | 怎么交付 | 谁上传 |
+|---|---|---|
+| 联想优化窗口 | 在 `Feynman_PYBOT-assoc` worktree 里本地提交到 `assoc/association` | 它可自行 `git push`；不确定就只提交，主负责人推 |
+| Astra / 老庄开发 | 成品放进 `incoming/laozhuang/`（保持完整目录结构） | 主负责人检查后提交到 `persona/laozhuang` |
+| Gemini / 审核 | 报告放进 `incoming/gemini/`，文件名 `YYYY-MM-DD-gemini.md` | 主负责人提交到 `review/gemini` |
+
+主负责人每次上传前检查：只动该分支对应目录、无语料、无状态文件、`tools/validate_persona.py` 通过。
