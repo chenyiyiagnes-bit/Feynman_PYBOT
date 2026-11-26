@@ -81,5 +81,82 @@ class TestWithRealLeftBrain(unittest.TestCase):
             self.assertIn("style_deg", result.params)
 
 
+class TestProfileThreading(unittest.TestCase):
+    """The package's segmentation profile must reach the typesetter."""
+
+    def test_reply_passes_the_persona_profile(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp) / "vault.json"
+            vault.write_text("{}", encoding="utf-8")
+            seen = {}
+
+            class Request:
+                def __init__(self, **kwargs):
+                    seen.update(kwargs)
+
+            class Operators:
+                def __init__(self, **kwargs):
+                    self.kwargs = kwargs
+
+            class FakeVault:
+                def __init__(self, path):
+                    self.path = path
+
+            class Weaver:
+                ParagraphRequest = Request
+
+                @staticmethod
+                def weave_paragraph(v, request):
+                    return {"paragraph": "好"}
+
+            class Typesetter:
+                OperatorWeights = Operators
+                Vault = FakeVault
+
+            r = LeftResponder(vault_path=vault, enabled=True)
+            r._weaver = Weaver
+            r._request_cls = Typesetter
+            p = persona_mod.load(ROOT / "personas" / "laozhuang-zh" / "persona.json")
+            result = r.reply("水善利万物", p.baselines, p)
+            self.assertIsNotNone(result, r.last_error)
+            self.assertEqual(seen.get("language_profile"), "classical")
+
+    def test_a_persona_without_a_profile_passes_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp) / "vault.json"
+            vault.write_text("{}", encoding="utf-8")
+            seen = {}
+
+            class Request:
+                def __init__(self, **kwargs):
+                    seen.update(kwargs)
+
+            class Operators:
+                def __init__(self, **kwargs):
+                    pass
+
+            class FakeVault:
+                def __init__(self, path):
+                    pass
+
+            class Weaver:
+                ParagraphRequest = Request
+
+                @staticmethod
+                def weave_paragraph(v, request):
+                    return {"paragraph": "ok"}
+
+            class Typesetter:
+                OperatorWeights = Operators
+                Vault = FakeVault
+
+            r = LeftResponder(vault_path=vault, enabled=True)
+            r._weaver = Weaver
+            r._request_cls = Typesetter
+            p = persona_mod.load(ROOT / "personas" / "laozhuang-en" / "persona.json")
+            self.assertIsNotNone(r.reply("water", p.baselines, p), r.last_error)
+            self.assertEqual(seen.get("language_profile"), "default")
+
+
 if __name__ == "__main__":
     unittest.main()

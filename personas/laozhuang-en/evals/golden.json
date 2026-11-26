@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "language": "en",
+  "golden": [
+    {
+      "query": "what is the Way",
+      "acceptable": [
+        "lz-en-001"
+      ]
+    },
+    {
+      "query": "what does the highest good is like water mean",
+      "acceptable": [
+        "lz-en-004"
+      ]
+    },
+    {
+      "query": "how do fortune and misfortune depend on each other",
+      "acceptable": [
+        "lz-en-005"
+      ]
+    },
+    {
+      "query": "what is the use of the useless",
+      "acceptable": [
+        "lz-en-006"
+      ]
+    },
+    {
+      "query": "what does Zhuang Zhou's butterfly dream mean",
+      "acceptable": [
+        "lz-en-010"
+      ]
+    },
+    {
+      "query": "what does Cook Ding carving an ox show",
+      "acceptable": [
+        "lz-en-009"
+      ]
+    },
+    {
+      "query": "what does acting without forcing mean",
+      "acceptable": [
+        "lz-en-003"
+      ]
+    },
+    {
+      "query": "what does great skill looks clumsy mean",
+      "acceptable": [
+        "lz-en-002"
+      ]
+    },
+    {
+      "query": "governing a large state is like cooking a small fish",
+      "acceptable": [
+        "lz-en-012"
+      ]
+    },
+    {
+      "query": "what is the happiness of fish",
+      "acceptable": [
+        "lz-en-008"
+      ]
+    },
+    {
+      "query": "what is the space inside a bowl for",
+      "acceptable": [
+        "lz-en-017"
+      ]
+    },
+    {
+      "query": "what does not contending mean",
+      "acceptable": [
+        "lz-en-011"
+      ]
+    },
+    {
+      "query": "how should you check an alleged quotation",
+      "acceptable": [
+        "lz-en-018"
+      ]
+    }
+  ],
+  "negatives": [
+    "how do I invest in stocks",
+    "write me a binary search",
+    "what is a neutrino",
+    "tell me a joke"
+  ]
+}

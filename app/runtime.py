@@ -25,15 +25,31 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "right") not in sys.path:
     sys.path.insert(0, str(ROOT / "right"))
 
-from omega_mind.config import PersonaConfig, persona_from_data  # noqa: E402
+from omega_mind.config import (  # noqa: E402
+    LEGACY_PERSONA_IDS,
+    PersonaConfig,
+    persona_from_data,
+)
 from omega_mind.engine import MindEngine  # noqa: E402
 from omega_mind.feynman_kb import FeynmanKB  # noqa: E402
+from omega_mind.paths import (  # noqa: E402
+    STATE_DIR_ENV,
+    default_state_path,
+    learned_dir_for,
+    state_base,
+)
 from omega_mind.pybot_bridge import PyBotBridge  # noqa: E402
 
 from bridge import LeftResponder, Persona, PersonaError, load  # noqa: E402
 
 DEFAULT_PERSONAS = ROOT / "personas"
-STATE_DIR_ENV = "PYBOT_STATE_DIR"
+
+#: The state helpers are defined once in ``omega_mind.paths`` so the CLI can
+#: share them without importing this module (and its left-brain dependency).
+__all__ = [
+    "DEFAULT_PERSONAS", "STATE_DIR_ENV", "build", "default_state_path",
+    "learned_dir_for", "resolve_persona", "state_base", "to_config",
+]
 
 
 def to_config(persona: Persona) -> PersonaConfig:
@@ -51,46 +67,29 @@ def knowledge_dir(persona: Persona) -> Optional[Path]:
 
 def resolve_persona(target: Union[str, Path],
                     personas_root: Union[str, Path] = DEFAULT_PERSONAS) -> Path:
-    """Accept an id ("feynman-zh"), a directory, or the persona.json itself."""
-    path = Path(target).expanduser()
+    """Accept an id ("feynman-zh"), a directory, or the persona.json itself.
+
+    Legacy ids ("feynman") resolve to the package they used to mean — the
+    same alias the right brain's ``get_persona`` applies, so a name does not
+    mean two different things on two sides. ``"generic"`` is not a package:
+    it is the right brain's card-less persona, and it is refused here with a
+    message that says where it does belong.
+    """
+    name = LEGACY_PERSONA_IDS.get(str(target), target)
+    if str(name) == "generic":
+        raise PersonaError(
+            "'generic' is not a persona package; it has no knowledge cards. "
+            "Use MindEngine(persona=PersonaConfig()) directly, or name a "
+            "package under personas/.")
+    path = Path(name).expanduser()
     if path.is_file():
         return path
     if path.is_dir() and (path / "persona.json").is_file():
         return path / "persona.json"
-    candidate = Path(personas_root) / str(target) / "persona.json"
+    candidate = Path(personas_root) / str(name) / "persona.json"
     if candidate.is_file():
         return candidate
     raise PersonaError(f"no persona named {target!r} under {personas_root}")
-
-
-def state_base() -> Path:
-    """Where every mind's state lives: ``$PYBOT_STATE_DIR`` or ``~/.pybot``.
-
-    Before the rename the state sat in ``~/.feynman_pybot``. If the new
-    directory does not exist yet and the old one does, keep using the old
-    one — an upgrade must not look like a wipe. Nothing is moved or copied.
-    """
-    override = os.getenv(STATE_DIR_ENV)
-    if override:
-        return Path(override)
-    home = Path.home()
-    current = home / ".pybot"
-    legacy = home / ".feynman_pybot"
-    if not current.exists() and legacy.exists():
-        return legacy
-    return current
-
-
-def default_state_path(persona_id: str) -> Path:
-    return state_base() / f"{persona_id}.mind_state.json"
-
-
-def learned_dir_for(persona: Persona) -> Path:
-    """Learned overlay lives with the mind's state, one folder per persona.
-
-    Two personas never share what one of them was taught.
-    """
-    return state_base() / persona.id / "kb_learned"
 
 
 def assoc_path_for(persona: Persona) -> Path:
@@ -120,7 +119,7 @@ def build(target: Union[str, Path],
     kb_dir = knowledge_dir(persona)
     lexicon_dir = persona.root / "data" / "lexicon"
     kb = (FeynmanKB(knowledge_dir=str(kb_dir),
-                    learned_dir=str(learned_dir_for(persona)),
+                    learned_dir=str(learned_dir_for(persona.id)),
                     assoc_path=str(assoc_path_for(persona)),
                     language=package_language,
                     profile=persona.language_profile,

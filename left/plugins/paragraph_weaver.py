@@ -72,6 +72,9 @@ class ParagraphRequest(BaseModel):
     auto_phase: bool = False
     breathing: bool = False
     cocreate: bool = False
+    # 切词规则 profile（persona.json 的 language_profile）：与右脑检索同一套
+    # 边界；默认 default，classical 包由桥从人设传入
+    language_profile: Optional[str] = None
 
 
 def _pick_skeleton(vault: Vault, kinds, style_deg: float,
@@ -262,6 +265,7 @@ def weave_paragraph(vault: Vault, req: ParagraphRequest, ext_hash: str = "",
         retrieve_consequence=req.retrieve_consequence,
         retrieval_gates=req.retrieval_gates,
         specific_pref=req.specific_pref,
+        language_profile=req.language_profile,
     )
     base = run_feynman_print(vault, print_req, ext_hash=ext_hash,
                              learned_edges=learned_edges,

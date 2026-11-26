@@ -71,6 +71,13 @@ class PersonaConfig:
     jargon_aversion: bool = False
     politeness: float = 1.0
 
+    # Which rule profile inside the package's language the mind reads with
+    # ("default" / "classical"). The persona package declares it; the CLI and
+    # app.runtime both take it from here, so boundaries agree everywhere.
+    language_profile: str = "default"
+    # Opt-in for the derived term graph; the package decides, not the machine.
+    recall_expansion: bool = False
+
     # cubie name -> replacement regex list
     override_triggers: Dict[str, List[str]] = field(default_factory=dict)
     disable_cubies: List[str] = field(default_factory=list)
@@ -115,6 +122,8 @@ def persona_from_data(data: Mapping) -> PersonaConfig:
         cfg.politeness = float(switches.get("politeness", 1.0))
     except (TypeError, ValueError):
         cfg.politeness = 1.0
+    cfg.language_profile = str(data.get("language_profile") or "default")
+    cfg.recall_expansion = bool(data.get("recall_expansion") or False)
     cfg.disable_cubies = list(data.get("disable_cubies") or [])
     cfg.override_triggers = {k: list(v)
                              for k, v in (data.get("override_triggers") or {}).items()}

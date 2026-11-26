@@ -9,13 +9,14 @@ question; negative cases must stay unanswered.
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from omega_mind.feynman_kb import FeynmanKB
-from omega_mind.golden_queries import GOLDEN, NEGATIVES
+from omega_mind.golden_queries import nets_by_package
 
 
 def real_kb(language: str = "zh") -> FeynmanKB:
@@ -26,58 +27,77 @@ def real_kb(language: str = "zh") -> FeynmanKB:
     return kb
 
 
+def package_kb(name: str) -> FeynmanKB:
+    """The package's own KB, over an empty learned dir.
+
+    Each net's rows name cards from that package's own index, so they can
+    only be checked against that package's KB — a Feynman KB cannot answer a
+    Zhuangzi question, and answering the Zhuangzi traps would be leakage.
+    A throwaway learned dir keeps the result independent of whatever a
+    developer machine happened to teach into the shared state directory.
+    """
+    kb = FeynmanKB.for_package(name, learned_dir=tempfile.mkdtemp(prefix="omega-golden-"))
+    if kb is None or not kb.available():
+        raise unittest.SkipTest(f"package {name!r} is not installed")
+    return kb
+
+
 class TestGoldenRetrieval(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.nets = nets_by_package()
         cls.kbs = {}
-        for language in {lang for _, lang, _ in GOLDEN}:
+        for name in cls.nets:
             try:
-                cls.kbs[language] = real_kb(language)
+                cls.kbs[name] = package_kb(name)
             except unittest.SkipTest:
                 continue
 
-    def kb_for(self, language: str) -> FeynmanKB:
-        if language not in self.kbs:
-            raise unittest.SkipTest(f"no {language!r} package installed")
-        return self.kbs[language]
+    def kb_for_package(self, name: str) -> FeynmanKB:
+        if name not in self.kbs:
+            raise unittest.SkipTest(f"package {name!r} is not installed")
+        return self.kbs[name]
 
     def test_known_questions_hit_the_right_card(self):
-        for query, language, acceptable in GOLDEN:
-            with self.subTest(query=query, language=language):
-                kb = self.kb_for(language)
-                _, source = kb.answer(query)
-                root = kb.source_root + ":"
-                self.assertTrue(source.startswith(root), source)
-                card = source[len(root):]
-                self.assertIn(card, acceptable,
-                              f"{query!r} -> {card}, expected {acceptable}")
+        for name, (golden, _) in self.nets.items():
+            for query, language, acceptable in golden:
+                with self.subTest(package=name, query=query):
+                    kb = self.kb_for_package(name)
+                    self.assertEqual(kb.language, language)
+                    _, source = kb.answer(query)
+                    root = kb.source_root + ":"
+                    self.assertTrue(source.startswith(root),
+                                    f"{query!r} -> {source} (not the package's own index)")
+                    card = source[len(root):]
+                    self.assertIn(card, acceptable,
+                                  f"{query!r} -> {card}, expected {acceptable}")
 
     def test_other_language_is_a_miss_not_a_fallback(self):
-        zh = self.kb_for("zh")
-        if "en" not in self.kbs:
-            self.skipTest("no English package installed")
+        zh = real_kb("zh")
         text, source = zh.answer("what is diffraction", language="en")
         self.assertIsNone(text, source)
         self.assertTrue(source.endswith(":no_match"), source)
 
     def test_traps_stay_unanswered(self):
-        for query, language in NEGATIVES:
-            with self.subTest(query=query, language=language):
-                kb = self.kb_for(language)
-                text, source = kb.answer(query)
-                self.assertIsNone(text, f"{query!r} answered with {source}")
-                self.assertTrue(source.endswith(":no_match"), source)
+        for name, (_, traps) in self.nets.items():
+            for query, language in traps:
+                with self.subTest(package=name, query=query):
+                    kb = self.kb_for_package(name)
+                    self.assertEqual(kb.language, language)
+                    text, source = kb.answer(query)
+                    self.assertIsNone(text, f"{query!r} answered with {source}")
+                    self.assertTrue(source.endswith(":no_match"), source)
 
     def test_lookup_reports_margin_and_limit(self):
-        wide = self.kb_for("zh").lookup("什么是阻尼", limit=3)
+        wide = real_kb("zh").lookup("什么是阻尼", limit=3)
         self.assertIsNotNone(wide.margin)
         self.assertLess(wide.margin, 0.05)
-        narrow = self.kb_for("zh").lookup("什么是阻尼", limit=1)
+        narrow = real_kb("zh").lookup("什么是阻尼", limit=1)
         self.assertIsNone(narrow.margin)
         self.assertEqual(narrow.considered, 1)
 
     def test_lookup_exposes_score_and_source(self):
-        found = self.kb_for("zh").lookup("什么是扩散")
+        found = real_kb("zh").lookup("什么是扩散")
         self.assertEqual(found.source, "feynman_kb:C_DIFFUSE")
         self.assertGreater(found.score, 0.3)
         self.assertEqual(found.to_dict()["source"], "feynman_kb:C_DIFFUSE")

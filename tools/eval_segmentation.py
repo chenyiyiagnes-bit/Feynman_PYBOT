@@ -169,9 +169,13 @@ def evaluate_retrieval(scheme: Callable[[str], List[str]],
     golden, negatives = for_package(package.name)
     language = _package_language(package)
     with patched(scheme):
+        # The package's own profile matters: classical 老庄 text segmented as
+        # modern Chinese drops tokens and silently scores a package against
+        # the wrong boundaries.
         kb = feynman_kb.FeynmanKB(
             knowledge_dir=str(package / "knowledge"),
-            language=language, source_prefix=package.name)
+            language=language, source_prefix=package.name,
+            profile=feynman_kb.package_profile(package))
         if not kb.available():
             return {"unavailable": f"no cards in {package / 'knowledge'}"}
         prefix = kb.source_root + ":"

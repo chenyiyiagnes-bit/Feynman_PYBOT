@@ -86,10 +86,11 @@ DAY = 86400.0
 NOON = 12 * 3600.0
 
 
-def fresh_engine(learned_dir: Any = None, auto_save: bool = False) -> MindEngine:
+def fresh_engine(learned_dir: Any = None, auto_save: bool = False,
+                 persona_id: str = "feynman-zh") -> MindEngine:
     kb = FeynmanKB(learned_dir=str(learned_dir)) if learned_dir else FeynmanKB()
     return MindEngine(
-        persona=get_persona("feynman-zh"),
+        persona=get_persona(persona_id),
         bridge=PyBotBridge.disabled(),
         kb=kb,
         auto_save=auto_save,
@@ -97,8 +98,9 @@ def fresh_engine(learned_dir: Any = None, auto_save: bool = False) -> MindEngine
     )
 
 
-def run(out_path: Path, learned_dir: Any = None) -> Dict[str, Any]:
-    engine = fresh_engine(learned_dir=learned_dir)
+def run(out_path: Path, learned_dir: Any = None,
+        persona_id: str = "feynman-zh") -> Dict[str, Any]:
+    engine = fresh_engine(learned_dir=learned_dir, persona_id=persona_id)
     store = LearnedStore(learned_dir) if learned_dir else LearnedStore()
     # A shared starting point so the A/B comparison is fair: same scramble,
     # same clock origin.
@@ -163,20 +165,31 @@ def run(out_path: Path, learned_dir: Any = None) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:]]
+    if "-h" in args or "--help" in args:
+        print("usage: evolve_curriculum.py [SNAPSHOT] [--fresh] [--learned-dir DIR] [--persona ID]")
+        raise SystemExit(0)
     learned: Any = None
     fresh = False
+    persona_id = "feynman-zh"
     if "--fresh" in args:
         args.remove("--fresh")
         fresh = True
-    if "--learned-dir" in args:
-        idx = args.index("--learned-dir")
-        learned = Path(args[idx + 1])
-        del args[idx:idx + 2]
+    for flag in ("--learned-dir", "--persona"):
+        if flag in args:
+            idx = args.index(flag)
+            value = args[idx + 1] if idx + 1 < len(args) else None
+            if value is None:
+                raise SystemExit(f"{flag} needs a value")
+            if flag == "--learned-dir":
+                learned = Path(value)
+            else:
+                persona_id = value
+            del args[idx:idx + 2]
     if fresh:
         import tempfile
         learned = Path(tempfile.mkdtemp(prefix="omega-learned-"))
     target = Path(args[0]) if args else (ROOT / "snapshots" / "evolved_snapshot.json")
-    report = run(target, learned_dir=learned)
+    report = run(target, learned_dir=learned, persona_id=persona_id)
     queue = load_queue(LearnedStore(learned) if learned else None)
     if queue:
         print(f"self-evolution queue ({len(queue)} item(s), from dream audits):")

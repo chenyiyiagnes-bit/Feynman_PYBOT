@@ -516,7 +516,8 @@ def _is_abstract_word(word: str) -> bool:
 
 
 def extract_entities(query: str, jargon: Optional[List[str]] = None, limit: int = 3,
-                     prefer: Optional[set] = None) -> List[str]:
+                     prefer: Optional[set] = None,
+                     profile: Optional[str] = None) -> List[str]:
     """从用户问句里抽可注入的名词实体（最多 limit 个，按出现顺序去重）。
 
     只用词性 + 黑名单，不猜语义：抽错了最多排版句里出现一个生词，
@@ -536,7 +537,7 @@ def extract_entities(query: str, jargon: Optional[List[str]] = None, limit: int 
         # jieba 不可用时词边界仍与右脑一致：共用 lang 规则，而不是按标点整段切
         # （整段切会把"熵到底是什么"当成一个词，实体永远抽不出来）。
         from plugins.word_segmentation import segment
-        pairs = [(w, "n") for w in segment(q)]
+        pairs = [(w, "n") for w in segment(q, profile=profile)]
     for word, flag in pairs:
         if len(word) == 1:
             if word not in SINGLE_CHAR_ENTITY:
@@ -609,6 +610,8 @@ class PrintRequest(BaseModel):
     # P21 同构空间：用户实体的"没有共现 ×0.35"离散惩罚换成连续相容乘子；
     # 默认关，关时不导入 plugins/isomorphism_p21，与旧版逐字节一致
     use_isomorphism: bool = False
+    # 切词规则 profile：与右脑同一套边界（classical 包由桥传入）
+    language_profile: Optional[str] = None
 
 
 def _select_per_slot(vault: Vault, style_deg: float, per_slot: int, topic: str,
@@ -1319,7 +1322,8 @@ def run_feynman_print(vault: Vault, req: PrintRequest, ext_hash: str = "",
     # 默认 3^4=81 条路径；条件级联时放宽候选池，由束搜索控制组合数
     per_slot = 8 if conditioned else 3
     user_entities = extract_entities(req.user_query, vault.jargon, limit=per_slot,
-                                     prefer={g["word"] for g in vault.by_slot["entity"]})
+                                     prefer={g["word"] for g in vault.by_slot["entity"]},
+                                     profile=req.language_profile)
     # 问句谓语注入动作槽：字库里没有"发光/吸/浮"时拿问句动词直接当动作字。
     # "发光"这类词既可能被抽成实体（vn 白名单）又可能是谓语：取掉它以后
     # 问句还有主语，就当动作；没有主语了（"摩擦为什么会生热"），它仍是实体。

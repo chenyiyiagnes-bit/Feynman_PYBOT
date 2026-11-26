@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "language": "zh",
+  "golden": [
+    {
+      "query": "上善若水是什么意思",
+      "acceptable": [
+        "lz-zh-004"
+      ]
+    },
+    {
+      "query": "祸福为什么互相依存",
+      "acceptable": [
+        "lz-zh-005"
+      ]
+    },
+    {
+      "query": "无用之用是什么意思",
+      "acceptable": [
+        "lz-zh-006"
+      ]
+    },
+    {
+      "query": "庄周梦蝶讲的是什么",
+      "acceptable": [
+        "lz-zh-010"
+      ]
+    },
+    {
+      "query": "庖丁解牛说明了什么",
+      "acceptable": [
+        "lz-zh-009"
+      ]
+    },
+    {
+      "query": "大巧若拙是什么意思",
+      "acceptable": [
+        "lz-zh-002"
+      ]
+    },
+    {
+      "query": "治大国若烹小鲜",
+      "acceptable": [
+        "lz-zh-012"
+      ]
+    },
+    {
+      "query": "知道自己要什么",
+      "acceptable": [
+        "lz-zh-ddj-33"
+      ]
+    },
+    {
+      "query": "碗里空着的地方有什么用",
+      "acceptable": [
+        "lz-zh-017"
+      ]
+    },
+    {
+      "query": "天地为什么能长久",
+      "acceptable": [
+        "lz-zh-ddj-07"
+      ]
+    },
+    {
+      "query": "水为什么总往低处流",
+      "acceptable": [
+        "lz-zh-ddj-08"
+      ]
+    },
+    {
+      "query": "濠梁之辩说的是什么",
+      "acceptable": [
+        "lz-zh-008"
+      ]
+    },
+    {
+      "query": "夫唯不争",
+      "acceptable": [
+        "lz-zh-011"
+      ]
+    },
+    {
+      "query": "好听的话和靠得住的话",
+      "acceptable": [
+        "lz-zh-ddj-81"
+      ]
+    },
+    {
+      "query": "野鸡为什么不愿意进笼子",
+      "acceptable": [
+        "lz-zh-ys-pheasant"
+      ]
+    },
+    {
+      "query": "柴烧完了火为什么还在",
+      "acceptable": [
+        "lz-zh-ys-fire"
+      ]
+    }
+  ],
+  "negatives": [
+    "帮我订一张机票",
+    "帮我写一段排序代码",
+    "中微子是什么",
+    "讲个笑话"
+  ]
+}

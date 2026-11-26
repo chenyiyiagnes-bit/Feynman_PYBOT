@@ -37,7 +37,13 @@
 
 跑起来的 mind 只审自己包那张网（`reflect.golden_ok` → `golden_queries.for_package`）；
 两包合并的 `GOLDEN`/`NEGATIVES` 只留给测试与评测工具。骨架里没有一个卡 id——
-没有 `evals/golden.json` 的包就是没有网，不会被拿去对别人的题集。
+没有 `evals/golden.json` 的包就是没有网：`golden_ok` 直接放行（没有可审的题，
+不能借别人的题——那些卡不在这个索引里，条条都会"失败"）。
+新增包应该补一张自己的网；空网只表示"暂未审"，不表示"审过没问题"。
+
+出厂包的网各自维护：`feynman-zh` 77 题 / `feynman-en` 69 题 /
+`laozhuang-zh` 16 题 / `laozhuang-en` 13 题。加题前先在真实 KB 上跑一遍
+`answer()`，确认它现在真的命中再写进去；题集不追新卡，只钉住已经可靠的行为。
 
 ## 3. 评测一个切法：`tools/eval_segmentation.py`
 
@@ -58,7 +64,7 @@ python3 tools/eval_segmentation.py --json out.json    # 完整报告（含逐条
 | 方案 | 实现 | 现状 |
 |---|---|---|
 | `bigram` | 出厂基线，`feynman_kb._tokens` 的字符二元组 | **在用的索引方案** |
-| `words` | `LanguageCore.segment()` 的词级切分 | 人工切分集 F1 0.825（bigram 0.389），但 golden 46/47（`什么是电介质` 命中 opt-009 而非 opt-020）——**未晋升** |
+| `words` | `LanguageCore.segment()` 的词级切分 | 人工切分集 F1 0.825（bigram 0.389），但 golden 165/175（例：`什么是电介质` 命中 opt-009 而非 opt-020）——**未晋升** |
 | `jieba` | jieba 精确模式 | 只是对照；没装就报告 `unavailable`，不假装跑过 |
 
 `--strict` 的判据：出厂的 `bigram` 必须仍全中自己包的网（命中 < 总数、陷阱被答出
@@ -78,6 +84,13 @@ python3 tools/eval_segmentation.py --json out.json    # 完整报告（含逐条
 - 关（默认，所有出厂包）：`lexicon_dir` 为 `None`，有没有构建过词表图回答都一样；
 - 开：`app/runtime.build()` 和语言切换时的 `FeynmanKB.for_language()` 都会指向
   包自己的 `data/lexicon/`；文件不存在时照样为空操作。
+
+## 5. 学到的卡放在状态目录，不放进包
+
+学到的新卡与别名（`kb_learned`）对所有入口只有一个位置：
+`$PYBOT_STATE_DIR`（默认 `~/.pybot`）`/<包 id>/kb_learned`（`omega_mind.paths`）。
+应用、CLI、评测脚本都走 `learned_dir_for()`，谁教过的卡另一处也看得到。
+包目录只放随仓库分发的数据；检出放在只读路径或多人共享时，学习也不会丢。
 
 开之前必须在真实卡片上过 golden 网（`tests/test_recall_expansion.py::RealCorpus`），
 宁可不开，也不让「这台机器碰巧构建过词表」改变同一个包的答案。

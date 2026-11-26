@@ -130,6 +130,7 @@ class LeftResponder:
                 nonce=max(0, min(int(nonce), 1_000_000)),
                 session_id=session_id,
                 operators=operators,
+                language_profile=getattr(persona, "language_profile", None),
                 **params.flags,
             )
             result = weaver.weave_paragraph(self._vault_obj(), request)

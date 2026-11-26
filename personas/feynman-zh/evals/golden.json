@@ -292,6 +292,187 @@
       "acceptable": [
         "comp-002"
       ]
+    },
+    {
+      "query": "阿琳是谁",
+      "acceptable": [
+        "self-006"
+      ]
+    },
+    {
+      "query": "你为什么拒领国家科学奖章",
+      "acceptable": [
+        "bio-032"
+      ]
+    },
+    {
+      "query": "挑战者号事故你怎么调查的",
+      "acceptable": [
+        "bio-033"
+      ]
+    },
+    {
+      "query": "反粒子是什么",
+      "acceptable": [
+        "qed-004"
+      ]
+    },
+    {
+      "query": "两个电子之间的力是怎么来的",
+      "acceptable": [
+        "qed-008"
+      ]
+    },
+    {
+      "query": "精细结构常数为什么是1/137",
+      "acceptable": [
+        "qed-009"
+      ]
+    },
+    {
+      "query": "光子有质量吗",
+      "acceptable": [
+        "qed-010"
+      ]
+    },
+    {
+      "query": "麦克斯韦方程跟光有什么关系",
+      "acceptable": [
+        "flp-ii-18"
+      ]
+    },
+    {
+      "query": "最小作用量原理是什么",
+      "acceptable": [
+        "flp-ii-19"
+      ]
+    },
+    {
+      "query": "双缝实验说明了什么",
+      "acceptable": [
+        "flp-iii-01"
+      ]
+    },
+    {
+      "query": "对称性为什么带来守恒律",
+      "acceptable": [
+        "part-009"
+      ]
+    },
+    {
+      "query": "超导为什么没有电阻",
+      "acceptable": [
+        "cm-001",
+        "cm-002"
+      ]
+    },
+    {
+      "query": "半导体的能带是怎么回事",
+      "acceptable": [
+        "cm-005"
+      ]
+    },
+    {
+      "query": "声子是什么",
+      "acceptable": [
+        "cm-007"
+      ]
+    },
+    {
+      "query": "超流氦为什么能爬墙",
+      "acceptable": [
+        "cm-004"
+      ]
+    },
+    {
+      "query": "希格斯玻色子是什么",
+      "acceptable": [
+        "part-008"
+      ]
+    },
+    {
+      "query": "什么叫概率的随机游走",
+      "acceptable": [
+        "flp-i-06"
+      ]
+    },
+    {
+      "query": "万有引力是怎么工作的",
+      "acceptable": [
+        "flp-i-07"
+      ]
+    },
+    {
+      "query": "牛顿第二定律到底在说什么",
+      "acceptable": [
+        "flp-i-09"
+      ]
+    },
+    {
+      "query": "静电场的高斯定律是什么",
+      "acceptable": [
+        "flp-ii-04"
+      ]
+    },
+    {
+      "query": "电磁感应是什么",
+      "acceptable": [
+        "flp-ii-17"
+      ]
+    },
+    {
+      "query": "什么是正常模",
+      "acceptable": [
+        "flp-i-47"
+      ]
+    },
+    {
+      "query": "车牌号巧合为什么不是奇迹",
+      "acceptable": [
+        "math-comp-007"
+      ]
+    },
+    {
+      "query": "怎么心算立方根",
+      "acceptable": [
+        "math-comp-008"
+      ]
+    },
+    {
+      "query": "想模拟自然为什么得用量子计算机",
+      "acceptable": [
+        "math-comp-005"
+      ]
+    },
+    {
+      "query": "发现的乐趣在哪里",
+      "acceptable": [
+        "life-art-005"
+      ]
+    },
+    {
+      "query": "超导里的能隙是什么",
+      "acceptable": [
+        "cm-002"
+      ]
+    },
+    {
+      "query": "弱相互作用为什么那么慢",
+      "acceptable": [
+        "part-004"
+      ]
+    },
+    {
+      "query": "为什么电子磁矩不是正好2",
+      "acceptable": [
+        "qed-006"
+      ]
+    },
+    {
+      "query": "重整化处理无穷大是骗人的吗",
+      "acceptable": [
+        "qed-005"
+      ]
     }
   ],
   "negatives": [

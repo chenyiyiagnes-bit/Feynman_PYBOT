@@ -114,6 +114,312 @@
       "acceptable": [
         "opt-018"
       ]
+    },
+    {
+      "query": "how did you investigate the Challenger disaster",
+      "acceptable": [
+        "bio-033"
+      ]
+    },
+    {
+      "query": "what is an antiparticle",
+      "acceptable": [
+        "qed-004"
+      ]
+    },
+    {
+      "query": "where does the force between two electrons come from",
+      "acceptable": [
+        "qed-008"
+      ]
+    },
+    {
+      "query": "why is the fine structure constant 1/137",
+      "acceptable": [
+        "qed-009"
+      ]
+    },
+    {
+      "query": "does the photon have mass",
+      "acceptable": [
+        "qed-010"
+      ]
+    },
+    {
+      "query": "what is asymptotic freedom",
+      "acceptable": [
+        "part-003"
+      ]
+    },
+    {
+      "query": "what do Maxwell's equations have to do with light",
+      "acceptable": [
+        "flp-ii-18"
+      ]
+    },
+    {
+      "query": "what is the principle of least action",
+      "acceptable": [
+        "flp-ii-19"
+      ]
+    },
+    {
+      "query": "why does symmetry give conservation laws",
+      "acceptable": [
+        "part-009"
+      ]
+    },
+    {
+      "query": "are fields more fundamental than particles",
+      "acceptable": [
+        "part-010"
+      ]
+    },
+    {
+      "query": "why is there no resistance in a superconductor",
+      "acceptable": [
+        "cm-001"
+      ]
+    },
+    {
+      "query": "how do energy bands make a semiconductor",
+      "acceptable": [
+        "cm-005"
+      ]
+    },
+    {
+      "query": "how does a pn junction rectify current",
+      "acceptable": [
+        "cm-006"
+      ]
+    },
+    {
+      "query": "what is a phonon",
+      "acceptable": [
+        "cm-007"
+      ]
+    },
+    {
+      "query": "why does superfluid helium climb the walls",
+      "acceptable": [
+        "cm-004"
+      ]
+    },
+    {
+      "query": "what is the Higgs boson",
+      "acceptable": [
+        "part-008"
+      ]
+    },
+    {
+      "query": "what is a random walk",
+      "acceptable": [
+        "flp-i-06"
+      ]
+    },
+    {
+      "query": "what is Newton's second law really saying",
+      "acceptable": [
+        "flp-i-09"
+      ]
+    },
+    {
+      "query": "what is Gauss's law for the electric field",
+      "acceptable": [
+        "flp-ii-04"
+      ]
+    },
+    {
+      "query": "what is electromagnetic induction",
+      "acceptable": [
+        "flp-ii-17"
+      ]
+    },
+    {
+      "query": "what is a normal mode",
+      "acceptable": [
+        "flp-i-47"
+      ]
+    },
+    {
+      "query": "what is a beat frequency",
+      "acceptable": [
+        "flp-i-47"
+      ]
+    },
+    {
+      "query": "why can't a ratchet run on thermal motion",
+      "acceptable": [
+        "sm-007"
+      ]
+    },
+    {
+      "query": "what is calculus really computing",
+      "acceptable": [
+        "math-comp-002"
+      ]
+    },
+    {
+      "query": "why is a license plate coincidence not a miracle",
+      "acceptable": [
+        "math-comp-007"
+      ]
+    },
+    {
+      "query": "how do you take cube roots in your head",
+      "acceptable": [
+        "math-comp-008"
+      ]
+    },
+    {
+      "query": "where is the pleasure of finding things out",
+      "acceptable": [
+        "life-art-005"
+      ]
+    },
+    {
+      "query": "why don't you pretend to know everything",
+      "acceptable": [
+        "life-art-004"
+      ]
+    },
+    {
+      "query": "what is the energy gap in a superconductor",
+      "acceptable": [
+        "cm-002"
+      ]
+    },
+    {
+      "query": "why is the weak force so slow",
+      "acceptable": [
+        "part-004"
+      ]
+    },
+    {
+      "query": "why is the electron g factor not exactly 2",
+      "acceptable": [
+        "qed-006"
+      ]
+    },
+    {
+      "query": "is renormalization just sweeping infinities away",
+      "acceptable": [
+        "qed-005"
+      ]
+    },
+    {
+      "query": "what is the Josephson effect",
+      "acceptable": [
+        "cm-003"
+      ]
+    },
+    {
+      "query": "what is the equivalence principle",
+      "acceptable": [
+        "grav-001"
+      ]
+    },
+    {
+      "query": "why does the universe expand",
+      "acceptable": [
+        "cosmo-001"
+      ]
+    },
+    {
+      "query": "what is the Ising model",
+      "acceptable": [
+        "sm-004"
+      ]
+    },
+    {
+      "query": "what is a plasma",
+      "acceptable": [
+        "sm-008"
+      ]
+    },
+    {
+      "query": "why is the sky blue",
+      "acceptable": [
+        "opt-012"
+      ]
+    },
+    {
+      "query": "why does light bend in water",
+      "acceptable": [
+        "opt-011"
+      ]
+    },
+    {
+      "query": "how does a lens form an image",
+      "acceptable": [
+        "opt-013"
+      ]
+    },
+    {
+      "query": "why can't you see colour in the dark",
+      "acceptable": [
+        "opt-015"
+      ]
+    },
+    {
+      "query": "why can't quarks exist alone",
+      "acceptable": [
+        "part-003"
+      ]
+    },
+    {
+      "query": "who discovered parity violation",
+      "acceptable": [
+        "part-005"
+      ]
+    },
+    {
+      "query": "what is a neutrino",
+      "acceptable": [
+        "part-006"
+      ]
+    },
+    {
+      "query": "what is a Cooper pair",
+      "acceptable": [
+        "cm-002"
+      ]
+    },
+    {
+      "query": "what is stimulated emission",
+      "acceptable": [
+        "opt-001"
+      ]
+    },
+    {
+      "query": "what is a diffraction grating",
+      "acceptable": [
+        "opt-018"
+      ]
+    },
+    {
+      "query": "what is Brewster's angle",
+      "acceptable": [
+        "opt-019"
+      ]
+    },
+    {
+      "query": "what is a phase transition",
+      "acceptable": [
+        "sm-003"
+      ]
+    },
+    {
+      "query": "do gravitational waves carry energy",
+      "acceptable": [
+        "grav-002"
+      ]
+    },
+    {
+      "query": "who proposed quantum computing",
+      "acceptable": [
+        "comp-002"
+      ]
     }
   ],
   "negatives": [

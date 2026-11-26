@@ -62,11 +62,11 @@ HOLDOUT: List[Tuple[str, str, List[str]]] = [
 ]
 
 
-def engine_fresh() -> MindEngine:
+def engine_fresh(persona_id: str = "feynman-zh") -> MindEngine:
     # A pristine baseline must not see cards the curriculum learned, or the
     # comparison would secretly measure the same knowledge twice.
     return MindEngine(
-        persona=get_persona("feynman-zh"),
+        persona=get_persona(persona_id),
         bridge=PyBotBridge.disabled(),
         kb=FeynmanKB(learned_dir=tempfile.mkdtemp()),
         auto_save=False,
@@ -74,11 +74,12 @@ def engine_fresh() -> MindEngine:
     )
 
 
-def engine_from(path: Path, learned_dir: str = None) -> MindEngine:
+def engine_from(path: Path, learned_dir: str = None,
+                persona_id: str = "feynman-zh") -> MindEngine:
     kb = FeynmanKB(learned_dir=learned_dir) if learned_dir else FeynmanKB()
     return MindEngine.load(
         str(path),
-        persona=get_persona("feynman-zh"),
+        persona=get_persona(persona_id),
         bridge=PyBotBridge.disabled(),
         kb=kb,
         auto_save=False,
@@ -156,19 +157,41 @@ def report(a: Dict[str, Any], b: Dict[str, Any]) -> None:
             print(f"    B[{rb['source']}]: {rb['reply'][:60]}")
 
 
+USAGE = """usage: evaluate_ab.py [SNAPSHOT] [--learned-dir DIR] [--persona ID]
+
+A/B the fresh engine against a curriculum-evolved snapshot.
+Hold-out questions stay Feynman's: --persona only selects which mind answers.
+"""
+
+
 def main() -> None:
     args = list(sys.argv[1:])
+    if "-h" in args or "--help" in args:
+        print(USAGE)
+        return
     learned: str = None
-    if "--learned-dir" in args:
-        idx = args.index("--learned-dir")
-        learned = args[idx + 1]
-        del args[idx:idx + 2]
+    persona_id = "feynman-zh"
+    for flag in ("--learned-dir", "--persona"):
+        if flag in args:
+            idx = args.index(flag)
+            value = args[idx + 1] if idx + 1 < len(args) else None
+            if value is None:
+                raise SystemExit(f"{flag} needs a value\n{USAGE}")
+            if flag == "--learned-dir":
+                learned = value
+            else:
+                persona_id = value
+            del args[idx:idx + 2]
+    try:
+        get_persona(persona_id)
+    except ValueError as exc:
+        raise SystemExit(f"{exc}\n{USAGE}")
     snapshot = Path(args[0]) if args else (
         ROOT / "snapshots" / "evolved_snapshot.json")
     if not snapshot.exists():
         raise SystemExit(f"missing snapshot: {snapshot} (run evolve_curriculum.py first)")
-    a = suite(engine_fresh(), "fresh")
-    b = suite(engine_from(snapshot, learned), "evolved")
+    a = suite(engine_fresh(persona_id), "fresh")
+    b = suite(engine_from(snapshot, learned, persona_id), "evolved")
     report(a, b)
     out = snapshot.with_suffix(".ab.json")
     out.write_text(json.dumps({"fresh": a, "evolved": b}, ensure_ascii=False, indent=1),

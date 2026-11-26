@@ -6,10 +6,13 @@ import argparse
 import select
 import sys
 
-from .config import PACKAGES_ROOT, get_persona
+from pathlib import Path
+
+from .config import LEGACY_PERSONA_IDS, PACKAGES_ROOT, get_persona
 from .cube import render_net
 from .engine import LANGUAGES, MindEngine, has_cjk
-from .feynman_kb import DEFAULT_DIRS, FeynmanKB
+from .feynman_kb import DEFAULT_DIRS, FeynmanKB, package_language
+from .paths import learned_dir_for
 from .profiler import format_profile, profile_corpus
 from .view import render_ascii
 
@@ -50,6 +53,30 @@ def print_profile(engine: MindEngine) -> None:
         print("（没有知识库目录可分析）")
 
 
+def _package_language(package: Path | None, override: str | None) -> str:
+    """The package's own language unless the caller forces one.
+
+    An English package started without ``--lang`` must come up in English;
+    defaulting to ``"zh"`` silently ran it in the wrong tongue.
+    """
+    return (override
+            or (package_language(package) if package else None)
+            or "zh")
+
+
+def _package_dir(target: str | Path) -> Path | None:
+    """A package id, a package directory, or a persona.json path."""
+    path = Path(target).expanduser()
+    if path.is_file():
+        return path.parent if path.name == "persona.json" else None
+    if (path / "persona.json").is_file():
+        return path
+    candidate = PACKAGES_ROOT / str(target)
+    if (candidate / "persona.json").is_file():
+        return candidate
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="omega_mind")
     parser.add_argument("--persona", default="generic",
@@ -65,22 +92,28 @@ def main(argv: list[str] | None = None) -> int:
                         help="print the corpus profile and exit")
     args = parser.parse_args(argv)
 
-    persona = get_persona(args.persona)
+    name = LEGACY_PERSONA_IDS.get(str(args.persona), args.persona)
+    package = None if str(name) == "generic" else _package_dir(name)
+    if str(name) != "generic" and package is None:
+        # Never fall back to a default package: a mistyped path would then
+        # load someone else's cards without a word.
+        parser.error(f"no persona package named {args.persona!r} "
+                     f"(looked under {PACKAGES_ROOT} and as a path)")
+    persona = get_persona(package or "generic")
     kb = None
-    if str(args.persona) != "generic":
-        # One mind, one package: the CLI feeds the package's own cards and
-        # derived state, exactly like app.runtime.build() does.
-        package = PACKAGES_ROOT / str(args.persona)
-        kb = FeynmanKB(
-            knowledge_dir=str(package / "knowledge"),
-            learned_dir=str(package / "data" / "kb_learned"),
-            assoc_path=str(package / "data" / "assoc" / "assoc_edges.jsonl"),
-            source_prefix=package.name,
-        )
+    if package is not None:
+        # One mind, one package: the CLI feeds the package's own cards,
+        # profile and derived state, exactly like app.runtime.build() does.
+        kb = FeynmanKB.for_package(package.name, root=package.parent,
+                                   learned_dir=str(learned_dir_for(package.name)))
+    else:
+        # 'generic' means no cards, not "the first package on disk".
+        kb = FeynmanKB.disabled()
+    language = _package_language(package, args.lang)
 
     import os
     if args.load and os.path.exists(args.save):
-        engine = MindEngine.load(args.save, persona=persona, language=args.lang,
+        engine = MindEngine.load(args.save, persona=persona, language=language,
                                  kb=kb)
         if engine.load_warning:
             print(f"[warn] {engine.load_warning} — 从空状态开始")
@@ -88,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[resumed] {args.save}")
     else:
         engine = MindEngine(persona=persona, store_path=args.save,
-                            kb=kb, language=args.lang or "zh")
+                            kb=kb, language=language)
     if args.lang:
         engine.set_language(args.lang)
 

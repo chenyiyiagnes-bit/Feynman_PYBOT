@@ -64,9 +64,9 @@ TEACH_THEN_TEST = [
 ]
 
 
-def engine(directory: str) -> MindEngine:
+def engine(directory: str, persona_id: str = "feynman-zh") -> MindEngine:
     return MindEngine(
-        persona=get_persona("feynman-zh"),
+        persona=get_persona(persona_id),
         bridge=PyBotBridge.disabled(),
         kb=FeynmanKB(learned_dir=directory),
         auto_save=False,
@@ -74,8 +74,8 @@ def engine(directory: str) -> MindEngine:
     )
 
 
-def run_hard_negatives() -> float:
-    mind = engine(tempfile.mkdtemp())
+def run_hard_negatives(persona_id: str = "feynman-zh") -> float:
+    mind = engine(tempfile.mkdtemp(), persona_id)
     for i, text in enumerate(HARD_NEGATIVES):
         mind.turn(text, now=1_000.0 + i * 60)
     minted = len(mind.kb.learned.cards)
@@ -85,8 +85,8 @@ def run_hard_negatives() -> float:
     return 1.0 if minted == 0 else 0.0
 
 
-def run_paraphrase() -> float:
-    mind = engine(tempfile.mkdtemp())
+def run_paraphrase(persona_id: str = "feynman-zh") -> float:
+    mind = engine(tempfile.mkdtemp(), persona_id)
     mind.turn(METAPHOR, now=1_000.0)
     hits, card_id = 0, None
     for i, question in enumerate(PARAPHRASES):
@@ -103,8 +103,8 @@ def run_paraphrase() -> float:
     return rate
 
 
-def run_teach_then_test() -> float:
-    mind = engine(tempfile.mkdtemp())
+def run_teach_then_test(persona_id: str = "feynman-zh") -> float:
+    mind = engine(tempfile.mkdtemp(), persona_id)
     hits = 0
     for i, (metaphor, question) in enumerate(TEACH_THEN_TEST):
         mind.turn(metaphor, now=1_000.0 + i * 120)
@@ -118,13 +118,31 @@ def run_teach_then_test() -> float:
     return rate
 
 
-def main() -> int:
+USAGE = """usage: evaluate_learning.py [--persona ID]
+
+Measure the learning layer on its own (hard negatives, paraphrase,
+teach-then-test). The question sets stay Chinese/Feynman's; --persona only
+selects which mind is measured.
+"""
+
+
+def main(argv=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if "-h" in args or "--help" in args:
+        print(USAGE)
+        return 0
+    persona_id = "feynman-zh"
+    if "--persona" in args:
+        idx = args.index("--persona")
+        if idx + 1 >= len(args):
+            raise SystemExit(f"--persona needs a value\n{USAGE}")
+        persona_id = args[idx + 1]
     print("学习层评测（每次使用全新临时学习目录）\n")
-    negative = run_hard_negatives()
+    negative = run_hard_negatives(persona_id)
     print()
-    paraphrase = run_paraphrase()
+    paraphrase = run_paraphrase(persona_id)
     print()
-    teach = run_teach_then_test()
+    teach = run_teach_then_test(persona_id)
     print()
     ok = negative == 1.0 and paraphrase >= 0.8 and teach >= 0.8
     print(f"硬负例不铸卡={negative == 1.0}  同卡换问法={paraphrase:.0%}  "

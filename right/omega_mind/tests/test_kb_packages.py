@@ -19,7 +19,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from omega_mind.config import get_persona
+from omega_mind.config import PACKAGES_ROOT, get_persona
 from omega_mind.engine import MindEngine
 from omega_mind.feynman_kb import FeynmanKB, package_language
 from omega_mind.pybot_bridge import PyBotBridge
@@ -180,7 +180,12 @@ class TestShippedPackages(unittest.TestCase):
         self.assertEqual(kb.language, "en")
         self.assertEqual(package_language(kb.dir.parent), "en")
         data = kb.dir.parent / "data"
-        self.assertEqual(kb.learned_dir, data / "kb_learned")
+        # Learned state lives under the state base, not inside the package:
+        # a checkout under a read-only or shared path must still be able to
+        # learn, and the app/CLI/scripts all point at the same store.
+        from omega_mind.paths import learned_dir_for
+        self.assertEqual(kb.learned_dir, learned_dir_for(kb.dir.parent.name))
+        self.assertFalse(kb.learned_dir.is_relative_to(kb.dir.parent))
         self.assertEqual(kb.assoc_path, data / "assoc" / "assoc_edges.jsonl")
         # The term graph is the package's opt-in, exactly as in app.runtime:
         # no shipped package asks for it, so a language switch must not turn
@@ -224,6 +229,69 @@ class TestMindHoldsOnePackage(unittest.TestCase):
         mind = offline_mind(FeynmanKB.disabled(), "zh")
         mind.set_language("en")
         self.assertEqual(mind.language, "en")
+
+
+class TestEnginePicksThePersonaPackage(unittest.TestCase):
+    """An implicit KB must be the persona's own package, not "the first one"."""
+
+    def _mind(self, persona_id: str, language: str) -> MindEngine:
+        return MindEngine(
+            persona=get_persona(persona_id), store_path=None,
+            clock=lambda: 1000.0, bridge=PyBotBridge.disabled(),
+            auto_save=False, language=language)
+
+    @classmethod
+    def _require(cls, *names: str):
+        for name in names:
+            if not (PACKAGES_ROOT / name / "knowledge").is_dir():
+                raise unittest.SkipTest(f"package {name} not installed")
+
+    def test_a_classical_persona_gets_its_own_cards(self):
+        self._require("laozhuang-zh", "feynman-zh")
+        mind = self._mind("laozhuang-zh", "zh")
+        self.assertEqual(mind.kb.dir.parent.name, "laozhuang-zh")
+        self.assertEqual(mind.kb.profile, "classical")
+
+    def test_for_package_returns_the_named_package(self):
+        self._require("laozhuang-zh")
+        kb = FeynmanKB.for_package("laozhuang-zh")
+        self.assertIsNotNone(kb)
+        self.assertEqual(kb.language, "zh")
+        self.assertEqual(kb.profile, "classical")
+        self.assertEqual(kb.source_prefix, "laozhuang-zh")
+
+    def test_for_package_is_none_for_a_non_package(self):
+        self.assertIsNone(FeynmanKB.for_package("no-such-package"))
+
+    def test_a_language_switch_goes_to_the_sibling_package(self):
+        self._require("laozhuang-zh", "laozhuang-en")
+        mind = self._mind("laozhuang-zh", "zh")
+        mind.set_language("en")
+        self.assertEqual(mind.language, "en")
+        self.assertEqual(mind.kb.dir.parent.name, "laozhuang-en")
+
+
+class TestGoldenGatePerPackage(unittest.TestCase):
+    def test_a_package_without_a_net_passes(self):
+        from omega_mind import reflect
+        if not (PACKAGES_ROOT / "laozhuang-zh" / "knowledge").is_dir():
+            self.skipTest("laozhuang-zh not installed")
+        kb = FeynmanKB.for_package("laozhuang-zh")
+        ok, failures = reflect.golden_ok(kb)
+        self.assertTrue(ok, failures)
+
+    def test_the_gate_reads_the_package_s_own_net(self):
+        from omega_mind import reflect
+        en = PACKAGES_ROOT / "feynman-en" / "evals" / "golden.json"
+        if not en.is_file():
+            self.skipTest("feynman-en golden net not installed")
+        kb = FeynmanKB.for_package("feynman-en")
+        queries, _negatives = reflect.for_package("feynman-en")
+        self.assertTrue(queries)
+        data = json.loads(en.read_text(encoding="utf-8"))
+        self.assertEqual([row[0] for row in queries],
+                         [row["query"] for row in data["golden"]])
+        self.assertEqual(kb.language, "en")
 
 
 if __name__ == "__main__":

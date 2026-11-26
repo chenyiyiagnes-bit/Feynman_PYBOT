@@ -242,22 +242,43 @@ def _record(history: Dict[str, Any], text: str, kind: str, turn: int,
 
 # -- golden gate ------------------------------------------------------------
 
+def _package_of(kb: FeynmanKB) -> Optional[str]:
+    """The package whose cards this KB loaded, or None for a loose KB.
+
+    The package is identified by where the cards were read from, not by
+    ``source_prefix``: a KB loaded straight from ``personas/<id>/knowledge``
+    keeps the default prefix, and auditing it against the merged net would
+    check another package's questions against these cards.
+    """
+    directory = getattr(kb, "dir", None)
+    if directory is None:
+        return None
+    package = Path(directory).parent
+    return package.name if (package / "persona.json").is_file() else None
+
+
 def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
     """The same net the tests use: no repair may flip a known answer.
 
     A package that ships ``evals/golden.json`` is checked against its own
-    rows only. A KB built without a package prefix (tests, one-off scripts)
-    falls back to the merged net, filtered by language.
+    rows only. A package without the file has no net: there is nothing to
+    audit against, so the gate passes (it must not borrow another package's
+    questions — those cards are not in this index, and every one of them
+    would "fail"). Only a KB built without a package at all (tests, one-off
+    scripts) falls back to the merged net, filtered by language.
     """
     failures: List[str] = []
     prefix = kb.source_root
-    golden, negatives = for_package(prefix)
-    if not golden and not negatives:
+    package = _package_of(kb)
+    if package is not None:
+        golden, negatives = for_package(package)
+        if not golden and not negatives:
+            return (True, [])
+    else:
         golden = tuple(row for row in GOLDEN if row[1] == kb.language)
         negatives = tuple(row for row in NEGATIVES if row[1] == kb.language)
-    else:
-        golden = tuple(row for row in golden if row[1] == kb.language)
-        negatives = tuple(row for row in negatives if row[1] == kb.language)
+    golden = tuple(row for row in golden if row[1] == kb.language)
+    negatives = tuple(row for row in negatives if row[1] == kb.language)
     for query, language, acceptable in golden:
         if language != kb.language:
             continue  # the other package's cards are not in this index
@@ -268,7 +289,7 @@ def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
         card = source[len(prefix) + 1:]
         if card not in acceptable:
             failures.append(f"{query} -> {card}")
-    for query, language in NEGATIVES:
+    for query, language in negatives:
         if language != kb.language:
             continue
         text, _ = kb.answer(query)

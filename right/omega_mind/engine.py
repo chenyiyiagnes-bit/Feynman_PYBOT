@@ -19,7 +19,7 @@ from .cubies import CUBIES_BY_NAME
 from .cube import CubeState
 from .cube_feedback import CubeFeedback, dream_restore_ratio
 from .dream import Dream, Dreamer
-from .feynman_kb import FeynmanKB
+from .feynman_kb import FeynmanKB, sibling_package
 from .learner import (
     CORRECTION_MARKERS,
     PROMOTION_CORTISOL_MAX,
@@ -35,6 +35,25 @@ from .pybot_bridge import PyBotBridge
 from .relations import RelationshipGraph
 from .renderer import Renderer
 from .state import AffectState
+
+
+def _default_kb(persona: PersonaConfig, language: str) -> FeynmanKB:
+    """The KB a mind without a supplied package should read.
+
+    The persona's own package wins; a mind that switches language gets the
+    same family's package in that language (``x-zh`` → ``x-en``) rather than
+    whichever package the directory listing happens to put first.
+    """
+    name = str(getattr(persona, "name", "") or "")
+    if name and name != "generic":
+        own = FeynmanKB.for_package(name)
+        if own is not None and own.language == language:
+            return own
+        sibling = sibling_package(name, language)
+        if sibling is not None:
+            return FeynmanKB.for_package(sibling.name, root=sibling.parent)
+    fallback = FeynmanKB.for_language(language)
+    return fallback if fallback is not None else FeynmanKB(language=language)
 
 
 @dataclass
@@ -181,7 +200,11 @@ class MindEngine:
         # One mind, one package: a KB the caller supplies keeps its own
         # package language, and a language switch loads the package for the
         # new language (or reports that none is installed).
-        self.kb = kb or FeynmanKB(language=language)
+        # Without a supplied KB, prefer the package this persona actually is
+        # (its cards, profile and learned store); only a persona that is not
+        # a package falls back to "the first package of this language".
+        self.kb = (kb if kb is not None else
+                   _default_kb(self.persona, language))
         self._kb_supplied = kb is not None
         # Optional corpus-callosum responder (bridge.LeftResponder). Kept
         # duck-typed and default-None: the right brain must run without the
@@ -577,7 +600,15 @@ class MindEngine:
                     f"this mind holds the {self.kb.language!r} package; "
                     f"build a mind for the {language!r} package instead")
             if not self._kb_supplied:
-                replacement = FeynmanKB.for_language(language)
+                # Same family first (x-zh → x-en); another character's
+                # package would answer in the right language but the wrong
+                # voice, so it is only the last resort.
+                sibling = sibling_package(str(getattr(self.persona, "name", "")),
+                                          language)
+                replacement = (FeynmanKB.for_package(sibling.name,
+                                                     root=sibling.parent)
+                               if sibling is not None
+                               else FeynmanKB.for_language(language))
                 if replacement is None:
                     raise ValueError(f"no {language!r} package is installed")
                 self.kb = replacement

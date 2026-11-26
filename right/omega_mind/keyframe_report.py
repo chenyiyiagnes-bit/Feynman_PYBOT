@@ -26,7 +26,7 @@ from .config import PACKAGES_ROOT, get_persona
 from .cube import render_net
 from .cube_feedback import CubeFeedback, displacement
 from .engine import MindEngine
-from .feynman_kb import FeynmanKB
+from .feynman_kb import FeynmanKB, package_language
 from .pybot_bridge import PyBotBridge
 
 # A mix of praise, curiosity, correction and indifference. It is deliberately
@@ -166,22 +166,30 @@ def run_report(persona: str = "generic", turns: int = 40,
     # The scripted lines are not knowledge questions, so the default run does
     # not load the corpus. ``with_kb`` turns it on (into a throwaway learned
     # directory) when the point of the run is the dream audit itself.
+    language = "zh"
     if with_kb:
         learned = tempfile.mkdtemp(prefix="omega-keyframe-")
         package = PACKAGES_ROOT / persona
         if persona != "generic" and (package / "knowledge").is_dir():
-            kb = FeynmanKB(knowledge_dir=str(package / "knowledge"),
-                           learned_dir=learned, source_prefix=package.name)
+            # The package's own language and profile decide the run, not a
+            # constant here: an English package scripted in English should
+            # not be forced into Chinese mode.
+            kb = (FeynmanKB.for_package(package.name, learned_dir=learned)
+                  or FeynmanKB(learned_dir=learned))
         else:
             kb = FeynmanKB(learned_dir=learned)
+        language = kb.language
     else:
         kb = FeynmanKB.disabled()
+        package = PACKAGES_ROOT / persona
+        if (package / "persona.json").is_file():
+            language = package_language(package) or language
     engine = MindEngine(
         persona=get_persona(persona),
         bridge=PyBotBridge.disabled(),
         kb=kb,
         auto_save=False,
-        language="zh",
+        language=language,
     )
     feedback = CubeFeedback()
     frames: List[Keyframe] = []

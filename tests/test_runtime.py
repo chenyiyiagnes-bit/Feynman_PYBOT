@@ -33,6 +33,18 @@ class TestResolve(unittest.TestCase):
         with self.assertRaises(PersonaError):
             resolve_persona("nobody", PERSONAS)
 
+    def test_the_old_alias_means_the_same_package(self):
+        # "feynman" meant feynman-zh before the split; both sides of the
+        # program must keep reading it the same way.
+        self.assertEqual(resolve_persona("feynman", PERSONAS),
+                         resolve_persona("feynman-zh", PERSONAS))
+
+    def test_generic_is_refused_with_a_way_out(self):
+        with self.assertRaises(PersonaError) as caught:
+            resolve_persona("generic", PERSONAS)
+        self.assertIn("generic", str(caught.exception))
+        self.assertIn("MindEngine", str(caught.exception))
+
 
 class TestConfigMapping(unittest.TestCase):
     def setUp(self):

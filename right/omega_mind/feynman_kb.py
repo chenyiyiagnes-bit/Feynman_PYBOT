@@ -23,6 +23,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 from . import assoc, lang, spreading
 from .learner import LearnedStore, card_row, normalize
+from .paths import learned_dir_for
 
 #: Shipped persona packages, discovered from ``personas/*/knowledge``. The
 #: right brain names no persona: a caller that wants a specific mind passes
@@ -61,6 +62,33 @@ def _wants_recall_expansion(package_dir: Path) -> bool:
     except (OSError, json.JSONDecodeError):
         return False
     return bool(data.get("recall_expansion"))
+
+
+def package_profile(package_dir: Path) -> Optional[str]:
+    """The segmentation profile a package declares (``default``/``classical``)."""
+    try:
+        data = json.loads((Path(package_dir) / "persona.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    profile = data.get("language_profile")
+    return str(profile) if profile else None
+
+
+def sibling_package(name: str, language: str,
+                    root: Path = PACKAGES_ROOT) -> Optional[Path]:
+    """The same family's package in another language (``x-zh`` → ``x-en``).
+
+    Used when a mind without a supplied package changes language: switching
+    should keep the character, not jump to whichever package happens to be
+    first in the directory listing.
+    """
+    base = re.sub(r"-(zh|en)$", "", str(name or ""))
+    if not base:
+        return None
+    candidate = Path(root) / f"{base}-{language}"
+    if (candidate / "persona.json").is_file():
+        return candidate
+    return None
 
 
 def _shipped_knowledge_dirs() -> Tuple[Path, ...]:
@@ -496,6 +524,42 @@ class FeynmanKB:
         return kb
 
     @classmethod
+    def for_package(cls, name: str, root: Path | str = PACKAGES_ROOT,
+                    language: Optional[str] = None,
+                    profile: Optional[str] = None,
+                    learned_dir: Optional[str] = None) -> Optional["FeynmanKB"]:
+        """A KB for one named package, or None when it is not installed.
+
+        This is the only way to build a package's KB outside ``app.runtime``:
+        everything a package declares (language, segmentation profile, term
+        graph switch) comes from its own ``persona.json``, and learned cards
+        go to the shared state directory — never into the package, which is
+        what keeps the CLI and the app teaching the same mind.
+        """
+        package = Path(root) / str(name)
+        if not (package / "persona.json").is_file():
+            return None
+        knowledge = package / "knowledge"
+        if not knowledge.is_dir():
+            return None
+        language = language or package_language(package) or "zh"
+        profile = profile or package_profile(package)
+        # Recall expansion is the package's choice, same as in app.runtime:
+        # a machine that once built the term graph must not answer differently
+        # from a fresh clone unless the package asked for the graph.
+        lexicon = (str(package / "data" / "lexicon")
+                   if _wants_recall_expansion(package) else None)
+        return cls(
+            knowledge_dir=str(knowledge),
+            learned_dir=str(learned_dir or learned_dir_for(package.name)),
+            assoc_path=str(package / "data" / "assoc" / "assoc_edges.jsonl"),
+            lexicon_dir=lexicon,
+            language=language,
+            profile=profile,
+            source_prefix=package.name,
+        )
+
+    @classmethod
     def for_language(cls, language: str,
                      profile: Optional[str] = None) -> Optional["FeynmanKB"]:
 
@@ -511,21 +575,8 @@ class FeynmanKB:
         path = cls(autoload=False)._find_dir(None, language)
         if path is None:
             return None
-        root = path.parent
-        data = root / "data"
-        # Recall expansion is the package's choice, same as in app.runtime:
-        # a machine that once built the term graph must not answer differently
-        # from a fresh clone unless the package asked for the graph.
-        lexicon = str(data / "lexicon") if _wants_recall_expansion(root) else None
-        return cls(
-            knowledge_dir=str(path),
-            learned_dir=str(data / "kb_learned"),
-            assoc_path=str(data / "assoc" / "assoc_edges.jsonl"),
-            lexicon_dir=lexicon,
-            language=language,
-            profile=profile,
-            source_prefix=root.name,
-        )
+        return cls.for_package(path.parent.name, root=path.parent.parent,
+                               language=language, profile=profile)
 
     def available(self) -> bool:
         return bool(self.docs)
