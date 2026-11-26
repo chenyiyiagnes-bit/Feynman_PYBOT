@@ -134,7 +134,8 @@ def build(target: Union[str, Path] = "feynman-zh",
     if enable_bridge is None:
         enable_bridge = os.getenv("OMEGA_LEFT_BRIDGE") == "1"
     if enable_bridge:
-        responder = LeftResponder(enabled=True)
+        responder = LeftResponder(enabled=True,
+                                  lexicon_dir=persona.root / "data" / "lexicon")
     kwargs = dict(
         persona=cfg,
         bridge=PyBotBridge.disabled(),

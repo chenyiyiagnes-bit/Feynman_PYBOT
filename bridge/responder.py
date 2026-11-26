@@ -19,6 +19,7 @@ from typing import Any, Dict, Optional
 
 from .mapping import BridgeParams, map_affect
 from .persona import Persona
+from . import slot_gate
 
 ENV_FLAG = "OMEGA_LEFT_BRIDGE"
 DEFAULT_LEFT_ROOT = Path(__file__).resolve().parents[1] / "left"
@@ -34,13 +35,15 @@ class BridgeResult:
 class LeftResponder:
     def __init__(self, left_root: str | Path | None = None,
                  vault_path: str | Path | None = None,
-                 enabled: bool | None = None) -> None:
+                 enabled: bool | None = None,
+                 lexicon_dir: str | Path | None = None) -> None:
         self.left_root = Path(left_root or os.getenv("QBOT_LEFT_ROOT") or DEFAULT_LEFT_ROOT).expanduser().resolve()
         env_vault = os.getenv("QBOT_FEYNMAN_VAULT")
         self.vault_path = Path(
             vault_path or env_vault or (self.left_root / "data" / "feynman_style_vault.json")
         ).expanduser()
         self.enabled = (os.getenv(ENV_FLAG) == "1") if enabled is None else bool(enabled)
+        self.lexicon_dir = Path(lexicon_dir).expanduser() if lexicon_dir else None
         self._weaver = None
         self._request_cls = None
         self._vault = None
@@ -103,9 +106,15 @@ class LeftResponder:
             jargon_aversion=self._jargon_aversion(persona),
         )
 
+    @property
+    def gate_active(self) -> bool:
+        """True when there is coded data to check a slot fill against."""
+        return slot_gate.load(self.lexicon_dir) is not None
+
     def reply(self, text: str, state: Dict[str, float], persona: Persona,
               cube_depth: float = 0.0, cube_verbosity: float = 0.0,
-              nonce: int = 0, session_id: Optional[str] = None) -> Optional[BridgeResult]:
+              nonce: int = 0, session_id: Optional[str] = None,
+              card_id: Optional[str] = None) -> Optional[BridgeResult]:
         if not self.enabled:
             return None
         try:
@@ -127,6 +136,12 @@ class LeftResponder:
             paragraph = (result or {}).get("paragraph") or ""
             if not paragraph.strip():
                 self.last_error = "empty paragraph"
+                return None
+            # Slot gate: a user word may only sit in a slot the chosen card
+            # can account for. Unverifiable (no coded data, no card) passes.
+            stray = slot_gate.unverified(result, card_id, self.lexicon_dir)
+            if stray:
+                self.last_error = "slot gate: " + "、".join(stray)
                 return None
             return BridgeResult(text=paragraph, raw=result, params=params.to_dict())
         except Exception as exc:  # noqa: BLE001

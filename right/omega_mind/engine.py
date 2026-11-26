@@ -442,6 +442,17 @@ class MindEngine:
         """
         if self.left_responder is None:
             return None
+        # Which card this turn is about, when the gate needs one: the slot
+        # filler may only use the user's word on a card that accounts for it.
+        card_id = None
+        gated = getattr(self.left_responder, "gate_active", False)
+        if gated:
+            found = self.kb.lookup(text, language=self.language, limit=1)
+            if found.text and ":" in found.source:
+                card_id = found.source.split(":", 1)[1]
+        # Only a responder that runs the gate is asked for a card id: earlier
+        # responders (and tests) keep their narrower ``reply`` signature.
+        extra = {"card_id": card_id} if gated else {}
         try:
             result = self.left_responder.reply(
                 text, self.state.values, self.persona,
@@ -449,6 +460,7 @@ class MindEngine:
                 cube_verbosity=getattr(cube_bias, "verbosity", 0.0),
                 nonce=self.turn_index,
                 session_id=self.current_user,
+                **extra,
             )
         except Exception:  # noqa: BLE001 - the add-on may never break a turn
             return None
