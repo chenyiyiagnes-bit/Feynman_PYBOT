@@ -17,10 +17,10 @@ from omega_mind.pybot_bridge import PyBotBridge
 from omega_mind.state import AffectState
 
 
-def real_kb() -> FeynmanKB:
-    kb = FeynmanKB()
-    if not kb.available():
-        raise unittest.SkipTest("feynman-open knowledge not on this machine")
+def real_kb(language: str = "zh") -> FeynmanKB:
+    kb = FeynmanKB(language=language)
+    if not kb.available() or kb.language != language:
+        raise unittest.SkipTest(f"{language!r} knowledge package not installed")
     return kb
 
 
@@ -131,7 +131,9 @@ class TestPostureIsBehavioral(unittest.TestCase):
         self.assertNotIn("～", careful)
 
     def test_near_tie_hedges_only_under_careful_posture(self):
-        kb = real_kb()
+        # An English turn is answered from the English package; a mind built
+        # on one package cannot switch languages at turn time.
+        kb = real_kb("en")
         engine = MindEngine(
             persona=get_persona("feynman"),
             bridge=PyBotBridge.disabled(),

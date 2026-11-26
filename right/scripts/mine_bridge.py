@@ -1,7 +1,7 @@
 """Mine candidate bridge pairs from the corpus — offline, for hand review.
 
-``_ZH_BRIDGE`` in ``feynman_kb.py`` maps everyday words to the vocabulary the
-cards actually use. It is small because every entry is a human judgement.
+The ``bridge`` table in the Chinese rule file (``lang/zh/*.json``) maps
+everyday words to the vocabulary the cards actually use. It is small because every entry is a human judgement.
 This script proposes more of the same kind of entry by scoring token pairs
 with PPMI over document co-occurrence:
 
@@ -29,7 +29,8 @@ from typing import Dict, List, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from omega_mind.feynman_kb import FeynmanKB, _CJK, _STOP_BIGRAMS, _ZH_BRIDGE
+from omega_mind.feynman_kb import FeynmanKB, _CJK
+from omega_mind.lang import load as load_lang
 
 OUT_DEFAULT = ROOT / "scripts" / "data" / "bridge_candidates.json"
 
@@ -47,12 +48,15 @@ def tokens(text: str) -> set:
             out.add(run)
         else:
             out.update(run[i:i + 2] for i in range(len(run) - 1))
-    return {tok for tok in out if tok not in _STOP_BIGRAMS}
+    return {tok for tok in out if tok not in stop_bigrams}
 
 
 def main() -> None:
     out_path = Path(sys.argv[1]) if len(sys.argv) > 1 else OUT_DEFAULT
-    kb = FeynmanKB()
+    zh = load_lang("zh")
+    stop_bigrams = zh._stop_bigrams
+    bridge = zh._bridge
+    kb = FeynmanKB(language="zh")
     if not kb.docs:
         raise SystemExit("corpus not found; set OMEGA_KB_PATH or check DEFAULT_DIRS")
 
@@ -71,7 +75,7 @@ def main() -> None:
         return sum(1 for toks in doc_tokens if seed in toks and term in toks)
 
     report: Dict[str, List[Dict[str, float]]] = {}
-    for seed, _mapped in _ZH_BRIDGE:
+    for seed, _mapped in bridge:
         if df[seed] < MIN_COOC:
             continue
         scored: List[Tuple[float, str, int]] = []
@@ -96,7 +100,7 @@ def main() -> None:
     payload = {
         "generated": date.today().isoformat(),
         "corpus_docs": total,
-        "note": "候选，不是词典。每条须人工核对后才可写入 _ZH_BRIDGE。",
+        "note": "候选，不是词典。每条须人工核对后才可写入 lang/zh 的 bridge 表。",
         "seeds": report,
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)

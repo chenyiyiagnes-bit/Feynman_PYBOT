@@ -16,7 +16,7 @@ from pathlib import Path
 
 from omega_mind.config import get_persona
 from omega_mind.engine import MindEngine
-from omega_mind.feynman_kb import DEFAULT_DIRS, FeynmanKB
+from omega_mind.feynman_kb import DEFAULT_DIRS, FeynmanKB, package_language
 from omega_mind.pybot_bridge import PyBotBridge
 
 CJK = re.compile(r"[一-鿿]")
@@ -53,38 +53,46 @@ REQUIRED_FIELDS = ("id", "type", "title", "text", "tags", "aliases",
                    "source", "source_class", "verification_status")
 
 
-def _knowledge_dir() -> Path:
+def _knowledge_dir(language: str = "zh") -> Path:
+    """The package in ``language`` that ships the math/comp cards.
+
+    Never the first directory that happens to have the file: the English
+    package carries the same file names, and the row schema under test is
+    the one the Chinese source rows use.
+    """
     for path in DEFAULT_DIRS:
-        if (path / "feynman_math_comp.jsonl").is_file():
+        if (package_language(path.parent) == language
+                and (path / "feynman_math_comp.jsonl").is_file()):
             return path
     raise unittest.SkipTest("feynman-open knowledge not on this machine")
 
 
-def _kb_or_skip() -> FeynmanKB:
+def _kb_or_skip(language: str = "zh") -> FeynmanKB:
     _knowledge_dir()
-    kb = FeynmanKB()
-    if not kb.available():
-        raise unittest.SkipTest("feynman knowledge base did not load")
+    kb = FeynmanKB(language=language)
+    if not kb.available() or kb.language != language:
+        raise unittest.SkipTest(f"{language!r} knowledge package did not load")
     return kb
 
 
 class TestMathCompCardsLoad(unittest.TestCase):
     def setUp(self):
-        self.kb = _kb_or_skip()
+        self.kb = _kb_or_skip("zh")
+        self.en = _kb_or_skip("en")
 
     def test_every_card_loads_in_both_languages(self):
         zh = {d.id for d in self.kb.docs}
-        en = {d.id for d in self.kb.docs_en}
+        en = {d.id for d in self.en.docs}
         self.assertTrue(NEW_IDS <= zh, f"missing zh: {NEW_IDS - zh}")
         self.assertTrue(NEW_IDS <= en, f"missing en: {NEW_IDS - en}")
 
     def test_pairs_stay_aligned(self):
         zh = {d.id for d in self.kb.docs if d.id in NEW_IDS}
-        en = {d.id for d in self.kb.docs_en if d.id in NEW_IDS}
+        en = {d.id for d in self.en.docs if d.id in NEW_IDS}
         self.assertEqual(zh, en)
 
     def test_english_overlay_has_no_chinese(self):
-        by_id = {d.id: d for d in self.kb.docs_en}
+        by_id = {d.id: d for d in self.en.docs}
         for cid in NEW_IDS:
             doc = by_id[cid]
             self.assertFalse(CJK.search(doc.answer),
@@ -121,7 +129,8 @@ class TestMathCompCardsLoad(unittest.TestCase):
 
 class TestMathCompRetrieval(unittest.TestCase):
     def setUp(self):
-        self.kb = _kb_or_skip()
+        self.kb = _kb_or_skip("zh")
+        self.en = _kb_or_skip("en")
 
     def test_chinese_topics_reach_their_card(self):
         for query, expected in ZH_QUERIES.items():
@@ -135,7 +144,7 @@ class TestMathCompRetrieval(unittest.TestCase):
     def test_english_topics_reach_their_card(self):
         for query, expected in EN_QUERIES.items():
             with self.subTest(query=query):
-                hits = self.kb.search(query, limit=3, language="en")
+                hits = self.en.search(query, limit=3)
                 self.assertTrue(hits, f"no hit for {query}")
                 score, doc = hits[0]
                 self.assertGreaterEqual(score, self.kb.MIN_SCORE)
@@ -161,7 +170,7 @@ class TestMathCompInTheEngine(unittest.TestCase):
         engine = MindEngine(
             persona=get_persona("feynman"),
             bridge=PyBotBridge.disabled(),
-            kb=FeynmanKB(),
+            kb=FeynmanKB(language="en"),
             auto_save=False,
             language="en",
         )

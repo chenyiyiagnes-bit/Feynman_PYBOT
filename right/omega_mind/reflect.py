@@ -242,9 +242,11 @@ def _record(history: Dict[str, Any], text: str, kind: str, turn: int,
 def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
     """The same net the tests use: no repair may flip a known answer."""
     failures: List[str] = []
+    prefix = kb.source_root
     for query, language, acceptable in GOLDEN:
-        _, source = kb.answer(query, language=language)
-        prefix = "feynman_kb_en" if language == "en" else "feynman_kb"
+        if language != kb.language:
+            continue  # the other package's cards are not in this index
+        _, source = kb.answer(query)
         if not source.startswith(prefix + ":"):
             failures.append(f"{query} -> {source}")
             continue
@@ -252,7 +254,9 @@ def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
         if card not in acceptable:
             failures.append(f"{query} -> {card}")
     for query, language in NEGATIVES:
-        text, _ = kb.answer(query, language=language)
+        if language != kb.language:
+            continue
+        text, _ = kb.answer(query)
         if text is not None:
             failures.append(f"{query} -> answered")
     return (not failures, failures)
@@ -264,8 +268,15 @@ def _trial_kb(kb: FeynmanKB, store: LearnedStore) -> Optional[FeynmanKB]:
         return None
     try:
         trial = FeynmanKB(knowledge_dir=str(kb.dir),
-                          english_dir=str(kb.en_dir) if kb.en_dir else None,
-                          learned_dir=str(store.dir))
+                          learned_dir=str(store.dir),
+                          assoc_path=(str(kb.assoc_path)
+                                      if kb.assoc_path else None),
+                          language=kb.language,
+                          profile=kb.profile,
+                          lexicon_dir=(str(kb.lexicon_dir)
+                                       if kb.lexicon_dir else None),
+                          source_prefix=kb.source_prefix,
+                          spreading=kb.spreading)
     except Exception:
         return None
     return trial if trial.available() else None
@@ -335,12 +346,14 @@ def _corpus_card_id(source: str) -> Optional[str]:
     """The card behind a confident corpus hit, if it was one."""
     if "soft" in source or source.endswith(":no_match"):
         return None
-    for prefix in ("feynman_kb_en:", "feynman_kb:"):
-        if source.startswith(prefix):
-            card_id = source[len(prefix):]
-            # A gap or correction card is the mind's own note, not a source.
-            return None if card_id.startswith("learned-") else card_id
-    return None
+    # Sources are "<package>:[<language>:]<card id>"; the package and the
+    # language tag are the oracle's, the last field is the card.
+    parts = source.split(":")
+    if len(parts) < 2:
+        return None
+    card_id = parts[-1]
+    # A gap or correction card is the mind's own note, not a source.
+    return None if card_id.startswith("learned-") else card_id
 
 
 def _apply_alias(kb: FeynmanKB, store: LearnedStore, question: str,
@@ -371,7 +384,7 @@ def _apply_alias(kb: FeynmanKB, store: LearnedStore, question: str,
                       reason="golden gate: " + "; ".join(failures[:2]))
     # The alias must actually make the question land on that card.
     _, source = trial.answer(question)
-    prefix = "feynman_kb_en:" if question.isascii() else "feynman_kb:"
+    prefix = trial.source_root + ":"
     if not source.startswith(prefix) or source[len(prefix):] != card_id:
         return Action(kind=kind, target=card_id, detail=question,
                       applied=False, reason="alias did not change the answer")
@@ -416,8 +429,13 @@ def _trial_copy(kb: FeynmanKB, store: LearnedStore
     try:
         trial = FeynmanKB(
             knowledge_dir=str(kb.dir),
-            english_dir=str(kb.en_dir) if kb.en_dir else None,
-            learned_dir=str(tmp))
+            learned_dir=str(tmp),
+            assoc_path=(str(kb.assoc_path) if kb.assoc_path else None),
+            language=kb.language,
+            profile=kb.profile,
+            lexicon_dir=(str(kb.lexicon_dir) if kb.lexicon_dir else None),
+            source_prefix=kb.source_prefix,
+            spreading=kb.spreading)
     except Exception:
         shutil.rmtree(tmp, ignore_errors=True)
         return None, None

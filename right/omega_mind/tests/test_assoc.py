@@ -291,8 +291,11 @@ class TestEngineSpeaks(unittest.TestCase):
         from omega_mind.pybot_bridge import PyBotBridge
         if not _edge_data_present():
             self.skipTest("data/assoc/assoc_edges.jsonl not present")
-        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"),
-                                     assoc_path=str(_edges_path()))
+        # One package per language: an English turn needs the English
+        # package, not a language switch inside a Chinese index.
+        kb = FeynmanKB(language="en",
+                       learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"),
+                       assoc_path=str(_edges_path()))
         if not kb.available():
             self.skipTest("feynman-open knowledge not on this machine")
         mind = MindEngine(
@@ -300,7 +303,7 @@ class TestEngineSpeaks(unittest.TestCase):
             clock=lambda: 1000.0, bridge=PyBotBridge.disabled(), kb=kb,
             auto_save=False, language="en")
         result = mind.turn("What is vacuum polarization?", now=1000.0)
-        self.assertTrue(result.source.startswith("feynman_kb_en:"),
+        self.assertTrue(result.source.startswith(kb.source_root + ":"),
                         result.source)
         association = result.retrieval.get("association")
         self.assertIn("Don't confuse it with", association)
@@ -352,7 +355,8 @@ class TestCommittedEdges(unittest.TestCase):
         cls.graph = assoc.load(_edges_path())
         cls.kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"),
                                      assoc_path=str(_edges_path()))
-        if not cls.kb.available():
+        cls.en_kb = FeynmanKB(language="en")
+        if not cls.kb.available() or not cls.en_kb.available():
             raise unittest.SkipTest("feynman-open knowledge not on this machine")
         cls.titles = {doc.id: doc.title for doc in cls.kb.docs}
         cls.ids = set(cls.titles)
@@ -392,7 +396,7 @@ class TestCommittedEdges(unittest.TestCase):
                 self.assertTrue(edge.difference_en.strip(), edge)
 
     def test_english_branch_speaks_with_english_titles(self):
-        en_titles = {doc.id: doc.title for doc in self.kb.docs_en}
+        en_titles = {doc.id: doc.title for doc in self.en_kb.docs}
         line = self.graph.sentence("opt-020", language="en",
                                    titles=en_titles)
         self.assertIsNotNone(line)
@@ -403,7 +407,7 @@ class TestCommittedEdges(unittest.TestCase):
 
     def test_every_spoken_edge_speaks_in_both_languages(self):
         zh_titles = {doc.id: doc.title for doc in self.kb.docs}
-        en_titles = {doc.id: doc.title for doc in self.kb.docs_en}
+        en_titles = {doc.id: doc.title for doc in self.en_kb.docs}
         for edge in self.graph.edges:
             if edge.origin != "human" or edge.kind not in assoc.SPOKEN:
                 continue
@@ -420,7 +424,7 @@ class TestCommittedEdges(unittest.TestCase):
     def test_every_card_has_an_english_name(self):
         import re
         cjk = re.compile(r"[\u4e00-\u9fff]")
-        for doc in self.kb.docs_en:
+        for doc in self.en_kb.docs:
             self.assertTrue(doc.title.strip(), doc.id)
             self.assertIsNone(cjk.search(doc.title),
                               (doc.id, doc.title))

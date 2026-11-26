@@ -23,61 +23,112 @@ from typing import Dict, Iterable, List, Optional, Tuple
 from . import assoc, lang, spreading
 from .learner import LearnedStore, card_row, normalize
 
-DEFAULT_DIRS = [
-    # The repo ships the Feynman cards next to the personas; a checkout answers
-    # out of the box. Set OMEGA_KB_PATH to point at your own card directory.
-    Path(__file__).resolve().parents[2] / "personas" / "feynman-zh" / "knowledge",
-]
+#: Shipped persona packages, discovered from ``personas/*/knowledge``. The
+#: right brain names no persona: a caller that wants a specific mind passes
+#: its ``knowledge`` directory (``app/runtime.build()`` does). The discovery
+#: only lets a fresh checkout, the CLI and the tests find cards without one.
+PACKAGES_ROOT = Path(__file__).resolve().parents[2] / "personas"
 
-# English is a translated overlay: the Chinese cards stay the source of truth,
-# and rows here replace only the fields the reply is built from. Cards that
-# were already written in English (the verified web quotes) need no overlay.
-DEFAULT_EN_DIR = (Path(__file__).resolve().parents[2] / "personas"
-                  / "feynman-en" / "knowledge")
+
+def package_language(package_dir: Path) -> Optional[str]:
+    """The language a package declares in its own ``persona.json``, if any.
+
+    ``package_dir`` may be the package root or its ``knowledge`` subdirectory.
+    A package that says nothing is treated as unclassified; the caller then
+    has to name the language.
+    """
+    root = Path(package_dir)
+    if root.name == "knowledge":
+        root = root.parent
+    try:
+        data = json.loads((root / "persona.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    language = data.get("language")
+    return language if language in ("zh", "en") else None
+
+
+def _shipped_knowledge_dirs() -> Tuple[Path, ...]:
+    return tuple(sorted(
+        path for path in PACKAGES_ROOT.glob("*/knowledge")
+        if path.is_dir() and any(path.glob("*.jsonl"))
+    ))
+
+
+#: Every pack the repo ships, one language each. Never a single hardcoded id.
+DEFAULT_DIRS = _shipped_knowledge_dirs()
 
 # Files whose rows carry a usable "text" (or equivalent) body. Rows without
 # prose (relations, people, manifest) are skipped automatically.
 SKIP_FILES = {"MANIFEST.json"}
 
-# Rows sometimes omit "type"; the file name then names the kind.
+# Rows sometimes omit "type"; the file name then names the kind. Kinds have
+# one spelling across packages: a package that names its files after its own
+# section headings still yields the same kind the engine reasons about, so a
+# card's behaviour never depends on the file layout of the package it came
+# from. Kinds are a property of the card schema, not of any persona.
 STEM_KIND = {
     "teachable_units": "teachable_unit",
     "physics_edges": "physics_edge",
     "method_cards": "method_card",
+    "feynman_biography": "biography",
+    "feynman_lectures": "lecture_card",
+    "feynman_life_art": "persona_memory",
+    "feynman_math_comp": "lecture_card",
+    "feynman_physics": "physics_card",
+    "facts": "fact",
+    "verified_facts": "fact",
+    "persona_memories": "persona_memory",
+    "physics_guardrails": "physics_guardrail",
+    "thinking_moves": "thinking_move",
+    "taste_discriminants": "taste_discriminant",
 }
 
 _ASCII = re.compile(r"[a-z0-9]+(?:[.\-][a-z0-9]+)*")
 _CJK = re.compile(r"[一-鿿]+")
 
-# Language rules are data under ``lang/<language>/``; the names below stay as
-# the zh/en entry points the rest of the package already calls.
-_ZH = lang.load("zh")
-_EN = lang.load("en")
+# Language rules are data under ``lang/<language>/``. Nothing is loaded at
+# import time: each KB instance loads exactly the core its package speaks, and
+# the module-level helpers below only exist for callers that work on one
+# language at a time (challenge mode, scripts). They load lazily on first use.
+#
+# The helpers keep the loader that was bound at import time. Tools that swap
+# ``lang.load`` to try another segmentation scheme mean to change the KB under
+# test, not the baseline the scheme is compared against — going through the
+# live name would make the baseline call the candidate, and recurse.
 
-_STOP_BIGRAMS = _ZH._stop_bigrams
-_ZH_BRIDGE = _ZH._bridge
+_BASELINE_LOAD = lang.load
+
+
+def _core(language: str, profile: Optional[str] = None):
+    """The package core for a live instance; follows ``lang.load`` swaps."""
+    return lang.load(language, profile)
+
+
+def _baseline_core(language: str):
+    return _BASELINE_LOAD(language)
 
 
 def _stem_en(word: str) -> str:
     """Light, deterministic English stemming for retrieval and grading."""
-    return _EN.stem(word)
+    return _baseline_core("en").stem(word)
 
 
 def _tokens_en(text: str) -> List[str]:
     """Lowercase word tokens, stopwords removed, light stemming."""
-    return _EN.tokens(text)
+    return _baseline_core("en").tokens(text)
 
 
 def _expand_en(text: str) -> str:
-    return _EN.expand(text)
+    return _baseline_core("en").expand(text)
 
 
 def _expand_zh(text: str) -> str:
-    return _ZH.expand(text)
+    return _baseline_core("zh").expand(text)
 
 
 def _bridge_zh(text: str) -> str:
-    return _ZH.bridge(text)
+    return _baseline_core("zh").bridge(text)
 
 
 def _unigrams(text: str) -> List[str]:
@@ -87,11 +138,11 @@ def _unigrams(text: str) -> List[str]:
     or everyday phrasings. They are weighted low enough that they can never
     pass the precision gate on their own.
     """
-    return _ZH.unigrams(text)
+    return _baseline_core("zh").unigrams(text)
 
 
 def _tokens(text: str) -> List[str]:
-    return _ZH.tokens(text)
+    return _baseline_core("zh").tokens(text)
 
 
 # Questions about the speaker's own memory are not questions about
@@ -287,7 +338,6 @@ class FeynmanKB:
     SOFT_MARGIN = 0.02
 
     def __init__(self, knowledge_dir: Optional[str] = None, autoload: bool = True,
-                 english_dir: Optional[str] = None,
                  learned_dir: Optional[str] = None,
                  assoc_path: Optional[str] = None,
                  language: Optional[str] = None,
@@ -295,10 +345,21 @@ class FeynmanKB:
                  lexicon_dir: Optional[str] = None,
                  source_prefix: Optional[str] = None,
                  spreading: Optional[bool] = None):
+        """One instance = one package = one language.
+
+        ``knowledge_dir`` (or ``OMEGA_KB_PATH``) names the package's card
+        directory; nothing here assumes a persona id. ``language`` selects the
+        rule set and the language of the index. When it is omitted and a
+        package is found, the package's own ``persona.json`` decides; a KB
+        with no package at all falls back to Chinese so a learned-only store
+        still segments its cards.
+        """
+        if language is not None and language not in ("zh", "en"):
+            raise ValueError("language must be 'zh' or 'en'")
+        self.language = language or "zh"
+        self._language_explicit = language is not None
         self.docs: List[Doc] = []
-        self.docs_en: List[Doc] = []
         self.idf: Dict[str, float] = {}
-        self.idf_en: Dict[str, float] = {}
         # Off unless asked for: OMEGA_SPREADING=1 or an explicit argument.
         # The bonus is small and gated, but it still needs golden-net proof
         # before it may become the default.
@@ -307,24 +368,20 @@ class FeynmanKB:
         self._spread: Optional[Dict[str, List[Tuple[str, float]]]] = None
         self._assoc: Optional[assoc.AssocGraph] = None
         self.dir: Optional[Path] = None
-        self.en_dir: Optional[Path] = None
         self.learned_dir: Optional[Path] = Path(learned_dir) if learned_dir else None
         # Judgement about this mind's own cards belongs to the persona, not to
         # the engine: two personas may share the engine and never borrow each
         # other's associations. None keeps the engine default (single-persona
         # CLI use).
         self.assoc_path: Optional[Path] = Path(assoc_path) if assoc_path else None
-        # A one-language package: ``language="en"`` means every card in this
-        # directory is already English and no Chinese corpus exists at all.
-        # None keeps the legacy dual mode (Chinese cards + English overlay).
-        if language not in (None, "zh", "en"):
-            raise ValueError("language must be None, 'zh' or 'en'")
-        self.language = language
         # Which rule set inside the language reads this package's text. The
         # 老庄 package reads classical Chinese; everything else is modern.
         self.profile = profile or "default"
-        self.core_zh = lang.load("zh", self.profile)
-        self.core_en = _EN
+        self._core_cache = None
+        if profile:
+            # An unknown profile is a caller error, and the caller deserves to
+            # hear about it here, not on the first query three layers down.
+            self._validate_profile()
         # Optional derived term graph (tools/build_lexicon.py). Off unless a
         # caller names the directory: the file is rebuilt data, not shipped
         # source, so its absence must not change any answer.
@@ -336,21 +393,84 @@ class FeynmanKB:
         self._source_rows: List[Tuple[str, dict]] = []
         self.mode = "unloaded"
         if autoload:
-            path = self._find_dir(knowledge_dir)
+            path = self._find_dir(knowledge_dir, self.language)
             if path is not None:
-                self.load(path, english_dir=english_dir)
+                self.load(path)
         # A learned overlay can exist with no corpus at all: the user may teach
         # the mind before any cards are installed.
         if self.learned_dir is not None and self.learned is None:
             self._load_learned()
 
-    @staticmethod
-    def _find_dir(explicit: Optional[str]) -> Optional[Path]:
+    @property
+    def core(self):
+        """This package's language rule set; loaded once, on first use."""
+        if self._core_cache is None:
+            self._core_cache = lang.load(self.language, self.profile)
+        return self._core_cache
+
+    @property
+    def source_root(self) -> str:
+        """The prefix every answer source from this package starts with.
+
+        The package names its own source: an instance holds one package in one
+        language, so ``feynman-zh:flp-i-01`` needs no separate language field.
+        Callers that mix packages pass a distinct ``source_prefix``.
+        """
+        return self.source_prefix
+
+    @property
+    def core_zh(self):
+        """The Chinese rule set, for callers that name the language explicitly.
+
+        A KB that holds another package's language has no Chinese core to
+        hand out; ask ``core`` for the rules this package actually reads.
+        """
+        if self.language != "zh":
+            raise ValueError(
+                f"this mind holds the {self.language!r} package; "
+                f"its language core is {self.language!r}, not 'zh'")
+        return self.core
+
+    def _validate_profile(self) -> None:
+        """Refuse a profile the package's language does not ship."""
+        available = lang.profiles(self.language)
+        if self.profile not in available:
+            raise lang.LanguageRuleError(
+                f"unknown language profile: {self.profile!r}; "
+                f"{self.language!r} ships {available}")
+
+    def _set_language(self, language: str) -> None:
+        if language not in ("zh", "en"):
+            raise ValueError("language must be 'zh' or 'en'")
+        if language != self.language:
+            self.language = language
+            self._core_cache = None
+            self._validate_profile()
+
+    def _adopt_package_language(self, path: Path) -> None:
+        """Take the language from the package's persona.json unless pinned."""
+        if self._language_explicit:
+            return
+        declared = package_language(path.parent)
+        if declared is not None:
+            self._set_language(declared)
+
+    def _find_dir(self, explicit: Optional[str],
+                  language: Optional[str]) -> Optional[Path]:
+        """Caller path, then env, then a shipped package in that language.
+
+        ``language=None`` means "no preference": the first shipped package is
+        used, unclassified or not.
+        """
         env = os.environ.get("OMEGA_KB_PATH")
-        candidates = [Path(p) for p in (explicit, env) if p]
-        candidates += DEFAULT_DIRS
-        for path in candidates:
+        for candidate in (explicit, env):
+            if not candidate:
+                continue
+            path = Path(candidate)
             if path.is_dir() and any(path.glob("*.jsonl")):
+                return path
+        for path in DEFAULT_DIRS:
+            if language is None or package_language(path.parent) == language:
                 return path
         return None
 
@@ -360,25 +480,40 @@ class FeynmanKB:
         kb.mode = "disabled"
         return kb
 
+    @classmethod
+    def for_language(cls, language: str,
+                     profile: Optional[str] = None) -> Optional["FeynmanKB"]:
+        """A KB for the installed package of ``language``, or None.
+
+        Used when a mind changes language at runtime: the new language needs
+        its own package, its own cards and its own derived state. Nothing from
+        the old package carries over, which is why this builds a fresh
+        instance instead of reloading one.
+        """
+        if language not in ("zh", "en"):
+            raise ValueError("language must be 'zh' or 'en'")
+        path = cls(autoload=False)._find_dir(None, language)
+        if path is None:
+            return None
+        root = path.parent
+        data = root / "data"
+        return cls(
+            knowledge_dir=str(path),
+            learned_dir=str(data / "kb_learned"),
+            assoc_path=str(data / "assoc" / "assoc_edges.jsonl"),
+            lexicon_dir=str(data / "lexicon"),
+            language=language,
+            profile=profile,
+            source_prefix=root.name,
+        )
+
     def available(self) -> bool:
-        return bool(self.docs or self.docs_en)
-
-    def _live_language(self) -> str:
-        return "en" if self.language == "en" else "zh"
-
-    def _live_docs(self) -> List[Doc]:
-        return self.docs_en if self.language == "en" else self.docs
-
-    def _live_idf(self) -> Dict[str, float]:
-        return self.idf_en if self.language == "en" else self.idf
+        return bool(self.docs)
 
     def _rebuild_idf(self) -> None:
-        if self.language == "en":
-            self.idf_en = self._build_idf(self.docs_en)
-        else:
-            self.idf = self._build_idf(self.docs)
+        self.idf = self._build_idf(self.docs)
 
-    def topic_for(self, text: str, language: str = "zh") -> str:
+    def topic_for(self, text: str, language: Optional[str] = None) -> str:
         """Coarse topic of a user utterance: the kind of the nearest card.
 
         Deliberately not a tag — tags are fine-grained and half of them are
@@ -393,7 +528,9 @@ class FeynmanKB:
                 return doc.kind
         return "general"
 
-    def load(self, path: Path, english_dir: Optional[str] = None) -> None:
+    def load(self, path: Path) -> None:
+        """Load one package. The language was fixed before the first card."""
+        self._adopt_package_language(path)
         if self.language == "en":
             self._load_en_package(path)
             return
@@ -418,13 +555,8 @@ class FeynmanKB:
         self.dir = path
         self.idf = self._build_idf(docs)
         self._spread = None
-        if self.language is None:
-            # Legacy bilingual mode only: a package loads one language.
-            self._load_english(english_dir)
         self._load_learned()
         self.mode = f"{self.source_prefix}:{len(docs)}"
-        if self.docs_en:
-            self.mode += f"+en:{len(self.docs_en)}"
         if len(self.docs) > len(docs):
             self.mode += f"+learned:{len(self.docs) - len(docs)}"
 
@@ -454,23 +586,35 @@ class FeynmanKB:
                 doc = self._row_to_doc(file.stem, row, language="en")
                 if doc is not None:
                     docs.append(doc)
-        self.docs = []
-        self.docs_en = docs
-        self.idf = {}
-        self.idf_en = self._build_idf(docs)
+        self.docs = docs
+        self.idf = self._build_idf(docs)
         self.dir = path
-        self.en_dir = path
         self._spread = None
         self.dropped_rows = dropped
         self._load_learned()
         self.mode = f"{self.source_prefix}:en:{len(docs)}"
         if dropped:
             self.mode += f"-drop:{dropped}"
-        learned = len(self.docs_en) - len(docs)
+        learned = len(self.docs) - len(docs)
         if learned:
             self.mode += f"+learned:{learned}"
 
     # -- learned overlay ---------------------------------------------------
+
+    def _learned_store(self) -> Optional[LearnedStore]:
+        """The learned overlay that belongs to this KB's own package.
+
+        Derived state is per package: what one mind was taught must never
+        appear in another package's index. An explicit ``learned_dir`` wins;
+        otherwise the store sits under the package that owns the cards. A KB
+        with neither has no overlay at all rather than a global one.
+        """
+        directory = self.learned_dir
+        if directory is None and self.dir is not None:
+            directory = self.dir.parent / "data" / "kb_learned"
+        if directory is None:
+            return None
+        return LearnedStore(directory)
 
     def _load_learned(self) -> None:
         """Append user-taught cards and aliases on top of the read-only corpus.
@@ -479,16 +623,18 @@ class FeynmanKB:
         scoring, same answer builder. Removing ``data/kb_learned`` restores
         the exact pre-learning behaviour.
         """
-        store = LearnedStore(self.learned_dir)
+        store = self._learned_store()
         self.learned = store
-        docs = self._live_docs()
+        if store is None:
+            return
+        docs = self.docs
         known = {doc.id for doc in docs}
         added = 0
         for row in store.cards:
             if row.get("id") in known:
                 continue
             doc = self._row_to_doc("learned_cards", row,
-                                   language=self._live_language())
+                                   language=self.language)
             if doc is None:
                 continue
             docs.append(doc)
@@ -500,7 +646,7 @@ class FeynmanKB:
             self._apply_alias(card_id, phrase)
 
     def _apply_alias(self, card_id: str, phrase: str) -> None:
-        docs = self._live_docs()
+        docs = self.docs
         doc = next((d for d in docs if d.id == card_id), None)
         if doc is None:
             return
@@ -508,10 +654,8 @@ class FeynmanKB:
         if phrase not in phrases:
             phrases.append(phrase)
         n = max(1, len(docs))
-        idf = self._live_idf()
-        tokens = (_tokens_en(phrase) if self._live_language() == "en"
-                  else _tokens(phrase))
-        for tok in tokens:
+        idf = self.idf
+        for tok in self.core.tokens(phrase):
             if doc.weights.get(tok, 0.0) < 3.0:
                 doc.weights[tok] = 3.0
             if tok not in idf:
@@ -520,7 +664,7 @@ class FeynmanKB:
     def learn_alias(self, card_id: str, phrase: str,
                     persist: bool = True) -> bool:
         """Attach a phrasing to a card after the mind was praised for it."""
-        if not phrase or not any(d.id == card_id for d in self._live_docs()):
+        if not phrase or not any(d.id == card_id for d in self.docs):
             return False
         self._apply_alias(card_id, phrase)
         if persist and self.learned is not None:
@@ -552,11 +696,10 @@ class FeynmanKB:
                         if c.get("id") == row["id"]), row)
             # A revision may have merged into a *different* id.
             row = self._merged_row(row, text)
-        doc = self._row_to_doc("learned_cards", row,
-                               language=self._live_language())
+        doc = self._row_to_doc("learned_cards", row, language=self.language)
         if doc is None:
             return False
-        docs = self._live_docs()
+        docs = self.docs
         for i, existing in enumerate(docs):
             if existing.id == doc.id:
                 docs[i] = doc
@@ -579,12 +722,8 @@ class FeynmanKB:
         if self.learned is None:
             return
         active = {c.get("id") for c in self.learned.cards}
-        live = [d for d in self._live_docs()
-                if not d.id.startswith("learned-") or d.id in active]
-        if self.language == "en":
-            self.docs_en = live
-        else:
-            self.docs = live
+        self.docs = [d for d in self.docs
+                     if not d.id.startswith("learned-") or d.id in active]
 
     def reload_learned(self) -> None:
         """Rebuild the learned overlay after a batch change (sleep merges).
@@ -595,22 +734,17 @@ class FeynmanKB:
         """
         if self.learned is None:
             return
-        live = [d for d in self._live_docs()
-                if not d.id.startswith("learned-")]
+        live = [d for d in self.docs if not d.id.startswith("learned-")]
         known = {doc.id for doc in live}
         for row in self.learned.cards:
             if row.get("id") in known:
                 continue
-            doc = self._row_to_doc("learned_cards", row,
-                                   language=self._live_language())
+            doc = self._row_to_doc("learned_cards", row, language=self.language)
             if doc is None:
                 continue
             live.append(doc)
             known.add(doc.id)
-        if self.language == "en":
-            self.docs_en = live
-        else:
-            self.docs = live
+        self.docs = live
         for card_id, phrase in self.learned.alias_items():
             self._apply_alias(card_id, phrase)
         self._rebuild_idf()
@@ -624,20 +758,6 @@ class FeynmanKB:
         if self.learned is not None and card_id.startswith("learned-"):
             self.learned.record_praise(card_id)
 
-    # -- English overlay ---------------------------------------------------
-
-    @staticmethod
-    def _find_en_dir(explicit: Optional[str]) -> Optional[Path]:
-        env = os.environ.get("OMEGA_KB_EN_PATH")
-        candidates = [Path(p) for p in (explicit, env) if p]
-        candidates.append(DEFAULT_EN_DIR)
-        for candidate in candidates:
-            if candidate.is_dir() and any(candidate.glob("*.jsonl")):
-                return candidate
-            if candidate.is_file() and candidate.suffix == ".jsonl":
-                return candidate
-        return None
-
     @staticmethod
     def _already_english(row: dict, kind: str = "") -> bool:
         body = " ".join(str(row.get(k) or "") for k in ("text", "move"))
@@ -647,49 +767,9 @@ class FeynmanKB:
             body = _answer_for(kind, row, language="en")
         return bool(body.strip()) and not _CJK.search(body)
 
-    def _load_english(self, english_dir: Optional[str]) -> None:
-        """Merge the translated overlay onto the Chinese rows.
-
-        A row with no translation and no original English body is skipped:
-        better an English mode that says less than one that leaks Chinese.
-        """
-        path = self._find_en_dir(english_dir)
-        if path is None:
-            self.docs_en = []
-            self.idf_en = {}
-            return
-        files = [path] if path.is_file() else sorted(path.glob("*.jsonl"))
-        translated: Dict[str, dict] = {}
-        for file in files:
-            for line in file.read_text(encoding="utf-8").splitlines():
-                if not line.strip():
-                    continue
-                try:
-                    row = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if row.get("id"):
-                    translated[str(row["id"])] = row
-
-        docs_en: List[Doc] = []
-        for stem, row in self._source_rows:
-            rid = str(row.get("id") or "")
-            if rid and rid in translated:
-                merged = dict(row)
-                merged.update(translated[rid])
-            elif self._already_english(row):
-                merged = row
-            else:
-                continue
-            doc = self._row_to_doc(stem, merged, language="en")
-            if doc is not None:
-                docs_en.append(doc)
-        self.docs_en = docs_en
-        self.idf_en = self._build_idf(docs_en)
-        self.en_dir = path
-
     def _row_to_doc(self, stem: str, row: dict,
-                    language: str = "zh") -> Optional[Doc]:
+                    language: Optional[str] = None) -> Optional[Doc]:
+        language = language or self.language
         kind = str(row.get("type") or STEM_KIND.get(stem, stem)).replace(" ", "_")
         answer = _answer_for(kind, row, language=language)
         if kind == "persona_memory":
@@ -732,7 +812,7 @@ class FeynmanKB:
             for text, weight in ((title, 1.0), (_join(row.get("tags")), 0.8),
                                  (_join(row.get("aliases")), 1.0),
                                  (answer, 0.25)):
-                for tok in _unigrams(text):
+                for tok in self.core.unigrams(text):
                     if doc.weights.get(tok, 0.0) < weight:
                         doc.weights[tok] = weight
         if not doc.weights:
@@ -740,12 +820,12 @@ class FeynmanKB:
         return doc
 
     def _add_weight(self, doc: Doc, text: str, weight: float,
-                    language: str = "zh") -> None:
+                    language: Optional[str] = None) -> None:
         if not text:
             return
-        tokens = (_tokens_en(text) if language == "en"
-                  else self.core_zh.tokens(text))
-        for tok in tokens:
+        # One core per instance: a card is tokenised by the rules of the
+        # package it came from, never by another language's segmenter.
+        for tok in self.core.tokens(text):
             if doc.weights.get(tok, 0.0) < weight:
                 doc.weights[tok] = weight
 
@@ -799,11 +879,20 @@ class FeynmanKB:
         return table
 
     def search(self, text: str, limit: int = 3,
-               language: str = "zh",
+               language: Optional[str] = None,
                min_score: Optional[float] = None,
                prefer_kinds: Iterable[str] = ()) -> List[Tuple[float, Doc]]:
-        docs = self.docs_en if language == "en" else self.docs
-        idf = self.idf_en if language == "en" else self.idf
+        """Search this package's index.
+
+        A request in another language is a miss, not a translation: the
+        package holds one language, and there is no second index to fall
+        through to.
+        """
+        if language is not None and language != self.language:
+            return []
+        language = self.language
+        docs = self.docs
+        idf = self.idf
         if not docs:
             return []
         if language == "en" and (_EN_EPISODIC.search(text)
@@ -811,15 +900,11 @@ class FeynmanKB:
             return []
         if language != "en" and _ZH_EPISODIC.search(text):
             return []
-        expanded = (_expand_en(text) if language == "en"
-                    else self.core_zh.bridge(self.core_zh.expand(text)))
-        query = set(_tokens_en(expanded) if language == "en"
-                    else self.core_zh.tokens(expanded))
-        if language != "en" and not query:
-            query = set()
+        expanded = self.core.bridge(self.core.expand(text))
+        query = set(self.core.tokens(expanded))
         if not query:
             return []
-        uni_query = set(self.core_zh.unigrams(expanded)) if language != "en" else set()
+        uni_query = set(self.core.unigrams(expanded))
         # Only tokens the corpus actually contains can match a card. Counting
         # out-of-vocabulary query tokens in the denominator punished natural
         # paraphrases ("费曼怎么看待权威") for words no card could ever have.
@@ -930,7 +1015,7 @@ class FeynmanKB:
                 boosted.append((score, doc))
             scored = boosted
         if self.spreading and scored:
-            index = self._spread_index(language, docs)
+            index = self._spread_index(docs)
             subject = set(qweight)
             spread: List[Tuple[float, Doc]] = []
             for score, doc in scored:
@@ -972,15 +1057,13 @@ class FeynmanKB:
                     reverse=True)
         return scored[:max(1, limit)]
 
-    def _spread_index(self, language: str, docs: List["Doc"]
+    def _spread_index(self, docs: List["Doc"]
                       ) -> Dict[str, List[Tuple[str, float]]]:
         if self._spread is None:
-            self._spread = {}
-        if language not in self._spread:
-            self._spread[language] = spreading.npmi_neighbors(docs)
-        return self._spread[language]
+            self._spread = spreading.npmi_neighbors(docs)
+        return self._spread
 
-    def lookup(self, text: str, language: str = "zh",
+    def lookup(self, text: str, language: Optional[str] = None,
                min_score: Optional[float] = None, limit: int = 3,
                prefer_kinds: Iterable[str] = (),
                detail: str = "normal",
@@ -1002,17 +1085,18 @@ class FeynmanKB:
         return found
 
     def _association_for(self, found: Lookup,
-                         language: str) -> Optional[str]:
-        if ":" not in found.source:
+                         language: Optional[str]) -> Optional[str]:
+        prefix = self.source_root + ":"
+        if not found.source.startswith(prefix):
             return None
-        card_id = found.source.split(":", 1)[1]
+        card_id = found.source[len(prefix):]
         if card_id.startswith("learned-") or card_id == "no_match":
             return None
         graph = self._assoc_graph()
         if graph is None or not graph.edges:
             return None
-        docs = self.docs_en if language == "en" else self.docs
-        titles = {doc.id: doc.title for doc in docs}
+        language = language or self.language
+        titles = {doc.id: doc.title for doc in self.docs}
         # Never explain a card the answer already names: the user asked
         # about it, and the runner-up may be the same subject restated.
         skip = {card_id}
@@ -1025,15 +1109,13 @@ class FeynmanKB:
             self._assoc = assoc.load(self.assoc_path)
         return self._assoc
 
-    def _lookup(self, text: str, language: str = "zh",
+    def _lookup(self, text: str, language: Optional[str] = None,
                 min_score: Optional[float] = None, limit: int = 3,
                 prefer_kinds: Iterable[str] = (),
                 detail: str = "normal") -> Lookup:
-        if self.language in ("zh", "en"):
-            # A single-language package names its own source.
-            prefix = self.source_prefix
-        else:
-            prefix = "feynman_kb_en" if language == "en" else "feynman_kb"
+        # A package names its own source; there is no cross-package index to
+        # borrow a prefix from.
+        prefix = self.source_root
         threshold = self.MIN_SCORE if min_score is None else min_score
         # Search's own min_score would drop the soft band before lookup can
         # consider it. An explicit gate above the default is a deliberate
@@ -1080,19 +1162,17 @@ class FeynmanKB:
             alternatives=alternatives,
         )
 
-    def _matched_terms(self, text: str, doc: Doc, language: str) -> Tuple[str, ...]:
+    def _matched_terms(self, text: str, doc: Doc,
+                       language: Optional[str] = None) -> Tuple[str, ...]:
         """Query tokens that hit this card — the evidence behind the answer."""
-        if language == "en":
-            tokens = set(_tokens_en(_expand_en(text)))
-        else:
-            tokens = set(self.core_zh.tokens(
-                self.core_zh.bridge(self.core_zh.expand(text))))
+        core = self.core
+        tokens = set(core.tokens(core.bridge(core.expand(text))))
         shared = sorted(tok for tok in tokens if tok in doc.weights)
         return tuple(shared[:10])
 
     def _class_tie(self, hits: List[Tuple[float, Doc]], prefix: str,
                    detail: str, text: str = "",
-                   language: str = "zh",
+                   language: Optional[str] = None,
                    alternatives: Tuple[Tuple[str, float], ...] = ()
                    ) -> Optional[Lookup]:
         """Resolve a learned/corpus near-tie in favour of the corpus card.
@@ -1125,7 +1205,7 @@ class FeynmanKB:
             alternatives=alternatives,
         )
 
-    def answer(self, text: str, language: str = "zh",
+    def answer(self, text: str, language: Optional[str] = None,
                min_score: Optional[float] = None, limit: int = 3,
                prefer_kinds: Iterable[str] = (),
                detail: str = "normal") -> Tuple[Optional[str], str]:
@@ -1134,6 +1214,12 @@ class FeynmanKB:
                             detail=detail)
         return found.text, found.source
 
-    def teachable_units(self, language: str = "zh") -> List[Doc]:
-        docs = self.docs_en if language == "en" else self.docs
-        return [doc for doc in docs if doc.unit is not None]
+    def teachable_units(self, language: Optional[str] = None) -> List[Doc]:
+        """Cards this package can teach.
+
+        A package holds one language; asking for another language yields
+        nothing rather than the other package's cards.
+        """
+        if language is not None and language != self.language:
+            return []
+        return [doc for doc in self.docs if doc.unit is not None]

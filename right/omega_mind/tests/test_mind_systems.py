@@ -533,42 +533,67 @@ def _has_cjk_in_values(value) -> bool:
 class TestEnglishKnowledge(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.kb = FeynmanKB()
+        cls.zh = real_kb("zh")
+        cls.en = real_kb("en")
 
-    def test_english_overlay_covers_every_prose_row(self):
-        self.assertTrue(self.kb.available())
-        # Learned cards are the user's own Chinese analogies; there is no
-        # English original to overlay, so the coverage rule applies to the
-        # shipped corpus only.
-        learned = {doc.id for doc in self.kb.docs
+    def test_english_package_covers_every_prose_row(self):
+        # One package per language: the English package is its own corpus,
+        # not an overlay on the Chinese one. Every Chinese prose row has one
+        # English row, by id.
+        learned = {doc.id for doc in self.zh.docs
                    if doc.id.startswith("learned-")}
-        self.assertEqual(len(self.kb.docs_en),
-                         len(self.kb.docs) - len(learned))
-        self.assertIn("+en:", self.kb.mode)
-        self.assertEqual(len(self.kb.teachable_units(language="en")), 4)
+        zh_ids = {doc.id for doc in self.zh.docs} - learned
+        en_ids = {doc.id for doc in self.en.docs}
+        # Known gap: the English package ships no verified_facts.jsonl, so
+        # the web-quote rows have no translation yet. Answering in English is
+        # unaffected (those rows are quotes from third-party pages, not
+        # teachings), but the gap is pinned here: translating them shrinks
+        # the set, adding an untranslated row fails this test.
+        facts_file = Path(self.zh.dir) / "verified_facts.jsonl"
+        untranslated = set()
+        if facts_file.is_file():
+            untranslated = {
+                row["id"] for row in
+                (json.loads(line) for line in
+                 facts_file.read_text(encoding="utf-8").splitlines() if line.strip())
+                if row.get("id")
+            }
+        self.assertEqual(en_ids, zh_ids - untranslated)
+        self.assertEqual(zh_ids - en_ids, untranslated)
+        self.assertIn(":en:", self.en.mode)
+        self.assertEqual(self.en.teachable_units(language="en"),
+                         [doc for doc in self.en.docs if doc.unit is not None])
+        self.assertEqual(self.en.teachable_units(language="zh"), [])
 
     def test_english_answers_never_leak_chinese(self):
-        for doc in self.kb.docs_en:
+        for doc in self.en.docs:
             self.assertFalse(any("一" <= ch <= "鿿" for ch in doc.answer),
                              msg=doc.id)
-        reply, source = self.kb.answer("What is an atom?", language="en")
+        reply, source = self.en.answer("What is an atom?")
         self.assertIsNotNone(reply)
-        self.assertTrue(source.startswith("feynman_kb_en:"))
+        self.assertTrue(source.startswith(self.en.source_root + ":"))
         self.assertFalse(any("一" <= ch <= "鿿" for ch in reply))
+
+    def test_chinese_package_does_not_answer_english(self):
+        # A Chinese-package miss is a miss; it never falls through to the
+        # English index.
+        text, source = self.zh.answer("What is an atom?", language="en")
+        self.assertIsNone(text)
+        self.assertTrue(source.endswith(":no_match"), source)
 
     def test_personal_memory_question_does_not_hit_a_biography(self):
         # A question about the speaker's own memory is not a question about
         # Feynman's teaching award; the card layer must stay out of it.
         for query in ("Why can I not remember yesterday clearly?",
                       "Why can't I remember yesterday clearly?"):
-            reply, source = self.kb.answer(query, language="en")
+            reply, source = self.en.answer(query)
             self.assertIsNone(reply, msg=query)
-            self.assertEqual(source, "feynman_kb_en:no_match")
+            self.assertEqual(source, f"{self.en.source_root}:no_match")
 
     def test_general_memory_question_does_not_hit_unrelated_card(self):
-        reply, source = self.kb.answer("How does memory work?", language="en")
+        reply, source = self.en.answer("How does memory work?")
         self.assertIsNone(reply)
-        self.assertEqual(source, "feynman_kb_en:no_match")
+        self.assertEqual(source, f"{self.en.source_root}:no_match")
 
     def test_overlay_rows_are_provenanced_and_english(self):
         import json
@@ -588,7 +613,7 @@ class TestEnglishKnowledge(unittest.TestCase):
     def test_persona_science_answer_omits_internal_usage_note(self):
         # persona-science-001 carries a note telling the assistant when to
         # recall it. That is metadata, not something the persona should say.
-        for docs in (self.kb.docs, self.kb.docs_en):
+        for docs in (self.zh.docs, self.en.docs):
             doc = next((d for d in docs if d.id == "persona-science-001"), None)
             self.assertIsNotNone(doc)
             self.assertNotIn("这个记忆应", doc.answer)
@@ -596,13 +621,13 @@ class TestEnglishKnowledge(unittest.TestCase):
             self.assertNotIn("during meals and casual conversation", doc.answer.lower())
 
     def test_chinese_answers_stay_chinese(self):
-        reply, source = self.kb.answer("原子是什么？")
+        reply, source = self.zh.answer("原子是什么？")
         self.assertIsNotNone(reply)
         self.assertTrue(source.startswith("feynman_kb:"))
         self.assertTrue(any("一" <= ch <= "鿿" for ch in reply))
 
     def test_chinese_science_question_hits_the_science_card(self):
-        reply, source = self.kb.answer("什么是科学？")
+        reply, source = self.zh.answer("什么是科学？")
         self.assertIsNotNone(reply)
         self.assertEqual(source, "feynman_kb:persona-science-001")
         self.assertNotIn("这个记忆应", reply)
@@ -611,30 +636,30 @@ class TestEnglishKnowledge(unittest.TestCase):
         engine = MindEngine(
             persona=get_persona("feynman"),
             bridge=PyBotBridge.disabled(),
-            kb=self.kb,
+            kb=self.en,
             auto_save=False,
             language="en",
         )
         result = engine.turn("What is an atom?")
-        self.assertTrue(result.source.startswith("feynman_kb_en:"))
+        self.assertTrue(result.source.startswith(self.en.source_prefix + ":"))
         self.assertFalse(any("一" <= ch <= "鿿" for ch in result.reply))
 
     def test_engine_chinese_mode_is_unchanged(self):
         engine = MindEngine(
             persona=get_persona("feynman"),
             bridge=PyBotBridge.disabled(),
-            kb=self.kb,
+            kb=self.zh,
             auto_save=False,
             language="zh",
         )
         result = engine.turn("原子是什么？")
-        self.assertTrue(result.source.startswith("feynman_kb:"))
+        self.assertTrue(result.source.startswith(self.zh.source_prefix + ":"))
         self.assertTrue(any("一" <= ch <= "鿿" for ch in result.reply))
 
 
 class TestEnglishChallenge(unittest.TestCase):
     def setUp(self):
-        self.kb = FeynmanKB()
+        self.kb = real_kb("en")
         self.engine = MindEngine(
             persona=get_persona("feynman"),
             bridge=PyBotBridge.disabled(),
@@ -796,10 +821,10 @@ class TestFactSkepticism(unittest.TestCase):
         self.assertTrue(result.resonance["breakthrough"])
 
 
-def real_kb() -> FeynmanKB:
-    kb = FeynmanKB()
-    if not kb.available():
-        raise unittest.SkipTest("feynman-open knowledge not on this machine")
+def real_kb(language: str = "zh") -> FeynmanKB:
+    kb = FeynmanKB(language=language)
+    if not kb.available() or kb.language != language:
+        raise unittest.SkipTest(f"no {language!r} knowledge package installed")
     return kb
 
 
@@ -820,10 +845,11 @@ class TestChallengeSession(unittest.TestCase):
         cls.kb = real_kb()
 
     def engine(self, language="zh"):
+        # No KB supplied: the mind owns its package and may switch to the
+        # other package's mind on set_language.
         return MindEngine(
             persona=get_persona("feynman"),
             bridge=PyBotBridge.disabled(),
-            kb=self.kb,
             auto_save=False,
             language=language,
         )
