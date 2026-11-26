@@ -45,28 +45,29 @@ EN_QUERIES = {
 }
 
 
-def _kb_or_skip() -> FeynmanKB:
+def _kb_or_skip(language: str = "zh") -> FeynmanKB:
     if not any(path.is_dir() and any(path.glob("*.jsonl"))
                for path in DEFAULT_DIRS):
         raise unittest.SkipTest("feynman-open knowledge not on this machine")
-    kb = FeynmanKB()
-    if not kb.available():
-        raise unittest.SkipTest("feynman knowledge base did not load")
+    kb = FeynmanKB(language=language)
+    if not kb.available() or kb.language != language:
+        raise unittest.SkipTest(f"{language!r} knowledge package did not load")
     return kb
 
 
 class TestLifeArtCardsLoad(unittest.TestCase):
     def setUp(self):
-        self.kb = _kb_or_skip()
+        self.kb = _kb_or_skip("zh")
+        self.en = _kb_or_skip("en")
 
     def test_every_card_loads_in_both_languages(self):
         zh = {d.id for d in self.kb.docs}
-        en = {d.id for d in self.kb.docs_en}
+        en = {d.id for d in self.en.docs}
         self.assertTrue(NEW_IDS <= zh, f"missing zh: {NEW_IDS - zh}")
         self.assertTrue(NEW_IDS <= en, f"missing en: {NEW_IDS - en}")
 
     def test_english_overlay_has_no_chinese(self):
-        by_id = {d.id: d for d in self.kb.docs_en}
+        by_id = {d.id: d for d in self.en.docs}
         for cid in NEW_IDS:
             doc = by_id[cid]
             self.assertFalse(CJK.search(doc.answer),
@@ -78,13 +79,14 @@ class TestLifeArtCardsLoad(unittest.TestCase):
         # The project rule is one-to-one pairing: no card may exist on only
         # one side, otherwise the two language modes drift apart.
         zh = {d.id for d in self.kb.docs if d.id in NEW_IDS}
-        en = {d.id for d in self.kb.docs_en if d.id in NEW_IDS}
+        en = {d.id for d in self.en.docs if d.id in NEW_IDS}
         self.assertEqual(zh, en)
 
 
 class TestLifeArtRetrieval(unittest.TestCase):
     def setUp(self):
-        self.kb = _kb_or_skip()
+        self.kb = _kb_or_skip("zh")
+        self.en = _kb_or_skip("en")
 
     def test_chinese_topics_reach_their_card(self):
         for query, expected in ZH_QUERIES.items():
@@ -98,7 +100,7 @@ class TestLifeArtRetrieval(unittest.TestCase):
     def test_english_topics_reach_their_card(self):
         for query, expected in EN_QUERIES.items():
             with self.subTest(query=query):
-                hits = self.kb.search(query, limit=3, language="en")
+                hits = self.en.search(query, limit=3)
                 self.assertTrue(hits, f"no hit for {query}")
                 score, doc = hits[0]
                 self.assertGreaterEqual(score, self.kb.MIN_SCORE)

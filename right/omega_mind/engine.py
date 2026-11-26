@@ -171,19 +171,23 @@ class MindEngine:
         auto_save: bool = True,
         language: str = "zh",
     ):
+        if language not in LANGUAGES:
+            raise ValueError(f"language must be one of {LANGUAGES}")
         self.persona = persona or get_persona("generic")
         self.clock = clock
         self.store_path = Path(store_path) if store_path else None
         self.auto_save = auto_save and self.store_path is not None
         self.bridge = bridge or PyBotBridge()
-        self.kb = kb or FeynmanKB()
+        # One mind, one package: a KB the caller supplies keeps its own
+        # package language, and a language switch loads the package for the
+        # new language (or reports that none is installed).
+        self.kb = kb or FeynmanKB(language=language)
+        self._kb_supplied = kb is not None
         # Optional corpus-callosum responder (bridge.LeftResponder). Kept
         # duck-typed and default-None: the right brain must run without the
         # left brain installed, and with None the turn path is unchanged.
         # It is tried only when a Chinese card lookup finds nothing.
         self.left_responder = left_responder
-        if language not in LANGUAGES:
-            raise ValueError(f"language must be one of {LANGUAGES}")
         self.language = language
 
         now = clock()
@@ -248,7 +252,8 @@ class MindEngine:
         # Praise is the only feedback signal this mind has. If the previous
         # turn was answered from a card and this turn is praise, remember the
         # phrasing that led there; later paraphrases of it will score higher.
-        if (self._last_source and self._last_source.startswith("feynman_kb:")
+        if (self._last_source
+                and self._last_source.startswith(self.kb.source_prefix + ":")
                 and self._last_query
                 and any(a.name == "edge_humor" and a.strength >= 0.5
                         for a in activations)):
@@ -379,7 +384,7 @@ class MindEngine:
                                    topic=self.kb.topic_for(text))
             elif metaphor_candidate(text):
                 self._remember_candidate(text)
-        if source.startswith("feynman_kb") and ":" in source:
+        if source.startswith(self.kb.source_prefix) and ":" in source:
             card_id = source.split(":", 1)[1]
             self.kb.note_hit(card_id)
         self._last_query = text
@@ -523,7 +528,7 @@ class MindEngine:
             reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
         # A guarded mind flags a near-tie instead of pretending to be sure.
         margin = self.last_retrieval.get("margin")
-        if (policy.posture == "careful" and source.startswith("feynman_kb")
+        if (policy.posture == "careful" and source.startswith(self.kb.source_prefix)
                 and margin is not None and margin < _HEDGE_MARGIN):
             reply = reply + _HEDGE[self.language]
         return reply, source
@@ -562,6 +567,22 @@ class MindEngine:
     def set_language(self, language: str) -> str:
         if language not in LANGUAGES:
             raise ValueError(f"language must be one of {LANGUAGES}")
+        if language != self.language and language != self.kb.language:
+            if self._kb_supplied and (self.kb.available()
+                                      or self.kb.mode != "disabled"):
+                # A supplied KB is a package: one package, one language. The
+                # other language is a different package and a different mind,
+                # built by the caller that owns the package paths.
+                raise ValueError(
+                    f"this mind holds the {self.kb.language!r} package; "
+                    f"build a mind for the {language!r} package instead")
+            if not self._kb_supplied:
+                replacement = FeynmanKB.for_language(language)
+                if replacement is None:
+                    raise ValueError(f"no {language!r} package is installed")
+                self.kb = replacement
+            # A disabled KB holds no cards in any language; the mind may
+            # still change modes for tone and fallbacks.
         if language != self.language and self.challenge_session is not None:
             progress = self.challenge_session.snapshot()
             self.challenge_session = ChallengeSession(
