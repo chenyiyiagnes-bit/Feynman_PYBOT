@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .feynman_kb import FeynmanKB
-from .golden_queries import GOLDEN, NEGATIVES
+from .golden_queries import GOLDEN, NEGATIVES, for_package
 from .learner import (
     CORRECTION_MARKERS,
     LearnedStore,
@@ -243,10 +243,22 @@ def _record(history: Dict[str, Any], text: str, kind: str, turn: int,
 # -- golden gate ------------------------------------------------------------
 
 def golden_ok(kb: FeynmanKB) -> Tuple[bool, List[str]]:
-    """The same net the tests use: no repair may flip a known answer."""
+    """The same net the tests use: no repair may flip a known answer.
+
+    A package that ships ``evals/golden.json`` is checked against its own
+    rows only. A KB built without a package prefix (tests, one-off scripts)
+    falls back to the merged net, filtered by language.
+    """
     failures: List[str] = []
     prefix = kb.source_root
-    for query, language, acceptable in GOLDEN:
+    golden, negatives = for_package(prefix)
+    if not golden and not negatives:
+        golden = tuple(row for row in GOLDEN if row[1] == kb.language)
+        negatives = tuple(row for row in NEGATIVES if row[1] == kb.language)
+    else:
+        golden = tuple(row for row in golden if row[1] == kb.language)
+        negatives = tuple(row for row in negatives if row[1] == kb.language)
+    for query, language, acceptable in golden:
         if language != kb.language:
             continue  # the other package's cards are not in this index
         _, source = kb.answer(query)
