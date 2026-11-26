@@ -1,5 +1,7 @@
 # Feynman_PYBOT
 
+[![tests](https://github.com/chenyiyiagnes-bit/Feynman_PYBOT/actions/workflows/tests.yml/badge.svg?branch=dev)](https://github.com/chenyiyiagnes-bit/Feynman_PYBOT/actions/workflows/tests.yml)
+
 一个不依赖大模型、可以「一键换人设」的角色心智框架：右脑管情绪与姿态，左脑管措辞，中间用一条可审计的接口连起来。
 
 - **右脑**：26 个方块（事件评价器）→ 7 维情感状态 → 语气/篇幅/检索策略 → 真 3×3×3 魔方记录对话历史，带疲劳、冷却、睡眠复位。
