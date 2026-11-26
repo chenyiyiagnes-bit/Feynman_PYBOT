@@ -69,15 +69,39 @@ SCHEMES: Dict[str, Callable[[str], List[str]]] = {
 }
 
 
+class _ProxyCore:
+    """A language core whose only difference is how it cuts Chinese text."""
+
+    def __init__(self, core, scheme: Callable[[str], List[str]]) -> None:
+        self._core = core
+        self._scheme = scheme
+
+    def __getattr__(self, name):
+        return getattr(self._core, name)
+
+    def tokens(self, text: str) -> List[str]:
+        return self._scheme(text)
+
+
 @contextlib.contextmanager
 def patched(scheme: Callable[[str], List[str]]):
-    """Route the KB's Chinese tokenizer through ``scheme`` for one build."""
-    original = feynman_kb._tokens
-    feynman_kb._tokens = scheme
+    """Route the KB's Chinese tokenizer through ``scheme`` for one build.
+
+    The knowledge base reads through its own language core, so the scheme is
+    installed where the core is loaded rather than by swapping a module-level
+    function nothing calls any more.
+    """
+    original = lang.load
+
+    def load_with_scheme(language, profile=None):
+        core = original(language, profile)
+        return _ProxyCore(core, scheme) if language == "zh" else core
+
+    lang.load = load_with_scheme
     try:
         yield
     finally:
-        feynman_kb._tokens = original
+        lang.load = original
 
 
 # ---------------------------------------------------------------------------

@@ -125,6 +125,7 @@ def build(target: Union[str, Path] = "feynman-zh",
                     learned_dir=str(learned_dir_for(persona)),
                     assoc_path=str(assoc_path_for(persona)),
                     language=package_language,
+                    profile=persona.language_profile,
                     source_prefix=persona.id)
           if kb_dir is not None else FeynmanKB.disabled())
     responder = None

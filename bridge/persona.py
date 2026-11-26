@@ -26,6 +26,9 @@ class Persona:
     id: str
     name: str
     language: str
+    # Which rule profile inside the language the mind reads with ("default"
+    # unless a package says otherwise: the 老庄 package reads classical).
+    language_profile: str
     baselines: Dict[str, float]
     taus: Dict[str, float]
     voice: Dict[str, List[str]]
@@ -112,6 +115,7 @@ def load(path: str | Path) -> Persona:
         id=str(data.get("id") or data.get("name") or path.parent.name),
         name=str(data.get("name") or ""),
         language=str(data.get("language") or "zh"),
+        language_profile=str(data.get("language_profile") or "default"),
         baselines={d: float(baselines[d]) for d in DIMENSIONS},
         taus={d: float(taus[d]) for d in DIMENSIONS},
         voice={k: list(v) for k, v in voice.items() if isinstance(v, list)},

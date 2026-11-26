@@ -287,6 +287,7 @@ class FeynmanKB:
                  learned_dir: Optional[str] = None,
                  assoc_path: Optional[str] = None,
                  language: Optional[str] = None,
+                 profile: Optional[str] = None,
                  source_prefix: Optional[str] = None,
                  spreading: Optional[bool] = None):
         self.docs: List[Doc] = []
@@ -314,6 +315,11 @@ class FeynmanKB:
         if language not in (None, "zh", "en"):
             raise ValueError("language must be None, 'zh' or 'en'")
         self.language = language
+        # Which rule set inside the language reads this package's text. The
+        # 老庄 package reads classical Chinese; everything else is modern.
+        self.profile = profile or "default"
+        self.core_zh = lang.load("zh", self.profile)
+        self.core_en = _EN
         self.source_prefix = source_prefix or "feynman_kb"
         self.learned: Optional[LearnedStore] = None
         self.aliases: Dict[str, List[str]] = {}
@@ -723,12 +729,12 @@ class FeynmanKB:
             return None
         return doc
 
-    @staticmethod
-    def _add_weight(doc: Doc, text: str, weight: float,
+    def _add_weight(self, doc: Doc, text: str, weight: float,
                     language: str = "zh") -> None:
         if not text:
             return
-        tokens = _tokens_en(text) if language == "en" else _tokens(text)
+        tokens = (_tokens_en(text) if language == "en"
+                  else self.core_zh.tokens(text))
         for tok in tokens:
             if doc.weights.get(tok, 0.0) < weight:
                 doc.weights[tok] = weight
@@ -756,14 +762,14 @@ class FeynmanKB:
         if language != "en" and _ZH_EPISODIC.search(text):
             return []
         expanded = (_expand_en(text) if language == "en"
-                    else _bridge_zh(_expand_zh(text)))
+                    else self.core_zh.bridge(self.core_zh.expand(text)))
         query = set(_tokens_en(expanded) if language == "en"
-                    else _tokens(expanded))
+                    else self.core_zh.tokens(expanded))
         if language != "en" and not query:
             query = set()
         if not query:
             return []
-        uni_query = set(_unigrams(expanded)) if language != "en" else set()
+        uni_query = set(self.core_zh.unigrams(expanded)) if language != "en" else set()
         # Only tokens the corpus actually contains can match a card. Counting
         # out-of-vocabulary query tokens in the denominator punished natural
         # paraphrases ("费曼怎么看待权威") for words no card could ever have.
@@ -1007,13 +1013,13 @@ class FeynmanKB:
             alternatives=alternatives,
         )
 
-    @staticmethod
-    def _matched_terms(text: str, doc: Doc, language: str) -> Tuple[str, ...]:
+    def _matched_terms(self, text: str, doc: Doc, language: str) -> Tuple[str, ...]:
         """Query tokens that hit this card — the evidence behind the answer."""
         if language == "en":
             tokens = set(_tokens_en(_expand_en(text)))
         else:
-            tokens = set(_tokens(_bridge_zh(_expand_zh(text))))
+            tokens = set(self.core_zh.tokens(
+                self.core_zh.bridge(self.core_zh.expand(text))))
         shared = sorted(tok for tok in tokens if tok in doc.weights)
         return tuple(shared[:10])
 

@@ -233,13 +233,20 @@ def _rule_path(language: str, profile: Optional[str]) -> Path:
     return _DATA_DIR / language / name
 
 
-@lru_cache(maxsize=None)
 def load(language: str, profile: Optional[str] = None) -> LanguageCore:
     """Load a language rule set; ``profile`` selects a named variant.
 
     Languages with a single rule set use ``core.json``. A named profile is an
-    overlay on it, so a variant only states what it changes.
+    overlay on it, so a variant only states what it changes. ``None``,
+    ``""`` and ``"default"`` name the same rule set and return the same object.
     """
+    if profile in (None, "", "default"):
+        profile = None
+    return _load(language, profile)
+
+
+@lru_cache(maxsize=None)
+def _load(language: str, profile: Optional[str]) -> LanguageCore:
     if language not in SUPPORTED:
         raise LanguageRuleError(f"unsupported language: {language!r}")
     base_path = _rule_path(language, None)
@@ -263,11 +270,24 @@ def load(language: str, profile: Optional[str] = None) -> LanguageCore:
 
 
 def _merge(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
-    """Overlay one rule file on another; list tables replace, maps merge."""
+    """Overlay one rule file on another.
+
+    Maps merge; lists (stop tables, lexicon, expansion rows) concatenate, so a
+    profile adds vocabulary and can never silently drop what the language
+    already knew; strings and scalars replace, because a profile that changes
+    the particle list means to change it.
+    """
     merged = dict(base)
     for key, value in overlay.items():
-        if isinstance(value, dict) and isinstance(merged.get(key), dict):
-            merged[key] = {**merged[key], **value}
+        current = merged.get(key)
+        if isinstance(value, dict) and isinstance(current, dict):
+            merged[key] = {**current, **value}
+        elif isinstance(value, list) and isinstance(current, list):
+            combined = list(current)
+            for item in value:
+                if item not in combined:
+                    combined.append(item)
+            merged[key] = combined
         else:
             merged[key] = value
     return merged

@@ -124,6 +124,60 @@ def _left_segmentation():
     return word_segmentation
 
 
+class ClassicalProfile(unittest.TestCase):
+    """A profile adds to its language without taking anything away."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.classical = lang.load("zh", "classical")
+        cls.modern = lang.load("zh")
+
+    def test_profile_is_listed(self) -> None:
+        self.assertIn("classical", lang.profiles("zh"))
+
+    def test_classical_question_expands_to_classical_topics(self) -> None:
+        expanded = self.classical.expand("何为道")
+        for word in ("道", "自然", "无为"):
+            self.assertIn(word, expanded)
+
+    def test_classical_bridge_exists(self) -> None:
+        self.assertIn("水", self.classical.bridge("上善若水"))
+        self.assertIn("不争", self.classical.bridge("上善若水"))
+
+    def test_modern_terms_survive_the_overlay(self) -> None:
+        self.assertIn("熵", self.classical.expand("熵是什么"))
+
+    def test_stop_bigrams_are_union_not_replacement(self) -> None:
+        self.assertTrue(set(self.modern.data["stop_bigrams"])
+                        <= set(self.classical.data["stop_bigrams"]))
+        self.assertIn("之谓", self.classical.data["stop_bigrams"])
+
+    def test_lexicon_is_union(self) -> None:
+        modern = set(self.modern.data["lexicon"])
+        classical = set(self.classical.data["lexicon"])
+        self.assertTrue(modern <= classical)
+        self.assertIn("庖丁解牛", classical)
+
+    def test_classical_particles_are_stop_characters(self) -> None:
+        self.assertIn("乎", self.classical._unigram_stop)
+        self.assertEqual(self.classical.segment("庖丁解牛游刃有余"),
+                         ["庖丁解牛", "游刃有余"])
+
+    def test_kb_can_read_with_a_profile(self) -> None:
+        kb = kbmod(autoload=False, profile="classical")
+        self.assertEqual(kb.profile, "classical")
+        self.assertIs(kb.core_zh, self.classical)
+        self.assertIs(kbmod(autoload=False).core_zh, self.modern)
+
+    def test_kb_names_an_unknown_profile(self) -> None:
+        with self.assertRaises(lang.LanguageRuleError):
+            kbmod(autoload=False, profile="no-such-profile")
+
+
+def kbmod(autoload: bool = False, **kwargs):
+    return kb.FeynmanKB(autoload=autoload, **kwargs)
+
+
 class RuleFiles(unittest.TestCase):
     def test_supported_languages_load(self) -> None:
         self.assertEqual(lang.load("zh").language, "zh")
@@ -136,8 +190,8 @@ class RuleFiles(unittest.TestCase):
 
     def test_unknown_profile_is_named(self) -> None:
         with self.assertRaises(lang.LanguageRuleError) as caught:
-            lang.load("zh", profile="classical")
-        self.assertIn("classical", str(caught.exception))
+            lang.load("zh", profile="no-such-profile")
+        self.assertIn("no-such-profile", str(caught.exception))
 
     def test_profiles_are_discoverable(self) -> None:
         self.assertIn("default", lang.profiles("zh"))
