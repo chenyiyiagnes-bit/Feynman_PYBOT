@@ -9,10 +9,10 @@
 | 分支 | 用途 | 谁能推 |
 |---|---|---|
 | `main` | 稳定 / 发布 | 主负责人 |
-| `dev` | 集成分支，阶段性成果都往这里合 | 主负责人（代传其他人的分支） |
+| `dev` | 集成分支，阶段性成果都往这里合 | 主负责人 |
 | `assoc/association` | 右脑联想优化的特性分支 | 联想优化窗口（Claude） |
 | `persona/laozhuang` | 老庄 PYBOT 开发 | Astra 团队 |
-| `review/gemini` | 审核报告 | Gemini |
+| `review/gemini` | 审核报告与准备性工作（分支同步、CI 初筛、release notes、文档 diff） | Gemini |
 
 流程：特性分支 → PR（或由主负责人 cherry-pick）到 `dev` → 主负责人 review 后合入 →
 里程碑时 `dev` → `main`。任何人不得直接推 `main`。
@@ -66,14 +66,20 @@
 - 不提交任何 `*.state.json`、`snapshots/`、`data/kb_learned/`、`data/assoc/`
 - 不提交语料
 
-## 上传权：只有一个
+## 上传：一个合并闸门，准备性工作可以分出去
 
 本机所有会话共用同一套 GitHub 凭据，因此**不需要每个 BOT 自己有账号**。
 
-| 角色 | 怎么交付 | 谁上传 |
-|---|---|---|
-| 联想优化窗口 | 在 `Feynman_PYBOT-assoc` worktree 里本地提交到 `assoc/association` | 它可自行 `git push`；不确定就只提交，主负责人推 |
-| Astra / 老庄开发 | 成品放进 `incoming/laozhuang/`（保持完整目录结构） | 主负责人检查后提交到 `persona/laozhuang` |
-| Gemini / 审核 | 报告放进 `incoming/gemini/`，文件名 `YYYY-MM-DD-gemini.md` | 主负责人提交到 `review/gemini` |
+原则是**审核与发布分离**：谁做独立检查，谁就不按合并键。
 
-主负责人每次上传前检查：只动该分支对应目录、无语料、无状态文件、`tools/validate_persona.py` 通过。
+| 角色 | 负责什么 | 怎么交付 | 能推什么 |
+|---|---|---|---|
+| 主负责人 | 设计判断、核心代码、审所有 diff | 直接提交 | `dev`、`main`；merge、tag、改仓库设置 |
+| 联想优化窗口 | 右脑联想代码 | 在 `Feynman_PYBOT-assoc` worktree 里本地提交 | 可自行 `git push` 到 `assoc/association`；不确定就只提交 |
+| Gemini / 审核 | 从 `dev` 同步审核分支、CI 红初筛、写 PR 描述与 release notes、文档 diff、评审报告 | 报告放 `incoming/gemini/`，文件名 `YYYY-MM-DD-gemini.md`；准备性改动推到 `review/gemini` | 只推 `review/gemini`，**不推** `dev` / `main` |
+| Astra / 老庄开发 | 老庄人设与卡片 | 成品放进 `incoming/laozhuang/`（保持完整目录结构） | 只推 `persona/laozhuang` |
+| DSH headless | 边界死板的批量活 | 只交 diff / PR | 不碰远端 |
+
+主负责人每次合并前检查：只动该分支对应目录、无语料、无状态文件、两套测试全绿、
+`tools/validate_persona.py` 通过。**Gemini 审过的分支同样要走这一步**——它的报告是输入，
+不是放行条。

@@ -1,0 +1,138 @@
+# HANDOFF — 状态、约束、待办
+
+任何新窗口、新协作者接手时先读这一页，再读 [`AGENTS.md`](AGENTS.md)。
+这里记录的是**代码里看不出来的东西**：为什么这样设计、哪些决定已经定了、下一步按什么顺序做。
+代码结构、提交历史请自己看，不在这里重复。
+
+最后更新：2026-11-26。
+
+---
+
+## 1. 心智模型（一句话）
+
+硬骨架只有一份，人设是包，一个包一种语言。
+
+```
+personas/feynman-zh/     费曼 · 中文
+personas/feynman-en/     费曼 · 英文
+personas/laozhuang-zh/   老庄 · 中文
+personas/laozhuang-en/   老庄 · 英文
+```
+
+- 一个包 = `persona.json` + `knowledge/*.jsonl`，`language` 固定为 `zh` 或 `en`。
+- 运行时语言不匹配直接报错（`PersonaError`），不做静默回退。**换语言就换包。**
+- 两包之间**不共享任何软数据**：知识卡、联想边、学习覆盖、语料全部按包隔离。
+- 骨架（`right/` `app/` `bridge/` `left/`）里不允许出现指向某个人设的默认路径；
+  默认值用 `Path(__file__).resolve().parents[N]` 或环境变量。
+
+## 2. 现在做到哪了
+
+已推 `dev`（`9f4aa1d persona: one hard skeleton, single-language packages`），CI 全绿。
+
+- `FeynmanKB` 按包装载单一语言；`source_prefix` 用包 id（`feynman-zh:flp-i-01`）。
+- 英文卡从引擎目录搬进 `personas/feynman-en/knowledge`（293 张）；
+  中文包 302 张。旧的「双语叠加」路径只留给直接调引擎的测试，包内不再触发。
+- `laozhuang-zh` 有 `persona.json`，**没有卡片**。
+- `laozhuang-en` 有 `persona.json`，英文语气是**占位**，也没有卡片。
+- 英文联想边本地生成过 89 条（不入库，`data/assoc/` 被忽略）。
+
+验证方式：
+
+```sh
+python3 -m unittest discover -s tests                          # 合并层
+cd right && python3 -m unittest discover -s omega_mind/tests   # 右脑
+cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必跑
+```
+
+## 3. 已定、不要再重新讨论的设计结论
+
+这几条是几轮讨论后定下的，接手时直接沿用；要推翻必须先说服仓库所有者。
+
+1. **频率 ≠ 核心。** 高频词是功能词，不是人格。词的重要性用 tf-idf / 意外度，不用原始频次。
+2. **共现 ≠ 语义。** 邻居要 PMI 加度数归一化，否则「的」连接一切。
+3. **槽填充不能自由生成。** 槽里只能放卡片里已有的东西；否则就是换了个地方编造。
+4. **卡片是唯一事实源。** 一张卡 = 一条可核对断言 + 出处（quote/span）+ 边界或反例。
+5. **token 编码是派生索引，不是事实源。** 编码可重建、可版本化，卡片是原文。
+6. **编码的真正用处是机检闸门**：发出的每个 token 都必须能在所选卡片字段的编码序列里找到。
+7. **切词迁移是不对称的。** 功能词、形态、词缀可以跨域迁移；领域词表和语域不能。
+   文言语料就是反例——**不能**拿现代汉语的切词规则去切老庄。
+8. **自进化必须有外部锚点。** 没有 golden 检索差异或人工确认，就不许晋升新词条。
+9. **语言规则归骨架的「语言核心」层，不归引擎代码。** 引擎是语言无关的；每个语言一份
+   版本化数据；每个包选一份。
+
+## 4. 任务清单
+
+未完成的工作，按依赖分组。每项都写了验收标准——**验收标准写不出来的，说明还不是任务。**
+
+### A. 语言核心与切词
+
+| # | 任务 | 验收标准 | 依赖 |
+|---|---|---|---|
+| A1 | 抽 `lang/zh/core.json`、`lang/en/core.json` | 把 `feynman_kb.py` 里的 `_tokens`、`_tokens_en`、`_STOP_BIGRAMS`、`_expand_zh`、`_expand_en`、`_bridge_zh`、`_stem_en` 与权重常量**原样**搬成数据文件；两套测试全绿、检索结果逐条不变 | — |
+| A2 | 三处分词统一 | 右脑 zh/en 与左脑词级分词走同一接口；两套测试全绿 | A1 |
+| A3 | `modern` / `classical` profile | `lang/zh` 下两套规则，包用 `"segmentation": "classical"` 选择；老庄包用 classical 能切出文言单字词 | A1、A4 |
+| A4 | `tools/eval_segmentation.py` | 输入两份切分结果，输出 golden 检索命中差异 + 人工切分集的准确率；可当 CI 的一步 | A1 |
+| A5 | 干净确认集 | 新确认集不来自任何已训练语料；登记出处与构建日期 | — |
+
+### B. 词粒库与编码
+
+| # | 任务 | 验收标准 | 依赖 |
+|---|---|---|---|
+| B1 | `tools/build_lexicon.py` | 产出 `personas/<id>/data/lexicon/{terms.json,edges.jsonl}`（派生、不入库）；terms 带类别、df-idf、出处；edges 带 PMI 与关系类型；重建结果可复现 | A1 |
+| B2 | `cards.coded.jsonl` | 每个卡片字段编成 token id + 字节偏移；生成时断言「每个 token 都能回溯到原文片段」 | B1 |
+| B3 | 词粒库驱动召回扩展 | 默认关；打开后 golden 检索命中率不低于基线，否则不合并 | B1、A4 |
+| B4 | 槽填充接机检闸门 | 左脑输出中每个实词 token 都能在所选卡片字段的编码序列里找到；找不到就拒答或降级，不得自由生成 | B2、左脑桥 |
+
+### C. 自进化
+
+| # | 任务 | 验收标准 | 依赖 |
+|---|---|---|---|
+| C1 | 词条晋升流程 | 高 PMI + 跨卡复现的候选词 → 评估提升 ≥ 阈值（数值待定，见 §5）→ 晋升并记出处；不提升则记日志丢弃 | B1、A4 |
+| C2 | 人工修正日志 | 每次「切错了/答错了」写成带出处的记录，可统计、可回放 | B1 |
+| C3 | 词表版本化 | 编码整批重建、可回滚；不做增量修补 | B1 |
+
+### D. 内容与包
+
+| # | 任务 | 验收标准 | 依赖 |
+|---|---|---|---|
+| D1 | 合并 `persona/laozhuang` | 分支先拉到 `dev`，再迁入卡片；两套测试全绿后才进 `dev` | — |
+| D2 | `laozhuang-en` 语气重写 | 用原文对应表达替换占位，不靠中文回译 | D1 |
+| D3 | 文言语料随包发布 | 仅限公有领域原文（《道德经》《庄子》）；仓库体积评估后再定 | 所有者确认 |
+| D4 | `tools/build_assoc.py` | 新克隆无联想边时能由卡片重建；可复现 | B1（可复用 PMI） |
+| D5 | 通知协作者目录改名 | Gemini / Astra 的脚本不再引用 `personas/feynman`、`personas/laozhuang` | — |
+
+### E. 更远
+
+| # | 任务 | 说明 |
+|---|---|---|
+| E1 | 人格 = 阈值与偏好 | 让语料决定「什么算答得上、遇边界补一句还是闭嘴、偏爱机制还是反例」，而不是落在词汇表上 |
+| E2 | `knowledge.corpus` 接左脑 vault | 目前没有消费方，缺一个 `tools/build_vault.py` |
+
+## 5. 等仓库所有者拍板的三件事
+
+在这三个有答案之前，相关任务不要动：
+
+1. **老庄分支怎么合**：直接 `merge dev` 进 `persona/laozhuang`，还是从 `dev` 新开
+   `persona/laozhuang-migrate` 再把内容搬过去？
+2. **英文老庄的占位语气**：先留着，还是等 D1 完成后按原文重写？
+3. **《道德经》《庄子》原文是否随仓库发布**：公版合法，但会明显增大仓库体积；
+   不发布则老庄包与费曼包一致——只有卡片，语料自备。
+
+另外 C1 的「提升阈值」需要一个具体数字，得等 A4/A5 有基线之后才能定，不预设。
+
+## 6. 已知的坑
+
+- **改名会静默打断别人。** `personas/feynman` → `feynman-zh` 这次让 29 个测试失败、
+  也让协作者脚本失效。以后改路径先用 `git grep` 扫全仓。
+- **结构化卡片没有 `text` 字段。** `physics_edge` / `teachable_unit` / `method_card`
+  的正文在 `phenomenon`、`force_invariant`、`pattern` 等字段里。任何「按 `text` 判断」
+  的代码都会静默丢卡——`_already_english` 就踩过，丢了 21 张。
+- **`data/assoc/` 与 `data/lexicon/` 都不入库。** 新克隆只有卡片，没有边。不要假设它们存在。
+- **确认集已污染。** 旧的 `heldout_voice` 等集合已进过训练语料，不能再用作评估证据（见 A5）。
+- **训练语料红线**：中英必须一一对应；英文只能用费曼原话，禁止中文回译。
+- **`.gitignore` 是最后一道，不是第一道。** 提交前仍然要 `git status` 亲眼看。
+
+## 7. 分工
+
+见 [`AGENTS.md`](AGENTS.md) 第 7 节与 [`COORDINATION.md`](COORDINATION.md)。
+一句话：**审核与发布分离，合并闸门只有一个。**
