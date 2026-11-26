@@ -4,16 +4,21 @@
 
 ## 分支
 
-仓库：https://github.com/chenyiyiagnes-bit/Feynman_PYBOT（private，发布时转 public）
+仓库：https://github.com/chenyiyiagnes-bit/Feynman_PYBOT（已转 public）
 
 | 分支 | 用途 | 谁能推 |
 |---|---|---|
 | `main` | 稳定 / 发布 | 主负责人 |
-| `dev` | 集成分支，阶段性成果都往这里合 | 两边都可推 |
-| `assoc/*` | 右脑联想优化的特性分支 | 联想优化窗口 |
+| `dev` | 集成分支，阶段性成果都往这里合 | 主负责人（代传其他人的分支） |
+| `assoc/association` | 右脑联想优化的特性分支 | 联想优化窗口（Claude） |
+| `persona/laozhuang` | 老庄 PYBOT 开发 | Astra 团队 |
+| `review/gemini` | 审核报告 | Gemini |
 
-流程：`assoc/*` → PR 到 `dev` → 主负责人review后合入 → 里程碑时 `dev` → `main`。
-任何人不得直接推 `main`。
+流程：特性分支 → PR（或由主负责人 cherry-pick）到 `dev` → 主负责人 review 后合入 →
+里程碑时 `dev` → `main`。任何人不得直接推 `main`。
+
+提交作者必须用能关联 GitHub 账号的邮箱（如 `227941007+chenyiyiagnes-bit@users.noreply.github.com`），
+`yiyichen@YiyideMacStudio.lan` 这类本机邮箱不会关联到账号。
 
 ## 语料红线
 
