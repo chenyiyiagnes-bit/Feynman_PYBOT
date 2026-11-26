@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import os
+from pathlib import Path
 import select
 import sys
 
@@ -54,11 +56,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="omega_mind")
     parser.add_argument("--persona", default="generic",
                         help="'generic' (no cards), or a package id under personas/")
-    parser.add_argument("--save", default="mind_state.json")
+    parser.add_argument("--save", help="explicit state file path")
     parser.add_argument("--load", action="store_true", help="resume from --save if it exists")
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--lang", choices=LANGUAGES, default=None,
-                        help="reply language mode (default: saved or zh)")
+                        help="reply language mode (default: package language, saved language or zh)")
     parser.add_argument("--serve", type=int, metavar="PORT", default=None,
                         help="run HTTP/WebSocket server instead of the CLI")
     parser.add_argument("--profile", action="store_true",
@@ -67,20 +69,29 @@ def main(argv: list[str] | None = None) -> int:
 
     persona = get_persona(args.persona)
     kb = None
+    language = args.lang
+    override = os.getenv("PYBOT_STATE_DIR")
     if str(args.persona) != "generic":
         # One mind, one package: the CLI feeds the package's own cards and
         # derived state, exactly like app.runtime.build() does.
         package = PACKAGES_ROOT / str(args.persona)
+        state_dir = Path(override) / package.name if override else package / "data"
+        if args.save is None:
+            args.save = str(state_dir / f"{package.name}.state.json")
         kb = FeynmanKB(
             knowledge_dir=str(package / "knowledge"),
-            learned_dir=str(package / "data" / "kb_learned"),
+            learned_dir=str(state_dir / "kb_learned"),
             assoc_path=str(package / "data" / "assoc" / "assoc_edges.jsonl"),
             source_prefix=package.name,
         )
+        if language is not None and language != kb.language:
+            parser.error("--lang must match the selected package")
+        language = kb.language
+    elif args.save is None:
+        args.save = str(Path(override or ".") / "mind_state.json")
 
-    import os
     if args.load and os.path.exists(args.save):
-        engine = MindEngine.load(args.save, persona=persona, language=args.lang,
+        engine = MindEngine.load(args.save, persona=persona, language=language,
                                  kb=kb)
         if engine.load_warning:
             print(f"[warn] {engine.load_warning} — 从空状态开始")
@@ -88,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[resumed] {args.save}")
     else:
         engine = MindEngine(persona=persona, store_path=args.save,
-                            kb=kb, language=args.lang or "zh")
+                            kb=kb, language=language or "zh")
     if args.lang:
         engine.set_language(args.lang)
 
@@ -102,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"OmegaMind · persona={persona.name} · lang={engine.language} · "
           "/state /save /reset /cube /turn /memory /relations /dream "
-          "/profile /challenge /lang /exit")
+          "/profile /challenge /analogy /lang /exit")
     print(f"[kb] {engine.kb.mode} · [pybot] {engine.bridge.mode}")
     challenge_on = False
     hinted: set[str] = set()
@@ -209,6 +220,16 @@ def main(argv: list[str] | None = None) -> int:
                 if dream.audit and not dream.audit.get("error"):
                     print("  " + reflect_summary(dream.audit, engine.language))
             continue
+        if text.startswith("/analogy "):
+            session = engine.challenge(reset=True)
+            prompt = session.open_analogy(text.partition(" ")[2].strip())
+            if prompt is None:
+                print("这张卡目前没有可练习的已审核类比。" if engine.language == "zh"
+                      else "This card doesn't have a reviewed analogy to practice.")
+            else:
+                print(prompt)
+            challenge_on = prompt is not None
+            continue
         if text == "/challenge":
             session = engine.challenge(reset=True)
             if not session.available():
@@ -230,14 +251,23 @@ def main(argv: list[str] | None = None) -> int:
                       else "（离开挑战模式）")
                 continue
             if text == "/next":
-                print(session.next_unit())
+                prompt = session.next_unit()
+                if prompt is not None:
+                    print(prompt)
+                else:
+                    challenge_on = False
                 continue
+            practicing_analogy = session.analogy is not None
             grade = session.submit(text)
             print(grade.feedback)
+            if practicing_analogy and session.analogy is None:
+                if grade.revealed:
+                    print(grade.revealed)
+                challenge_on = False
             if args.verbose:
                 print(f"  verdict={grade.verdict} score={grade.score} "
                       f"matched={grade.matched} missing={grade.missing}")
-            if session.unit is None and grade.verdict == "strong":
+            if not practicing_analogy and session.unit is None and grade.verdict == "strong":
                 print(session.next_unit())
             continue
 

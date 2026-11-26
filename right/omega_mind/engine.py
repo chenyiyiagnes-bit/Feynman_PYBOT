@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from . import evidence, knowledge, left_brain, reflect, resonance, skepticism
+from . import dialogue, evidence, knowledge, left_brain, reflect, resonance, review, skepticism
 from .appraisal import Activation, AppraisalEngine
 from .challenge import ChallengeSession
 from .config import PersonaConfig, get_persona
@@ -29,7 +29,7 @@ from .learner import (
     metaphor_candidate,
     shared_pairs,
 )
-from .memory import Episode, MemoryTiers, salience_of
+from .memory import Episode, MemoryTiers, fact_changes, salience_of
 from .policy import Policy, StyleDirective
 from .pybot_bridge import PyBotBridge
 from .relations import RelationshipGraph
@@ -71,6 +71,7 @@ class _DialogueFocus:
     source: str
     spoken: List[str]
     last_reply: str
+    revision: str
 
 
 _PROACTIVE = {
@@ -202,6 +203,15 @@ class MindEngine:
         # The standalone prototype can use it after a Chinese lookup miss.
         self.left_responder = left_responder
         self.language = language
+        self.retrieval_mode = os.getenv("OMEGA_RETRIEVAL", "legacy")
+        if self.retrieval_mode not in ("legacy", "shadow", "rrf"):
+            self.retrieval_mode = "legacy"
+        self.structured_evidence = os.getenv(
+            "OMEGA_STRUCTURED_EVIDENCE", "1" if self.kb.managed_package else "0") != "0"
+        self.posture_mode = os.getenv("OMEGA_POSTURE", "affect_cube")
+        if self.posture_mode not in ("fixed", "affect", "affect_cube"):
+            self.posture_mode = "affect_cube"
+        self.review_learning = self.kb.uses_review()
 
         now = clock()
         self.state = AffectState.from_persona(self.persona, now)
@@ -232,6 +242,7 @@ class MindEngine:
         self._last_query: Optional[str] = None
         self._last_source: Optional[str] = None
         self._dialogue_focus: Optional[_DialogueFocus] = None
+        self._topics = dialogue.TopicHistory()
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -254,16 +265,24 @@ class MindEngine:
             self.state.set("affinity", self.relations.affinity(user, self.persona.baseline("affinity")))
             self.current_user = user
             self._dialogue_focus = None
+            self._last_query = self._last_source = None
+            self._pending_metaphors.clear()
+        if self.review_learning and self._uses_knowledge_package():
+            self.kb.refresh_review()
+        changes = fact_changes(text, self.language)
         # The cube's return path: how long each displaced cubie has held the
         # front face this turn, and which baselines the affect state should
         # relax toward while the arrangement stays scrambled.
         self.cube_feedback.observe(self.cube, self.turn_index)
-        effective_baselines = self.cube_feedback.baselines(self.persona, self.cube)
+        effective_baselines = (self.cube_feedback.baselines(self.persona, self.cube)
+                               if self.posture_mode == "affect_cube" else None)
         self.state.advance(now, self.persona, baselines=effective_baselines)
 
-        gains = self.cube_feedback.gains(self.cube)
+        gains = (self.cube_feedback.gains(self.cube)
+                 if self.posture_mode == "affect_cube" else None)
         activations = self.appraisal.evaluate(text, self.turn_index, gains=gains)
 
+        review_learning = self.review_learning and self._uses_knowledge_package()
         # Praise is the only feedback signal this mind has. If the previous
         # turn was answered from a card and this turn is praise, remember the
         # phrasing that led there; later paraphrases of it will score higher.
@@ -273,17 +292,22 @@ class MindEngine:
                 and any(a.name == "edge_humor" and a.strength >= 0.5
                         for a in activations)):
             card_id = self._last_source.split(":", 1)[1]
-            self.kb.learn_alias(card_id, self._last_query)
+            if review_learning:
+                review.queue_candidate(self.kb.learned, "alias",
+                                {"card_id": card_id, "phrase": self._last_query})
+            else:
+                self.kb.learn_alias(card_id, self._last_query)
             self.kb.note_praise(card_id)
 
         # A loose comparison from an earlier turn earns a card once the user
         # confirms it — by praising, or by using it again. Promotion happens
         # before retrieval so the confirming turn can already use it.
-        self._promote_metaphors(text, activations)
+        if not review_learning:
+            self._promote_metaphors(text, activations)
 
         # A grand claim gets the evidence reflex before any card is retrieved.
         # The jolt is part of the affect dynamics, not a separate UI message.
-        skeptic = skepticism.check(text, self.language) if base_reply is None else None
+        skeptic = skepticism.check(text, self.language) if base_reply is None and not changes else None
         if skeptic is not None:
             self.state.apply({
                 "dopamine": skepticism.DOPAMINE_JOLT,
@@ -303,15 +327,16 @@ class MindEngine:
 
         # The right brain has now reacted; let it choose how the left brain
         # should look for and compose facts. It never supplies facts itself.
-        cube_bias = self.cube_feedback.bias(self.cube)
-        left_policy = left_brain.plan_for(
-            self.state, self.persona, activations,
-            cube_bias=cube_bias)
+        cube_bias = (self.cube_feedback.bias(self.cube)
+                     if self.posture_mode == "affect_cube" else None)
+        left_policy = (left_brain.LeftBrainPolicy() if self.posture_mode == "fixed"
+                       else left_brain.plan_for(self.state, self.persona, activations,
+                                                cube_bias=cube_bias))
         self.last_left_brain = left_policy.to_dict()
 
         self.relations.touch(user, now)
         self.relations.mentions(text, now, user)
-        self._turn_cube(activations, gains)
+        self._turn_cube(activations, gains if gains is not None else {})
 
         # Second-order breakthrough: a strong appraisal (or a correction)
         # re-enters the cube as a short phase-locked sequence.
@@ -337,7 +362,20 @@ class MindEngine:
 
         self.last_retrieval = {}
         if base_reply is None:
-            if skeptic is not None:
+            if changes:
+                self.last_retrieval = {"dialogue_act": "memory_update",
+                                       "fact_kinds": [change.kind for change in changes]}
+                changed = changes[-1]
+                if changed.operation == "retract" and changed.kind == "lives_in":
+                    base_reply = ("明白，你已经不住在那里了。" if self.language == "zh"
+                                  else "Got it. You don't live there anymore.")
+                elif changed.kind == "lives_in":
+                    base_reply = (f"记住了，你现在住在{changed.raw}。" if self.language == "zh"
+                                  else f"Got it. You live in {changed.raw} now.")
+                else:
+                    base_reply = "我记住了。" if self.language == "zh" else "I'll remember that."
+                source = "memory:update"
+            elif skeptic is not None:
                 base_reply, source = skeptic.reply, f"skepticism:{skeptic.rule}"
             else:
                 base_reply, source = self._base_reply(text, left_policy, cube_bias)
@@ -346,20 +384,23 @@ class MindEngine:
             if not _match_language(base_reply, self.language):
                 base_reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
 
-        directive = self.policy.compute(self.state, activations, self.language)
+        style_state = (AffectState.from_persona(self.persona, now)
+                       if self.posture_mode == "fixed" else self.state)
+        directive = self.policy.compute(
+            style_state, [] if self.posture_mode == "fixed" else activations, self.language)
         presented = self._present_evidence(base_reply, source, left_policy.detail)
         reply = self.renderer.render(
             presented if presented is not None else base_reply,
             directive, self.turn_index, self.language,
             posture=left_policy.posture,
             preserve=presented is not None or bool(self.last_retrieval.get("dialogue_act"))
-            or source.startswith("fallback"))
+            or source.startswith("fallback") or bool(self.last_retrieval.get("evidence_plan")))
         # The association is an aside, so it goes after the shell: the
         # answer keeps its own ending, the remark stays one clean line.
         reply = _with_association(reply, self.last_retrieval.get("association"),
                                   left_policy.detail)
         if self._uses_knowledge_package():
-            self._remember_dialogue(source, base_reply, reply)
+            self._remember_dialogue(source, base_reply, reply, text)
 
         result = TurnResult(
             reply=reply,
@@ -385,7 +426,7 @@ class MindEngine:
             affect=dict(result.state),
             salience=salience_of(activations, deltas),
             retrieval=dict(result.retrieval),
-        ))
+        ), changes=changes)
         self._log_event({
             "turn": self.turn_index,
             "now": now,
@@ -400,8 +441,10 @@ class MindEngine:
         # explicit one becomes a card right away; a loose comparison waits in
         # the pending buffer for a confirmation signal. Minting happens after
         # the reply, so the teaching turn cannot echo itself.
-        if self.kb.available():
-            if looks_like_metaphor(text):
+        if self.kb.available() and not changes:
+            if review_learning and (looks_like_metaphor(text) or metaphor_candidate(text)):
+                review.queue_candidate(self.kb.learned, "analogy", {"text": text})
+            elif looks_like_metaphor(text):
                 self.kb.learn_card(text, origin="conversation",
                                    topic=self.kb.topic_for(text))
             elif metaphor_candidate(text):
@@ -528,11 +571,30 @@ class MindEngine:
             policy = left_brain.LeftBrainPolicy()
         personal = self._personal_reply(text)
         if personal is not None:
-            self.last_retrieval = {}
+            self.last_retrieval = {"dialogue_act": "memory_query"}
             return personal
         packaged = self._uses_knowledge_package()
         target = ""
         if packaged:
+            resume = dialogue.resume_target(text, self.language)
+            if resume is not None:
+                doc = self._topics.resolve(self.current_user, resume, self.kb.by_id)
+                self.last_retrieval = {"dialogue_act": "resume_gap"}
+                if doc is not None and (not self.review_learning or self.kb.public_doc(doc)):
+                    if self.structured_evidence and evidence.structured_card(doc):
+                        plan, reason = evidence.compose(doc, "conclusion", policy.detail,
+                                                        self.persona.prefer_examples)
+                        if not plan:
+                            self.last_retrieval["decision"] = reason
+                            return dialogue.RESUME_GAP[self.language], f"clarification:{self.language}"
+                        self.last_retrieval["evidence_plan"] = plan
+                        reply = " ".join(part["text"] for part in plan)
+                    else:
+                        reply = doc.answer_for(policy.detail)
+                    self.last_retrieval.update(dialogue_act="resume", card_id=doc.id,
+                                               revision=dialogue.card_revision(doc))
+                    return reply, f"{self.kb.source_root}:{doc.id}"
+                return dialogue.RESUME_GAP[self.language], f"clarification:{self.language}"
             social = knowledge.social_reply(text, self.language)
             if social is not None:
                 self.last_retrieval = {"dialogue_act": "social"}
@@ -543,9 +605,14 @@ class MindEngine:
                 return followup
 
         found = self.kb.lookup(
-            text, language=self.language, min_score=policy.min_score,
-            limit=policy.limit, prefer_kinds=policy.prefer_kinds,
-            detail=policy.detail, associate=True)
+            text, language=self.language, min_score=None if packaged else policy.min_score,
+            limit=3 if packaged else policy.limit,
+            prefer_kinds=() if packaged else policy.prefer_kinds,
+            detail=policy.detail, associate=True,
+            public_only=packaged and self.review_learning,
+            mode=self.retrieval_mode if packaged else "legacy",
+            structured=packaged and self.structured_evidence,
+            prefer_examples=self.persona.prefer_examples)
         self.last_retrieval = found.to_dict()
         reply, source = found.text, found.source
         if (target and self._dialogue_focus is not None
@@ -555,6 +622,12 @@ class MindEngine:
             self.last_retrieval["unverified_followup"] = True
             reply = None
         if not _match_language(reply or "", self.language):
+            if packaged and self.last_retrieval.get("decision") == "conflict":
+                self.last_retrieval["dialogue_act"] = "clarify_conflict"
+                return (("我找到的材料给出了不同结论。你问的是哪一种条件？"
+                         if self.language == "zh" else
+                         "My sources give different answers. Which conditions do you mean?"),
+                        f"clarification:{self.language}")
             if packaged:
                 return _FALLBACK[self.language], f"fallback:{self.language}"
             # Keep the standalone prototype's fallback tools for callers
@@ -571,6 +644,7 @@ class MindEngine:
         # A guarded mind flags a near-tie instead of pretending to be sure.
         margin = self.last_retrieval.get("margin")
         if (policy.posture == "careful" and source.startswith(self.kb.source_prefix)
+                and not self.last_retrieval.get("evidence_plan")
                 and margin is not None and margin < _HEDGE_MARGIN):
             reply = reply + _HEDGE[self.language]
         return reply, source
@@ -586,10 +660,23 @@ class MindEngine:
         focus = self._dialogue_focus
         if not kind or focus is None:
             return None
+        card = self.kb.by_id.get(focus.card_id)
+        if (card is None or focus.revision != dialogue.card_revision(card)
+                or (self.review_learning and not self.kb.public_doc(card))):
+            return None
+        edge = None
+        plan = []
         if kind == "repeat":
             passage = focus.last_reply
+        elif self.structured_evidence and evidence.structured_card(card) and not target:
+            intent = {"why": "mechanism", "boundary": "condition", "rephrase": "example"}[kind]
+            plan, _ = evidence.compose(card, intent, "brief")
+            if plan and not any(part["role"] == intent and all(
+                    part["text"] not in said for said in focus.spoken) for part in plan):
+                plan = []
+            passage = " ".join(part["text"] for part in plan) if plan else None
         else:
-            passage = self.kb.follow_up(focus.card_id, kind, target, tuple(focus.spoken))
+            passage, edge = self.kb.follow_up_evidence(focus.card_id, kind, target, tuple(focus.spoken))
         if not _match_language(passage or "", self.language):
             if target:
                 return None
@@ -597,26 +684,37 @@ class MindEngine:
             return _FOLLOWUP_GAP[self.language], f"fallback:{self.language}"
         self.last_retrieval = {
             "dialogue_act": kind, "source": focus.source,
-            "card_id": focus.card_id, "evidence": passage,
+            "card_id": focus.card_id, "revision": dialogue.card_revision(card),
+            "evidence": passage,
         }
+        if edge is not None:
+            self.last_retrieval["association_edge"] = edge
+        if plan:
+            self.last_retrieval["evidence_plan"] = plan
         return passage, focus.source
 
-    def _remember_dialogue(self, source: str, base: str, reply: str) -> None:
+    def _remember_dialogue(self, source: str, base: str, reply: str, query: str) -> None:
         kind = self.last_retrieval.get("dialogue_act")
         focus = self._dialogue_focus
-        if kind in ("ack", "followup_gap"):
+        if kind in ("ack", "followup_gap", "resume_gap", "memory_query", "memory_update"):
             return
         prefix, _, card_id = source.partition(":")
         own = self.kb.source_prefix
-        if prefix not in (own, own + "_soft") or not card_id or card_id == "no_match":
+        doc = self.kb.by_id.get(card_id)
+        if prefix not in (own, own + "_soft") or doc is None:
             self._dialogue_focus = None
-        elif kind == "repeat":
             return
-        elif focus is not None and focus.card_id == card_id:
+        revision = dialogue.card_revision(doc)
+        if kind == "repeat":
+            return
+        if focus is not None and focus.card_id == card_id and focus.revision == revision:
             focus.spoken = (focus.spoken + [base, reply])[-12:]
             focus.last_reply = reply
         else:
-            self._dialogue_focus = _DialogueFocus(card_id, source, [base, reply], reply)
+            self._dialogue_focus = _DialogueFocus(card_id, source, [base, reply], reply, revision)
+        if not kind and self.kb.public_doc(doc):
+            self._topics.remember(self.current_user, dialogue.Topic(
+                card_id, revision, doc.title, query[:200]))
 
     def _personal_reply(self, text: str):
         """Answer a direct question from what the mind was told before.
@@ -625,6 +723,8 @@ class MindEngine:
         read by nobody; this is the read path. If the question is not one of
         the known shapes, return None and let the KB/fallback handle it.
         """
+        if self.language == "en":
+            text = text.replace("’", "'")
         role = _ROLE_QUESTIONS.get(self.language)
         if role is not None:
             match = role.search(text)
@@ -635,6 +735,12 @@ class MindEngine:
                         return f"Your {match.group(1)} is {name}.", "memory:relations"
                     return f"你{match.group(1)}叫{name}。", "memory:relations"
                 return None
+        historical = dialogue.historical_kind(text, self.language)
+        if historical:
+            entry = self.tiers.previous(self.current_user, historical)
+            if entry is not None and entry.get("raw"):
+                return dialogue.MEMORY_PAST[self.language].format(entry["raw"]), "memory:history"
+            return dialogue.MEMORY_UNKNOWN[self.language], "memory:unknown"
         facts = {}
         for entry in self.tiers.about(self.current_user):
             kind = entry["key"].split(":", 1)[0]
@@ -646,7 +752,7 @@ class MindEngine:
             raw = entry.get("raw") if entry else None
             if raw:
                 return template.format(raw), f"memory:semantic:{kind}"
-            return None
+            return dialogue.MEMORY_UNKNOWN[self.language], "memory:unknown"
         return None
 
     def set_language(self, language: str) -> str:
@@ -675,6 +781,7 @@ class MindEngine:
             self.challenge_session.restore(progress)
         if language != self.language:
             self._dialogue_focus = None
+            self._topics = dialogue.TopicHistory()
         self.language = language
         if self.auto_save:
             self.save()
@@ -740,7 +847,9 @@ class MindEngine:
                      if getattr(e, "turn", 0) < first_turn), None)
                 try:
                     report = reflect.audit(self.kb, self.kb.learned, batch,
-                                           cortisol=peak, prior=prior)
+                                           cortisol=peak, prior=prior,
+                                           review_only=(self.review_learning
+                                                        and self._uses_knowledge_package()))
                     audit = report.to_dict()
                     dream.audit = audit
                 except Exception as exc:  # a broken audit never costs a dream
@@ -836,6 +945,7 @@ class MindEngine:
         return {
             "version": 1,
             "persona": self.persona.name,
+            "package_scope": (self.kb.source_root if self._uses_knowledge_package() else None),
             "state": self.state.snapshot(),
             "last_ts": self.state.last_ts,
             "memory": self.memory,
@@ -845,6 +955,7 @@ class MindEngine:
             "proactive_cursor": self._proactive_cursor,
             "renderer": self.renderer.snapshot(),
             "tiers": self.tiers.snapshot(),
+            "topics": self._topics.snapshot(self.kb.source_root),
             "relations": self.relations.snapshot(),
             "cube": self.cube.snapshot(),
             "cube_feedback": self.cube_feedback.snapshot(),
@@ -857,8 +968,7 @@ class MindEngine:
             "challenge": (self.challenge_session.snapshot()
                           if self.challenge_session is not None else {}),
             "pybot": self._pybot_snapshot(),
-            "learned_aliases": {cid: list(p)
-                                for cid, p in self.kb.aliases.items()},
+            "learned_aliases": self.kb.unreviewed_aliases(),
             "event_log": self.event_log[-50:],
         }
 
@@ -912,6 +1022,8 @@ class MindEngine:
             return cls._fresh_after_bad_save(
                 source, bad_reason, persona=persona, clock=clock,
                 bridge=bridge, kb=kb, auto_save=auto_save, language=language)
+        if kb is not None and data.get("package_scope") not in (None, kb.source_root):
+            raise ValueError("state file belongs to another persona package")
         try:
             return cls.load_from_dict(
                 data, persona=persona, clock=clock, bridge=bridge, kb=kb,
@@ -961,11 +1073,13 @@ class MindEngine:
             bridge=bridge, kb=kb, auto_save=auto_save,
             language=language or data.get("language", "zh"),
         )
+        if data.get("package_scope") not in (None, engine.kb.source_root):
+            raise ValueError("state file belongs to another persona package")
         engine.state.restore(data.get("state", {}), last_ts=data.get("last_ts"))
         # Aliases ride in the save so a learned phrasing survives a restart
         # even when the learned-cards directory is read-only or absent.
         learned = data.get("learned_aliases") or {}
-        if isinstance(learned, dict):
+        if isinstance(learned, dict) and not engine.review_learning:
             for card_id, phrases in learned.items():
                 if not isinstance(phrases, list):
                     continue
@@ -979,12 +1093,12 @@ class MindEngine:
         engine._proactive_cursor = int(data.get("proactive_cursor", 0))
         engine.renderer.restore(data.get("renderer", {}))
         engine.tiers.restore(data.get("tiers", {}))
+        engine._topics.restore(data.get("topics"), engine.kb.source_root)
         engine.relations.restore(data.get("relations", {}))
         engine.cube.restore(data.get("cube", {}))
         engine.cube_feedback.restore(data.get("cube_feedback", {}))
         engine.dreamer.restore(data.get("dreams", {}))
         engine.current_user = data.get("current_user", "default")
-        engine.language = data.get("language", "zh")
         # These two are the last turn's visible policy/retrieval; they used to
         # be saved and silently dropped on load.
         engine.last_left_brain = dict(data.get("left_brain") or {})
@@ -1029,6 +1143,7 @@ class MindEngine:
         self.last_left_brain = {}
         self.last_retrieval = {}
         self._dialogue_focus = None
+        self._topics = dialogue.TopicHistory()
         self.challenge_session = None
         if self.store_path and self.store_path.exists():
             self.store_path.unlink()

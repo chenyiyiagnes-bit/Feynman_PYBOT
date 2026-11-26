@@ -94,8 +94,6 @@ _EN_FACT_STOP = {
     # Interrogatives: "What do I like?" must not store likes="what".
     "what", "where", "who", "whom", "whose", "which", "why", "how", "when",
 }
-_CLAUSE_SPLIT = re.compile(r"[,.;:!?\n]|\s+(?:and|but|because|so)\s+", re.I)
-
 # A Chinese capture containing one of these is a question, not a fact:
 # "我喜欢什么" captured "什么", "我住在哪儿" captured "哪儿".
 _ZH_INTERROGATIVE = ("什么", "啥", "谁", "哪", "几", "多少", "怎么", "怎样",
@@ -106,13 +104,89 @@ def _zh_value_ok(value: str) -> bool:
     return bool(value) and not any(mark in value for mark in _ZH_INTERROGATIVE)
 
 
-def _clean_en_value(raw: str) -> str:
-    value = _CLAUSE_SPLIT.split(raw, maxsplit=1)[0]
-    return value.strip().strip(" .'\"-")
-
-
 def _en_value_ok(value: str) -> bool:
     return len(value) >= 2 and value.lower() not in _EN_FACT_STOP
+
+
+@dataclass(frozen=True)
+class FactChange:
+    kind: str
+    raw: str
+    value: str
+    quote: str
+    operation: str = "set"
+    replaces: str = ""
+
+
+_MOVE = {
+    "zh": re.compile(r"我(?:已经|刚)?(?:从([^，。！？]{2,20}))?搬(?:到了?|去了?)([^，。！？]{2,20}?)(?:了)?"),
+    "en": re.compile(r"I (?:have )?moved (?:from (.+?) )?to (.+)", re.I),
+}
+_RETRACT = {
+    "zh": (
+        ("lives_in", re.compile(r"我(?:已经|现在|早就)?(?:不再|不)(?:住在|在)([一-鿿A-Za-z· ]{2,20}?)(?:了)?")),
+        ("work", re.compile(r"我(?:已经|现在)?不(?:再)?在(.+?)(?:工作|上班)(?:了)?")),
+        ("name", re.compile(r"我(?:已经|现在)?不(?:再)?叫(.+?)(?:了)?")),
+        ("likes", re.compile(r"我(?:已经|现在)?不再(?:喜欢|爱)(.+?)(?:了)?")),
+        ("dislikes", re.compile(r"我(?:已经|现在)?不再(?:讨厌|反感)(.+?)(?:了)?")),
+    ),
+    "en": (
+        ("lives_in", re.compile(r"I (?:(?:no longer|don't|do not) live in|used to live in) (.+)", re.I)),
+        ("work", re.compile(r"I (?:no longer|don't|do not) work (?:at|for|as) (.+)", re.I)),
+        ("name", re.compile(r"I no longer go by (.+)", re.I)),
+        ("likes", re.compile(r"I no longer (?:like|love) (.+)", re.I)),
+        ("dislikes", re.compile(r"I no longer (?:dislike|hate) (.+)", re.I)),
+    ),
+}
+_DECLARE = {
+    "zh": re.compile(r"^(?:请?记住[：: ]*|其实[，, ]*|我现在(?=住在))"),
+    "en": re.compile(r"^(?:please remember(?: that)?[ :]+|actually[, ]+)", re.I),
+}
+_HYPOTHETICAL = re.compile(
+    r"如果|假如|假设|比如|举例|听说|他说|她说|我说过|曾经|以前|过去|可能|也许|"
+    r"\b(?:if|suppose|imagine|hypothetically|example|might|maybe)\b|"
+    r"\b(?:said|claims?|told me)\b", re.I)
+_QUOTES = re.compile(r"""["“”「」『』‘’\x60]|(?:^|\s)'[^']+'(?:$|\s|[.,!?])""")
+
+
+def fact_changes(text: str, language: Optional[str] = None) -> List[FactChange]:
+    """Extract self-reports from complete clauses only."""
+    text = re.sub(r"(?<=[A-Za-z])’(?=[A-Za-z])", "'", text)
+    if any(mark in text for mark in "?？") or _QUOTES.search(text):
+        return []
+    language = language or ("zh" if re.search(r"[一-鿿]", text) else "en")
+    if _HYPOTHETICAL.search(text) or (
+            language == "zh" and re.search(r"(?:说|表示|转述|写道|告诉我)[，：,:]", text)
+            and not text.startswith(("我说", "我告诉"))):
+        return []
+    text = _DECLARE[language].sub(
+        lambda match: "我" if match[0].startswith("我现在") else "", text.strip(), count=1)
+    patterns = _FACT_PATTERNS if language == "zh" else _EN_FACT_PATTERNS
+    value_ok = _zh_value_ok if language == "zh" else _en_value_ok
+    changes = {}
+    if language == "en":
+        text = re.sub(r"\s+(?:and|but)\s+(?=I\s+)", ", ", text, flags=re.I)
+        text = re.sub(r"\s+(?:and|but)\s+(?=(?:work|live|like|love|hate|dislike)\s)",
+                      ", I ", text, flags=re.I)
+    for clause in re.split(r"[，。！,;；!\n]|\.(?:\s+|$)", text):
+        clause = clause.strip()
+        move = _MOVE[language].fullmatch(clause)
+        withdrawals = [(kind, match[1]) for kind, pattern in _RETRACT[language]
+                       if (match := pattern.fullmatch(clause)) and value_ok(match[1])]
+        if move and value_ok(move[2]):
+            raw = move[2]
+            value = f"用户住在 {raw}" if language == "zh" else f"User lives in {raw}"
+            changes["lives_in"] = FactChange("lives_in", raw, value, clause,
+                                             replaces=move[1] or "")
+        elif withdrawals:
+            kind, raw = withdrawals[0]
+            changes[kind] = FactChange(kind, raw, "", clause, "retract")
+        else:
+            for pattern, kind, template in patterns:
+                match = pattern.fullmatch(clause)
+                if match and value_ok(match[1]):
+                    changes[kind] = FactChange(kind, match[1], template.format(match[1]), clause)
+    return list(changes.values())
 
 
 class MemoryTiers:
@@ -122,10 +196,11 @@ class MemoryTiers:
         # key -> {"value": str, "source_turn": int, "quote": str}
         self.semantic: Dict[str, Dict[str, Any]] = {}
         self.fact_log: List[Dict[str, Any]] = []
+        self.withdrawn: Dict[str, Dict[str, Any]] = {}
 
     # -- writing -----------------------------------------------------------
 
-    def record(self, episode: Episode) -> None:
+    def record(self, episode: Episode, changes: Optional[List[FactChange]] = None) -> None:
         self.working.append(episode)
         self.episodes.append(episode)
         if len(self.episodes) > EPISODIC_CAP:
@@ -140,38 +215,57 @@ class MemoryTiers:
             room = max(0, EPISODIC_CAP - len(undreamed))
             dreamed = sorted(dreamed, key=lambda e: e.salience, reverse=True)[:room]
             self.episodes = sorted(undreamed + dreamed, key=lambda e: e.turn)
-        self._extract(episode)
+        for change in fact_changes(episode.text) if changes is None else changes:
+            self._store_fact(episode, change)
 
-    def _extract(self, episode: Episode) -> None:
-        for pattern, kind, template in _FACT_PATTERNS:
-            match = pattern.search(episode.text)
-            if match and _zh_value_ok(match.group(1)):
-                self._store_fact(episode, kind, template.format(match.group(1)),
-                                 match.group(0), raw=match.group(1))
-        for pattern, kind, template in _EN_FACT_PATTERNS:
-            match = pattern.search(episode.text)
-            if not match:
-                continue
-            value = _clean_en_value(match.group(1))
-            if not _en_value_ok(value):
-                continue
-            quote = match.group(0).strip().rstrip(" .,;:!?")
-            self._store_fact(episode, kind, template.format(value), quote,
-                             raw=value)
-
-    def _store_fact(self, episode: Episode, kind: str, value: str,
-                    quote: str, raw: Optional[str] = None) -> None:
-        key = f"{kind}:{episode.user}"
+    def _store_fact(self, episode: Episode, change: FactChange) -> None:
+        key = f"{change.kind}:{episode.user}"
+        prior = self.semantic.get(key)
+        latest = prior or self.withdrawn.get(key)
+        if latest and latest.get("source_turn", -1) >= episode.turn:
+            return
+        if (change.operation == "retract" and latest
+                and latest.get("raw", "").casefold() != change.raw.casefold()):
+            return
         entry = {
-            "value": value,
+            "value": change.value,
             "source_turn": episode.turn,
-            "quote": quote,
-            "raw": raw if raw is not None else value,
+            "valid_from": episode.now,
+            "quote": change.quote,
+            "raw": change.raw,
+            "operation": change.operation,
         }
-        if self.semantic.get(key) != entry:
+        if prior is not None:
+            for event in reversed(self.fact_log):
+                if event.get("key") == key and event.get("source_turn") == prior.get("source_turn"):
+                    event["valid_until"] = episode.now
+                    break
+        elif change.replaces and latest is None:
+            self.fact_log.append({"key": key, "raw": change.replaces,
+                                  "operation": "set", "quote": change.quote,
+                                  "source_turn": episode.turn, "valid_until": episode.now})
+        if change.operation == "retract":
+            self.semantic.pop(key, None)
+            self.withdrawn[key] = entry
+        else:
             self.semantic[key] = entry
-            self.fact_log.append({"key": key, **entry})
-            self.fact_log = self.fact_log[-100:]
+            self.withdrawn.pop(key, None)
+        self.fact_log.append({"key": key, **entry})
+        self.fact_log = self.fact_log[-100:]
+        opposite = {"likes": "dislikes", "dislikes": "likes"}.get(change.kind)
+        if opposite and change.operation == "set":
+            other = self.semantic.get(f"{opposite}:{episode.user}")
+            if other and other.get("raw", "").casefold() == change.raw.casefold():
+                self._store_fact(episode, FactChange(opposite, change.raw, "", change.quote, "retract"))
+
+    def previous(self, user: str, kind: str) -> Optional[Dict[str, Any]]:
+        key = f"{kind}:{user}"
+        current = self.semantic.get(key, {}).get("raw")
+        for entry in reversed(self.fact_log):
+            if (entry.get("key") == key and entry.get("operation", "set") == "set"
+                    and entry.get("raw") and entry["raw"] != current):
+                return entry
+        return self.withdrawn.get(key)
 
     # -- reading -----------------------------------------------------------
 
@@ -185,7 +279,7 @@ class MemoryTiers:
         return [
             {"key": k, **v}
             for k, v in self.semantic.items()
-            if k.endswith(f":{user}")
+            if k.partition(":")[2] == user
         ]
 
     # -- persistence -------------------------------------------------------
@@ -196,6 +290,7 @@ class MemoryTiers:
             "episodes": [e.to_dict() for e in self.episodes],
             "semantic": self.semantic,
             "fact_log": self.fact_log,
+            "withdrawn": self.withdrawn,
         }
 
     def restore(self, data: Dict[str, Any]) -> None:
@@ -207,8 +302,14 @@ class MemoryTiers:
         self.working = deque((e for e in working if e is not None),
                              maxlen=WORKING_SIZE)
         self.episodes = [e for e in episodes if e is not None]
-        self.semantic = data.get("semantic", {})
-        self.fact_log = data.get("fact_log", [])
+        source = data.get("semantic")
+        self.semantic = ({key: value for key, value in source.items()
+                          if isinstance(value, dict)} if isinstance(source, dict) else {})
+        self.fact_log = [entry for entry in (data.get("fact_log") or [])[-100:]
+                         if isinstance(entry, dict)]
+        source = data.get("withdrawn")
+        self.withdrawn = ({key: value for key, value in source.items()
+                           if isinstance(value, dict)} if isinstance(source, dict) else {})
 
 
 def salience_of(activations, deltas: Dict[str, float]) -> float:

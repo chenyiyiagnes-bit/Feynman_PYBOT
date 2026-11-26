@@ -18,6 +18,7 @@ Deleting ``data/kb_learned`` rolls every repair back, as it always could.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tempfile
 import time
@@ -455,9 +456,15 @@ def _card_by_body(store: LearnedStore, body: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+_EN_CORRECTION = re.compile(
+    r"^\s*(?:no[,!]|that's (?:wrong|not right)|that is (?:wrong|not right)|"
+    r"you (?:misunderstood|got (?:it|that) wrong)|correction\s*:)", re.I)
+
+
 def _clean_correction(text: str) -> str:
     """Drop the "不对，其实…" wrapper so the stored answer reads cleanly."""
-    body = text.strip()
+    body = _EN_CORRECTION.sub("", text.strip(), count=1).lstrip(" ,.:!")
+    body = re.sub(r"^actually[, ]+", "", body, flags=re.I)
     for marker in sorted(CORRECTION_MARKERS, key=len, reverse=True):
         if body.startswith(marker):
             body = body[len(marker):].lstrip("，,。.！!？? 　")
@@ -543,7 +550,7 @@ def _mint_correction(kb: FeynmanKB, store: LearnedStore, question: str,
 
 def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
           cortisol: float = 0.0, today: Optional[str] = None,
-          prior: Any = None) -> AuditReport:
+          prior: Any = None, *, review_only: bool = False) -> AuditReport:
     """Look over one dream's episodes and repair what went wrong.
 
     ``batch`` is captured before consolidation flips ``dreamed``; the caller
@@ -590,6 +597,8 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
     corrections: List[Tuple[Any, Any]] = []
     previous_of: Dict[int, Any] = {}
     for prev, nxt in zip(sequence, sequence[1:]):
+        if getattr(prev, "user", None) != getattr(nxt, "user", None):
+            continue
         previous_of[id(nxt)] = prev
         if id(nxt) not in batch_ids:
             continue
@@ -598,13 +607,14 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
             continue
         prev_source = str(getattr(prev, "source", "") or "")
         prev_text = str(getattr(prev, "text", "") or "").strip()
-        if _is_miss(prev_source) or _is_weak(prev):
-            if any(mark in follow for mark in CORRECTION_MARKERS):
-                corrections.append((prev, nxt))
-            if prev_text and (
-                    any(mark in follow for mark in CORRECTION_MARKERS)
-                    or similarity(normalize(follow),
-                                  normalize(prev_text)) >= SAME_FOLLOWUP):
+        explicit = (any(follow.startswith(mark) for mark in CORRECTION_MARKERS)
+                    or bool(_EN_CORRECTION.match(follow)))
+        weak = _is_miss(prev_source) or _is_weak(prev)
+        if explicit and (weak or (review_only and prev_source.startswith(kb.source_root + ":"))):
+            corrections.append((prev, nxt))
+        if weak:
+            if prev_text and (explicit or similarity(normalize(follow),
+                                                     normalize(prev_text)) >= SAME_FOLLOWUP):
                 # A miss followed by "不对" or by the same question again is
                 # one failure with two turns, not two nights of it.
                 finding = _record(history, prev_text, "broken_followup",
@@ -620,6 +630,21 @@ def audit(kb: FeynmanKB, store: LearnedStore, batch: List[Any],
     _write_queue(store, report.findings, today)
 
     report.read_only = cortisol > MAX_CORTISOL
+    if review_only:
+        from .review import queue_candidate
+
+        for prev, nxt in corrections[:MAX_CORRECTIONS]:
+            question = str(getattr(prev, "text", "")).strip()
+            correction = _clean_correction(str(getattr(nxt, "text", "")))
+            if question and CORRECTION_MIN_TEXT <= len(correction) <= CORRECTION_MAX_TEXT:
+                candidate = queue_candidate(store, "correction",
+                                            {"question": question, "text": correction,
+                                             "previous_source": prev.source})
+                report.actions.append(Action("correction_candidate", candidate or "",
+                                             question, False, "pending review"))
+        for finding in report.findings[:MAX_ACTIONS]:
+            queue_candidate(store, "gap", {"question": finding.question})
+        return report
     # Baseline: the shelf must already pass before any repair may touch it.
     gate_ok, gate_failures = golden_ok(kb)
     report.gate_ok = gate_ok

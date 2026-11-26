@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "authored": "2026-11-26",
+  "provenance": "Synthetic dialogue authored for this evaluation. No production conversations or training materials. Physics and philosophy expectations assigned from topic and card IDs before the first run. Keep v1 unchanged after observing results.",
+  "cases": [
+    {
+      "id": "zh-reassert-location",
+      "package": "feynman-zh",
+      "turns": [
+        "我住在宁波。",
+        "我已经不住在宁波了。",
+        {"text": "我住在哪儿？", "source": "memory:unknown", "excludes": ["宁波"]},
+        {"text": "我以前住在哪儿？", "source": "memory:history", "contains": ["宁波"]},
+        "我现在住在绍兴。",
+        {"text": "我住在哪儿？", "source": "memory:semantic", "contains": ["绍兴"], "excludes": ["宁波"]}
+      ]
+    },
+    {
+      "id": "zh-past-reporters",
+      "package": "laozhuang-zh",
+      "turns": [
+        "小林说，我住在成都。",
+        "假设我住在重庆。",
+        {"text": "我住在哪儿？", "source": "memory:unknown", "excludes": ["成都", "重庆"]},
+        {"text": "我从拉萨搬到昆明了。", "source": "memory:update", "contains": ["昆明"]},
+        {"text": "我过去住在哪儿？", "source": "memory:history", "contains": ["拉萨"]}
+      ]
+    },
+    {
+      "id": "en-users",
+      "package": "feynman-en",
+      "turns": [
+        {"user": "a", "text": "My name is Mira."},
+        {"user": "b", "text": "What's my name?", "source": "memory:unknown", "excludes": ["Mira"]},
+        {"user": "b", "text": "Please remember that my name is Kai.", "action": "memory_update"},
+        {"user": "a", "text": "What's my name?", "source": "memory:semantic", "contains": ["Mira"], "excludes": ["Kai"]}
+      ]
+    },
+    {
+      "id": "en-job-change",
+      "package": "laozhuang-en",
+      "turns": [
+        "I work at Northwind.",
+        {"text": "I no longer work at Northwind.", "action": "memory_update"},
+        {"text": "Where do I work?", "source": "memory:unknown", "excludes": ["Northwind"]},
+        "I work at Verdan Lab.",
+        {"text": "Where do I work?", "source": "memory:semantic", "contains": ["Verdan Lab"], "excludes": ["Northwind"]}
+      ]
+    },
+    {
+      "id": "zh-topic-return",
+      "package": "laozhuang-zh",
+      "turns": [
+        {"text": "上善若水，善在哪里？", "cards": ["lz-zh-004"]},
+        {"text": "你说无用也有用是什么意思？", "cards": ["lz-zh-006"]},
+        {"text": "回到开始提到的水好吗？", "cards": ["lz-zh-004"], "action": "resume"},
+        {"user": "b", "text": "回到上善若水。", "source": "clarification", "action": "resume_gap"}
+      ]
+    },
+    {
+      "id": "en-topic-return",
+      "package": "laozhuang-en",
+      "turns": [
+        {"text": "How do fortune and misfortune lean on each other?", "cards": ["lz-en-005"]},
+        {"text": "What is the use of the useless?", "cards": ["lz-en-006"]},
+        {"text": "Go back to the earlier question about fortune and misfortune.", "cards": ["lz-en-005"], "action": "resume"}
+      ]
+    },
+    {
+      "id": "zh-mechanics",
+      "package": "feynman-zh",
+      "turns": [
+        {"text": "登月之后宇航员变轻了，可他的质量也跟着变了吗？", "cards": ["mech-mass-weight"]},
+        {"text": "虚构的锑蓝粒子今天被证实了吗？", "abstain": true}
+      ]
+    },
+    {
+      "id": "en-mechanics",
+      "package": "feynman-en",
+      "turns": [
+        {"text": "Can torque and energy be interchangeable just because they share units?", "cards": ["mech-torque-energy"]},
+        {"text": "What temperature did the fictional orphelion crystal break at yesterday?", "abstain": true}
+      ]
+    }
+  ]
+}
