@@ -383,6 +383,30 @@ class TestCommittedEdges(unittest.TestCase):
         self.assertNotRegex(line, r"[\u4e00-\u9fff]")
         self.assertLessEqual(len(line), assoc.MAX_SENTENCE_CHARS_EN)
 
+    def test_every_spoken_edge_speaks_in_both_languages(self):
+        zh_titles = {doc.id: doc.title for doc in self.kb.docs}
+        en_titles = {doc.id: doc.title for doc in self.kb.docs_en}
+        for edge in self.graph.edges:
+            if edge.origin != "human" or edge.kind not in assoc.SPOKEN:
+                continue
+            sides = (edge.a, edge.b) if edge.kind == "same_mechanism" \
+                else (edge.a,)
+            for side in sides:
+                for lang, titles in (("zh", zh_titles), ("en", en_titles)):
+                    line = self.graph.sentence(side, language=lang,
+                                               titles=titles)
+                    self.assertIsNotNone(line, (edge, side, lang))
+                    self.assertNotRegex(
+                        line, r"[\u4e00-\u9fff]") if lang == "en" else None
+
+    def test_every_card_has_an_english_name(self):
+        import re
+        cjk = re.compile(r"[\u4e00-\u9fff]")
+        for doc in self.kb.docs_en:
+            self.assertTrue(doc.title.strip(), doc.id)
+            self.assertIsNone(cjk.search(doc.title),
+                              (doc.id, doc.title))
+
     def test_kind_coverage_is_not_one_note(self):
         kinds = {e.kind for e in self.graph.edges if e.origin == "human"}
         self.assertIn("same_mechanism", kinds)
