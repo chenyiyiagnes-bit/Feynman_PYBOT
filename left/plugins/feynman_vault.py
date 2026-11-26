@@ -1,9 +1,9 @@
 """费曼语料铸字：从本地真实语料蒸馏四槽位费曼字库（带出处）。
 
-语料来源（默认）：
-- `/Users/yiyichen/Desktop/费曼物理_文字版/corpus/cpt_zh.jsonl` 中费曼本人署名的作品
+语料来源（自己提供，路径由环境变量指定）：
+- `QBOT_FEYNMAN_CORPUS` 指向的 JSONL 中费曼本人署名的作品
   （讲义中译、别闹了费曼先生、发现的乐趣、费曼讲系列、QED 等）；
-- `~/Projects/feynman-open/knowledge/*.jsonl` 的结构化思维动作与品味判据（由引擎读取）。
+- `QBOT_FEYNMAN_KNOWLEDGE` 指向的结构化思维动作与品味判据（由引擎读取）。
 
 本模块只做统计与测量，不生成费曼没说过的话：
 1. 句首起手式、实体、动作、后果短语，每一项记录 `source｜section` 出处；

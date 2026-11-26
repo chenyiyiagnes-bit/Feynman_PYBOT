@@ -6,7 +6,7 @@
 ## 运行
 
 ```bash
-cd ~/Desktop/量子模拟/右脑
+cd right
 python3 -m omega_mind --persona generic
 python3 -m omega_mind --persona feynman --verbose
 ```
@@ -43,7 +43,7 @@ python3 -m omega_mind --profile         # 语料画像后退出
 ## 测试
 
 ```bash
-cd ~/Desktop/量子模拟/右脑
+cd right
 python3 -m unittest discover -s omega_mind/tests -v
 ```
 
@@ -66,17 +66,12 @@ from bot.runtime import turn
 turn(text, memory)   # -> {"reply": ..., ...}
 ```
 
-本机已有原版仓库（2026-11 实测可用，commit 7d63c7f）：
-
-```
-/Users/yiyichen/Projects/pi-clean/workspace/projects/pybot
-```
-
-桥接查找顺序：`OMEGA_PYBOT_PATH` 环境变量 → 项目内 `vendor/pybot` → 上面这个本机路径。
+桥接查找顺序：`OMEGA_PYBOT_PATH` 环境变量 → 项目内 `vendor/pybot`。
+要让桥接生效，把 huggingface/pybot 的代码放到 `right/vendor/pybot`，或用环境变量指过去。
 找到后直接运行即可，不用设 PYTHONPATH：
 
 ```bash
-cd ~/Desktop/量子模拟/右脑
+cd right
 python3 -m omega_mind --persona feynman
 ```
 

@@ -15,4 +15,6 @@ export QBOT_FEYNMAN_CORPUS=/path/to/your/corpus.jsonl
 export QBOT_FEYNMAN_VAULT=data/feynman_style_vault_p15.json
 ```
 
-没有语料时，插件会退回到空字库，测试里标记为 `needs_vault` 的用例会跳过。
+没有语料时：`bridge.LeftResponder`（`OMEGA_LEFT_BRIDGE=1` 才启用）会静默降级为不发言；
+直接调用 `left/plugins/feynman_typesetter.py` 的 `Vault(...)` 会抛 `FileNotFoundError`，
+此时先按上面的环境变量备好语料与字库，或用 `left/scripts/build_vault*.py` 先铸字。

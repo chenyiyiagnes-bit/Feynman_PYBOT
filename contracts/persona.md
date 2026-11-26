@@ -9,6 +9,7 @@
 |---|---|---|
 | `schema` | int | 目前为 1 |
 | `id` / `name` | str | 人设标识与显示名 |
+| `description` | str | 可选，一句话介绍（导出工具会带上） |
 | `language` | `"zh"` \| `"en"` | 默认语言；回复内不混语言 |
 | `baselines` | object | 7 维基线：dopamine/cortisol/valence/arousal/affinity/defensiveness/energy；valence ∈ [-1,1]，其余 [0,1] |
 | `taus` | object | 每维的指数衰减时间常数（秒） |
@@ -18,7 +19,7 @@
 | `override_triggers` | object | 方块名 → 额外正则列表（覆盖默认触发器） |
 | `extra_effects` | object | 方块名 → 额外情感增量 |
 | `cubies` | array | 26 个方块，必须恰好 26 个 |
-| `knowledge` | object | `kb_dirs`（相对本文件）、`corpus`（自备语料路径，可为 null） |
+| `knowledge` | object | `kb_dirs`（相对本文件）、`corpus`（自备语料路径，可为 null）、`corpus_note`（可选，说明语料来源与许可） |
 | `license` | object | 人设内容与代码各自的许可证 |
 
 ## 方块（cubie）
