@@ -17,6 +17,7 @@ left/data/assoc/
 **/data/kb_learned/
 **/data/assoc/
 **/data/lexicon/
+data/state/
 *.sqlite
 *.sqlite3
 *.db
