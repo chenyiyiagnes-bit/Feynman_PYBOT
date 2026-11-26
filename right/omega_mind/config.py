@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Mapping, Union
+from typing import Dict, Iterable, List, Mapping, Union
 
 #: Where packages live relative to this module (right/omega_mind/config.py).
 PACKAGES_ROOT = Path(__file__).resolve().parents[2] / "personas"
@@ -81,6 +81,10 @@ class PersonaConfig:
 
     # cubie name -> replacement regex list
     override_triggers: Dict[str, List[str]] = field(default_factory=dict)
+    # cubie name -> pattern string -> author gain from that cubie's table.
+    # Appraisal uses this when an override pattern is the same text as a
+    # table trigger. A pattern with no entry keeps gain 1.0.
+    trigger_gains: Dict[str, Dict[str, float]] = field(default_factory=dict)
     disable_cubies: List[str] = field(default_factory=list)
 
     # cubie name -> extra state deltas
@@ -95,6 +99,32 @@ class PersonaConfig:
 
 def generic_persona() -> PersonaConfig:
     return PersonaConfig()
+
+
+def _trigger_gains(cubies: Iterable[Mapping]) -> Dict[str, Dict[str, float]]:
+    """Each cubie's own trigger table, pattern -> gain.
+
+    An override list replaces the patterns of a cubie; it must not flatten
+    every replacement to gain 1.0 when the author wrote a weight for the same
+    pattern in the cubie table.
+    """
+    gains: Dict[str, Dict[str, float]] = {}
+    for cubie in cubies:
+        if not isinstance(cubie, Mapping):
+            continue
+        name = str(cubie.get("name") or "")
+        if not name:
+            continue
+        table: Dict[str, float] = {}
+        for item in cubie.get("triggers") or []:
+            if not isinstance(item, (list, tuple)) or len(item) < 2:
+                continue
+            try:
+                table[str(item[0])] = float(item[1])
+            except (TypeError, ValueError):
+                continue
+        gains[name] = table
+    return gains
 
 
 def persona_from_data(data: Mapping) -> PersonaConfig:
@@ -129,6 +159,7 @@ def persona_from_data(data: Mapping) -> PersonaConfig:
     cfg.disable_cubies = list(data.get("disable_cubies") or [])
     cfg.override_triggers = {k: list(v)
                              for k, v in (data.get("override_triggers") or {}).items()}
+    cfg.trigger_gains = _trigger_gains(data.get("cubies") or [])
     cfg.extra_effects = {k: dict(v)
                          for k, v in (data.get("extra_effects") or {}).items()}
     return cfg

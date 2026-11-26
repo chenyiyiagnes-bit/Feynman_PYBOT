@@ -539,27 +539,12 @@ class TestEnglishKnowledge(unittest.TestCase):
     def test_english_package_covers_every_prose_row(self):
         # One package per language: the English package is its own corpus,
         # not an overlay on the Chinese one. Every Chinese prose row has one
-        # English row, by id.
+        # English row, by id — the web-quote rows included.
         learned = {doc.id for doc in self.zh.docs
                    if doc.id.startswith("learned-")}
         zh_ids = {doc.id for doc in self.zh.docs} - learned
         en_ids = {doc.id for doc in self.en.docs}
-        # Known gap: the English package ships no verified_facts.jsonl, so
-        # the web-quote rows have no translation yet. Answering in English is
-        # unaffected (those rows are quotes from third-party pages, not
-        # teachings), but the gap is pinned here: translating them shrinks
-        # the set, adding an untranslated row fails this test.
-        facts_file = Path(self.zh.dir) / "verified_facts.jsonl"
-        untranslated = set()
-        if facts_file.is_file():
-            untranslated = {
-                row["id"] for row in
-                (json.loads(line) for line in
-                 facts_file.read_text(encoding="utf-8").splitlines() if line.strip())
-                if row.get("id")
-            }
-        self.assertEqual(en_ids, zh_ids - untranslated)
-        self.assertEqual(zh_ids - en_ids, untranslated)
+        self.assertEqual(en_ids, zh_ids)
         self.assertIn(":en:", self.en.mode)
         self.assertEqual(self.en.teachable_units(language="en"),
                          [doc for doc in self.en.docs if doc.unit is not None])
@@ -606,8 +591,12 @@ class TestEnglishKnowledge(unittest.TestCase):
         self.assertGreaterEqual(len(rows), 200)
         for name, row in rows:
             self.assertTrue(row.get("id"), name)
-            self.assertEqual(row.get("translation_of"), row["id"], name)
-            self.assertEqual(row.get("source_language"), "zh", name)
+            # Each row is written in English, not carried over as a
+            # back-translation of the Chinese card, and it says where its
+            # claims come from.
+            self.assertTrue(row.get("support") or row.get("source")
+                            or row.get("source_url"), name)
+            self.assertNotIn("translation_of", row, name)
             self.assertFalse(_has_cjk_in_values(row), name)
 
     def test_persona_science_answer_omits_internal_usage_note(self):

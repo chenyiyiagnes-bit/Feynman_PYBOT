@@ -118,7 +118,8 @@
     {
       "query": "how did you investigate the Challenger disaster",
       "acceptable": [
-        "bio-033"
+        "bio-033",
+        "web-6fe68dfce6"
       ]
     },
     {
@@ -166,7 +167,8 @@
     {
       "query": "why does symmetry give conservation laws",
       "acceptable": [
-        "part-009"
+        "part-009",
+        "flp-iii-17"
       ]
     },
     {
@@ -178,7 +180,8 @@
     {
       "query": "why is there no resistance in a superconductor",
       "acceptable": [
-        "cm-001"
+        "cm-001",
+        "cm-002"
       ]
     },
     {
@@ -250,7 +253,8 @@
     {
       "query": "why can't a ratchet run on thermal motion",
       "acceptable": [
-        "sm-007"
+        "sm-007",
+        "flp-i-46"
       ]
     },
     {

@@ -45,8 +45,12 @@
   ],
   "override_triggers": {
     "core_intuition": [
-      "说错|错了|不对|纠正|盲区|搞错",
-      "我不懂|我不知道|搞不懂|弄不明白|不明白"
+      "\\byou(?:'?re| are) wrong\\b",
+      "\\bi (?:do not|don'?t) (?:know|understand)\\b"
+    ],
+    "edge_humor": [
+      "\\bhaha\\b|\\blol\\b",
+      "\\bthat(?:'?s| is) (?:amazing|interesting)\\b"
     ],
     "corner_pedantry": [
       "权威专家|高深理论|背诵|定义是|学术八股|术语|掉书袋|众所周知"
