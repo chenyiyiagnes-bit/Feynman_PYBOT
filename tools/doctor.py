@@ -40,9 +40,14 @@ def main(argv=None) -> int:
     for rid, path in discover(ROOT / "personas").items():
         try:
             persona = load(path)
-            cards = len(list((knowledge_dir(persona) or Path()).glob("*.jsonl"))) \
-                if knowledge_dir(persona) else 0
+            kdir = knowledge_dir(persona)
+            cards = len(list(kdir.glob("*.jsonl"))) if kdir else 0
             add(PASS, f"persona {rid}", f"{len(persona.cubies)} cubies, {cards} card files")
+            if cards == 0:
+                add(WARN, f"cards {rid}", "no knowledge cards — only persona voice replies")
+            corpus = persona.corpus_path()
+            if corpus is not None and not corpus.exists():
+                add(WARN, f"corpus {rid}", f"missing: {corpus}")
         except Exception as exc:  # noqa: BLE001
             add(FAIL, f"persona {rid}", str(exc))
 
