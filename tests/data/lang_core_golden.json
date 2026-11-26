@@ -1,0 +1,1566 @@
+{
+ "bridge_zh": {
+  "": "",
+  "   ": "   ",
+  "1650nm": "1650nm",
+  "3.14": "3.14",
+  "COVID-19": "COVID-19",
+  "HI THERE": "HI THERE",
+  "How does memory work?": "How does memory work?",
+  "What is an atom?": "What is an atom?",
+  "What is damping?": "What is damping?",
+  "What is entropy?": "What is entropy?",
+  "What is science?": "What is science?",
+  "What's an atom?": "What's an atom?",
+  "Who are you?": "Who are you?",
+  "Why does hot water cool down?": "Why does hot water cool down?",
+  "Why does ice float?": "Why does ice float?",
+  "a": "a",
+  "conservation conservation conserved conserving": "conservation conservation conserved conserving",
+  "disturbances deviation deviates": "disturbances deviation deviates",
+  "e=mc^2": "e=mc^2",
+  "how does a diffraction grating work": "how does a diffraction grating work",
+  "tell me a joke": "tell me a joke",
+  "well-known": "well-known",
+  "what is a dielectric": "what is a dielectric",
+  "what is dielectric polarization": "what is dielectric polarization",
+  "what is diffraction": "what is diffraction",
+  "what is electric susceptibility": "what is electric susceptibility",
+  "what is interference": "what is interference",
+  "what is polarization": "what is polarization",
+  "what is synchrotron radiation": "what is synchrotron radiation",
+  "what is the capital of France": "what is the capital of France",
+  "what is the dielectric constant": "what is the dielectric constant",
+  "what is vacuum polarization": "what is vacuum polarization",
+  "why can bees see ultraviolet": "why can bees see ultraviolet",
+  "why can't I remember yesterday": "why can't I remember yesterday",
+  "why is a rainbow always seven colours": "why is a rainbow always seven colours",
+  "中微子是什么": "中微子是什么",
+  "为什么 有 空格": "为什么 有 空格",
+  "为什么冰块浮在水上": "为什么冰块浮在水上",
+  "为什么天气会变": "为什么天气会变",
+  "为什么彩虹总是七种颜色呢": "为什么彩虹总是七种颜色呢",
+  "为什么暗处看不出颜色": "为什么暗处看不出颜色",
+  "为什么有些事一开始不起眼，后来收不住": "为什么有些事一开始不起眼，后来收不住",
+  "为什么端一杯满水走路反而稳": "为什么端一杯满水走路反而稳",
+  "什么是": "什么是",
+  "什么是像差": "什么是像差",
+  "什么是干涉": "什么是干涉",
+  "什么是扩散": "什么是扩散",
+  "什么是电介质": "什么是电介质 电介质 折射 色散",
+  "什么是科学": "什么是科学",
+  "什么是能量守恒": "什么是能量守恒 能量 热 守恒 动能",
+  "什么是阻尼": "什么是阻尼",
+  "介电常数是什么": "介电常数是什么",
+  "偏振是什么": "偏振是什么",
+  "光为什么在水里拐弯": "光为什么在水里拐弯 光 干涉 双缝",
+  "光栅是怎么分光的": "光栅是怎么分光的 光 干涉 双缝",
+  "单个光子怎么过偏振片": "单个光子怎么过偏振片 光 干涉 双缝 光子 动量 能量",
+  "受激辐射是什么": "受激辐射是什么",
+  "同步辐射是什么": "同步辐射是什么",
+  "天空为什么是蓝色的": "天空为什么是蓝色的",
+  "夸克为什么不能单独存在": "夸克为什么不能单独存在",
+  "宇称不守恒是谁发现的": "宇称不守恒是谁发现的",
+  "布儒斯特角是什么": "布儒斯特角是什么",
+  "干涉和衍射有什么区别": "干涉和衍射有什么区别",
+  "干涉是什么": "干涉是什么",
+  "库珀对是什么": "库珀对是什么",
+  "引力波有能量吗": "引力波有能量吗 能量 热 守恒 动能",
+  "我们上次聊了什么": "我们上次聊了什么",
+  "我昨天吃了什么": "我昨天吃了什么",
+  "极化是什么": "极化是什么",
+  "水为什么变凉了？": "水为什么变凉了？",
+  "热水为什么会自己变凉": "热水为什么会自己变凉",
+  "熵": "熵",
+  "熵是什么": "熵是什么",
+  "电介质极化是什么": "电介质极化是什么 电介质 折射 色散",
+  "电子磁矩为什么不是 2": "电子磁矩为什么不是 2",
+  "相变是什么": "相变是什么",
+  "真空极化是什么": "真空极化是什么",
+  "约瑟夫森效应是什么": "约瑟夫森效应是什么",
+  "蜜蜂为什么能看见紫外": "蜜蜂为什么能看见紫外",
+  "衍射是什么": "衍射是什么",
+  "讲个笑话": "讲个笑话",
+  "费曼": "费曼",
+  "费曼图怎么读": "费曼图怎么读",
+  "费曼怎么看待权威": "费曼怎么看待权威",
+  "费曼是谁": "费曼是谁",
+  "路径积分是什么意思": "路径积分是什么意思",
+  "透镜为什么能成像": "透镜为什么能成像",
+  "部分子模型是什么": "部分子模型是什么",
+  "重整化是什么": "重整化是什么",
+  "量子电动力学是讲什么的": "量子电动力学是讲什么的 路径积分 费曼图 qed 概率幅 量子 叠加 测量",
+  "量子电动力学是讲什么的？": "量子电动力学是讲什么的？ 路径积分 费曼图 qed 概率幅 量子 叠加 测量",
+  "量子计算是谁提出的": "量子计算是谁提出的 量子 叠加 测量",
+  "钱不会凭空多出来，那它会去哪": "钱不会凭空多出来，那它会去哪",
+  "ＡＢＣ": "ＡＢＣ"
+ },
+ "expand_en": {
+  "": "",
+  "   ": "   ",
+  "1650nm": "1650nm",
+  "3.14": "3.14",
+  "COVID-19": "COVID-19",
+  "HI THERE": "HI THERE",
+  "How does memory work?": "How does memory work? memory remembering forgetting",
+  "What is an atom?": "What is an atom?",
+  "What is damping?": "What is damping?",
+  "What is entropy?": "What is entropy?",
+  "What is science?": "What is science? sciencemethod",
+  "What's an atom?": "What's an atom?",
+  "Who are you?": "Who are you? selfidentity",
+  "Why does hot water cool down?": "Why does hot water cool down?",
+  "Why does ice float?": "Why does ice float?",
+  "a": "a",
+  "conservation conservation conserved conserving": "conservation conservation conserved conserving",
+  "disturbances deviation deviates": "disturbances deviation deviates",
+  "e=mc^2": "e=mc^2",
+  "how does a diffraction grating work": "how does a diffraction grating work",
+  "tell me a joke": "tell me a joke",
+  "well-known": "well-known",
+  "what is a dielectric": "what is a dielectric",
+  "what is dielectric polarization": "what is dielectric polarization",
+  "what is diffraction": "what is diffraction",
+  "what is electric susceptibility": "what is electric susceptibility",
+  "what is interference": "what is interference",
+  "what is polarization": "what is polarization",
+  "what is synchrotron radiation": "what is synchrotron radiation",
+  "what is the capital of France": "what is the capital of France",
+  "what is the dielectric constant": "what is the dielectric constant",
+  "what is vacuum polarization": "what is vacuum polarization",
+  "why can bees see ultraviolet": "why can bees see ultraviolet",
+  "why can't I remember yesterday": "why can't I remember yesterday",
+  "why is a rainbow always seven colours": "why is a rainbow always seven colours",
+  "中微子是什么": "中微子是什么",
+  "为什么 有 空格": "为什么 有 空格",
+  "为什么冰块浮在水上": "为什么冰块浮在水上",
+  "为什么天气会变": "为什么天气会变",
+  "为什么彩虹总是七种颜色呢": "为什么彩虹总是七种颜色呢",
+  "为什么暗处看不出颜色": "为什么暗处看不出颜色",
+  "为什么有些事一开始不起眼，后来收不住": "为什么有些事一开始不起眼，后来收不住",
+  "为什么端一杯满水走路反而稳": "为什么端一杯满水走路反而稳",
+  "什么是": "什么是",
+  "什么是像差": "什么是像差",
+  "什么是干涉": "什么是干涉",
+  "什么是扩散": "什么是扩散",
+  "什么是电介质": "什么是电介质",
+  "什么是科学": "什么是科学",
+  "什么是能量守恒": "什么是能量守恒",
+  "什么是阻尼": "什么是阻尼",
+  "介电常数是什么": "介电常数是什么",
+  "偏振是什么": "偏振是什么",
+  "光为什么在水里拐弯": "光为什么在水里拐弯",
+  "光栅是怎么分光的": "光栅是怎么分光的",
+  "单个光子怎么过偏振片": "单个光子怎么过偏振片",
+  "受激辐射是什么": "受激辐射是什么",
+  "同步辐射是什么": "同步辐射是什么",
+  "天空为什么是蓝色的": "天空为什么是蓝色的",
+  "夸克为什么不能单独存在": "夸克为什么不能单独存在",
+  "宇称不守恒是谁发现的": "宇称不守恒是谁发现的",
+  "布儒斯特角是什么": "布儒斯特角是什么",
+  "干涉和衍射有什么区别": "干涉和衍射有什么区别",
+  "干涉是什么": "干涉是什么",
+  "库珀对是什么": "库珀对是什么",
+  "引力波有能量吗": "引力波有能量吗",
+  "我们上次聊了什么": "我们上次聊了什么",
+  "我昨天吃了什么": "我昨天吃了什么",
+  "极化是什么": "极化是什么",
+  "水为什么变凉了？": "水为什么变凉了？",
+  "热水为什么会自己变凉": "热水为什么会自己变凉",
+  "熵": "熵",
+  "熵是什么": "熵是什么",
+  "电介质极化是什么": "电介质极化是什么",
+  "电子磁矩为什么不是 2": "电子磁矩为什么不是 2",
+  "相变是什么": "相变是什么",
+  "真空极化是什么": "真空极化是什么",
+  "约瑟夫森效应是什么": "约瑟夫森效应是什么",
+  "蜜蜂为什么能看见紫外": "蜜蜂为什么能看见紫外",
+  "衍射是什么": "衍射是什么",
+  "讲个笑话": "讲个笑话",
+  "费曼": "费曼",
+  "费曼图怎么读": "费曼图怎么读",
+  "费曼怎么看待权威": "费曼怎么看待权威",
+  "费曼是谁": "费曼是谁",
+  "路径积分是什么意思": "路径积分是什么意思",
+  "透镜为什么能成像": "透镜为什么能成像",
+  "部分子模型是什么": "部分子模型是什么",
+  "重整化是什么": "重整化是什么",
+  "量子电动力学是讲什么的": "量子电动力学是讲什么的",
+  "量子电动力学是讲什么的？": "量子电动力学是讲什么的？",
+  "量子计算是谁提出的": "量子计算是谁提出的",
+  "钱不会凭空多出来，那它会去哪": "钱不会凭空多出来，那它会去哪",
+  "ＡＢＣ": "ＡＢＣ"
+ },
+ "expand_zh": {
+  "": "",
+  "   ": "   ",
+  "1650nm": "1650nm",
+  "3.14": "3.14",
+  "COVID-19": "COVID-19",
+  "HI THERE": "HI THERE",
+  "How does memory work?": "How does memory work?",
+  "What is an atom?": "What is an atom?",
+  "What is damping?": "What is damping?",
+  "What is entropy?": "What is entropy?",
+  "What is science?": "What is science?",
+  "What's an atom?": "What's an atom?",
+  "Who are you?": "Who are you?",
+  "Why does hot water cool down?": "Why does hot water cool down?",
+  "Why does ice float?": "Why does ice float?",
+  "a": "a",
+  "conservation conservation conserved conserving": "conservation conservation conserved conserving",
+  "disturbances deviation deviates": "disturbances deviation deviates",
+  "e=mc^2": "e=mc^2",
+  "how does a diffraction grating work": "how does a diffraction grating work",
+  "tell me a joke": "tell me a joke",
+  "well-known": "well-known",
+  "what is a dielectric": "what is a dielectric",
+  "what is dielectric polarization": "what is dielectric polarization",
+  "what is diffraction": "what is diffraction",
+  "what is electric susceptibility": "what is electric susceptibility",
+  "what is interference": "what is interference",
+  "what is polarization": "what is polarization",
+  "what is synchrotron radiation": "what is synchrotron radiation",
+  "what is the capital of France": "what is the capital of France",
+  "what is the dielectric constant": "what is the dielectric constant",
+  "what is vacuum polarization": "what is vacuum polarization",
+  "why can bees see ultraviolet": "why can bees see ultraviolet",
+  "why can't I remember yesterday": "why can't I remember yesterday",
+  "why is a rainbow always seven colours": "why is a rainbow always seven colours",
+  "中微子是什么": "中微子是什么",
+  "为什么 有 空格": "为什么 有 空格",
+  "为什么冰块浮在水上": "为什么冰块浮在水上 浮力 漂浮",
+  "为什么天气会变": "为什么天气会变",
+  "为什么彩虹总是七种颜色呢": "为什么彩虹总是七种颜色呢",
+  "为什么暗处看不出颜色": "为什么暗处看不出颜色",
+  "为什么有些事一开始不起眼，后来收不住": "为什么有些事一开始不起眼，后来收不住",
+  "为什么端一杯满水走路反而稳": "为什么端一杯满水走路反而稳",
+  "什么是": "什么是",
+  "什么是像差": "什么是像差",
+  "什么是干涉": "什么是干涉",
+  "什么是扩散": "什么是扩散 扩散 随机 游走",
+  "什么是电介质": "什么是电介质",
+  "什么是科学": "什么是科学 科学 态度 证据 专家 观察 权威",
+  "什么是能量守恒": "什么是能量守恒 守恒 能量",
+  "什么是阻尼": "什么是阻尼 阻尼 过阻尼 欠阻尼 阻尼比",
+  "介电常数是什么": "介电常数是什么",
+  "偏振是什么": "偏振是什么",
+  "光为什么在水里拐弯": "光为什么在水里拐弯",
+  "光栅是怎么分光的": "光栅是怎么分光的",
+  "单个光子怎么过偏振片": "单个光子怎么过偏振片",
+  "受激辐射是什么": "受激辐射是什么",
+  "同步辐射是什么": "同步辐射是什么",
+  "天空为什么是蓝色的": "天空为什么是蓝色的",
+  "夸克为什么不能单独存在": "夸克为什么不能单独存在",
+  "宇称不守恒是谁发现的": "宇称不守恒是谁发现的 守恒 能量",
+  "布儒斯特角是什么": "布儒斯特角是什么",
+  "干涉和衍射有什么区别": "干涉和衍射有什么区别",
+  "干涉是什么": "干涉是什么",
+  "库珀对是什么": "库珀对是什么",
+  "引力波有能量吗": "引力波有能量吗",
+  "我们上次聊了什么": "我们上次聊了什么",
+  "我昨天吃了什么": "我昨天吃了什么",
+  "极化是什么": "极化是什么",
+  "水为什么变凉了？": "水为什么变凉了？",
+  "热水为什么会自己变凉": "热水为什么会自己变凉",
+  "熵": "熵 熵 无序 热力学",
+  "熵是什么": "熵是什么 熵 无序 热力学",
+  "电介质极化是什么": "电介质极化是什么",
+  "电子磁矩为什么不是 2": "电子磁矩为什么不是 2",
+  "相变是什么": "相变是什么",
+  "真空极化是什么": "真空极化是什么",
+  "约瑟夫森效应是什么": "约瑟夫森效应是什么",
+  "蜜蜂为什么能看见紫外": "蜜蜂为什么能看见紫外",
+  "衍射是什么": "衍射是什么",
+  "讲个笑话": "讲个笑话",
+  "费曼": "费曼",
+  "费曼图怎么读": "费曼图怎么读",
+  "费曼怎么看待权威": "费曼怎么看待权威 权威 怀疑 尊重 证据 专家",
+  "费曼是谁": "费曼是谁 我是谁 自我介绍",
+  "路径积分是什么意思": "路径积分是什么意思",
+  "透镜为什么能成像": "透镜为什么能成像",
+  "部分子模型是什么": "部分子模型是什么",
+  "重整化是什么": "重整化是什么 重整化 尺度",
+  "量子电动力学是讲什么的": "量子电动力学是讲什么的",
+  "量子电动力学是讲什么的？": "量子电动力学是讲什么的？",
+  "量子计算是谁提出的": "量子计算是谁提出的",
+  "钱不会凭空多出来，那它会去哪": "钱不会凭空多出来，那它会去哪",
+  "ＡＢＣ": "ＡＢＣ"
+ },
+ "queries": [
+  "热水为什么会自己变凉",
+  "为什么端一杯满水走路反而稳",
+  "钱不会凭空多出来，那它会去哪",
+  "为什么有些事一开始不起眼，后来收不住",
+  "什么是科学",
+  "费曼是谁",
+  "费曼怎么看待权威",
+  "什么是阻尼",
+  "熵是什么",
+  "什么是能量守恒",
+  "什么是扩散",
+  "重整化是什么",
+  "What is entropy?",
+  "Why does hot water cool down?",
+  "What is science?",
+  "What is damping?",
+  "Who are you?",
+  "What is an atom?",
+  "量子电动力学是讲什么的",
+  "费曼图怎么读",
+  "路径积分是什么意思",
+  "电子磁矩为什么不是 2",
+  "宇称不守恒是谁发现的",
+  "夸克为什么不能单独存在",
+  "部分子模型是什么",
+  "中微子是什么",
+  "库珀对是什么",
+  "约瑟夫森效应是什么",
+  "受激辐射是什么",
+  "为什么彩虹总是七种颜色呢",
+  "天空为什么是蓝色的",
+  "光为什么在水里拐弯",
+  "why is a rainbow always seven colours",
+  "透镜为什么能成像",
+  "什么是像差",
+  "同步辐射是什么",
+  "为什么暗处看不出颜色",
+  "蜜蜂为什么能看见紫外",
+  "what is synchrotron radiation",
+  "why can bees see ultraviolet",
+  "干涉是什么",
+  "什么是干涉",
+  "衍射是什么",
+  "光栅是怎么分光的",
+  "干涉和衍射有什么区别",
+  "偏振是什么",
+  "布儒斯特角是什么",
+  "单个光子怎么过偏振片",
+  "what is interference",
+  "what is diffraction",
+  "what is polarization",
+  "what is vacuum polarization",
+  "极化是什么",
+  "电介质极化是什么",
+  "介电常数是什么",
+  "真空极化是什么",
+  "什么是电介质",
+  "what is dielectric polarization",
+  "what is the dielectric constant",
+  "what is a dielectric",
+  "what is electric susceptibility",
+  "how does a diffraction grating work",
+  "相变是什么",
+  "引力波有能量吗",
+  "量子计算是谁提出的",
+  "我昨天吃了什么",
+  "我们上次聊了什么",
+  "讲个笑话",
+  "为什么天气会变",
+  "为什么冰块浮在水上",
+  "tell me a joke",
+  "what is the capital of France",
+  "why can't I remember yesterday",
+  "How does memory work?",
+  "Why does ice float?",
+  "",
+  "   ",
+  "熵",
+  "a",
+  "3.14",
+  "e=mc^2",
+  "HI THERE",
+  "什么是",
+  "费曼",
+  "量子电动力学是讲什么的？",
+  "What's an atom?",
+  "水为什么变凉了？",
+  "为什么 有 空格",
+  "ＡＢＣ",
+  "1650nm",
+  "COVID-19",
+  "well-known",
+  "conservation conservation conserved conserving",
+  "disturbances deviation deviates"
+ ],
+ "stem_en": {
+  "atom": "atom",
+  "atoms": "atom",
+  "be": "be",
+  "conservation": "conserv",
+  "conserved": "conserv",
+  "deviates": "deviat",
+  "deviation": "devi",
+  "disturbance": "disturb",
+  "disturbances": "disturbanc",
+  "flies": "fly",
+  "free": "fre",
+  "ies": "ies",
+  "mass": "mas",
+  "masses": "mas",
+  "momentum": "momentum",
+  "physics": "physic",
+  "quanta": "quanta",
+  "quantum": "quantum",
+  "radiating": "radiat",
+  "radiation": "radi",
+  "science": "sci",
+  "sciences": "scienc",
+  "see": "see",
+  "the": "the"
+ },
+ "tokens": {
+  "": [],
+  "   ": [],
+  "1650nm": [
+   "1650nm"
+  ],
+  "3.14": [
+   "3.14"
+  ],
+  "COVID-19": [
+   "covid-19"
+  ],
+  "HI THERE": [
+   "hi",
+   "there"
+  ],
+  "How does memory work?": [
+   "how",
+   "does",
+   "memory",
+   "work"
+  ],
+  "What is an atom?": [
+   "what",
+   "is",
+   "an",
+   "atom"
+  ],
+  "What is damping?": [
+   "what",
+   "is",
+   "damping"
+  ],
+  "What is entropy?": [
+   "what",
+   "is",
+   "entropy"
+  ],
+  "What is science?": [
+   "what",
+   "is",
+   "science"
+  ],
+  "What's an atom?": [
+   "what",
+   "s",
+   "an",
+   "atom"
+  ],
+  "Who are you?": [
+   "who",
+   "are",
+   "you"
+  ],
+  "Why does hot water cool down?": [
+   "why",
+   "does",
+   "hot",
+   "water",
+   "cool",
+   "down"
+  ],
+  "Why does ice float?": [
+   "why",
+   "does",
+   "ice",
+   "float"
+  ],
+  "a": [
+   "a"
+  ],
+  "conservation conservation conserved conserving": [
+   "conservation",
+   "conservation",
+   "conserved",
+   "conserving"
+  ],
+  "disturbances deviation deviates": [
+   "disturbances",
+   "deviation",
+   "deviates"
+  ],
+  "e=mc^2": [
+   "e",
+   "mc",
+   "2"
+  ],
+  "how does a diffraction grating work": [
+   "how",
+   "does",
+   "a",
+   "diffraction",
+   "grating",
+   "work"
+  ],
+  "tell me a joke": [
+   "tell",
+   "me",
+   "a",
+   "joke"
+  ],
+  "well-known": [
+   "well-known"
+  ],
+  "what is a dielectric": [
+   "what",
+   "is",
+   "a",
+   "dielectric"
+  ],
+  "what is dielectric polarization": [
+   "what",
+   "is",
+   "dielectric",
+   "polarization"
+  ],
+  "what is diffraction": [
+   "what",
+   "is",
+   "diffraction"
+  ],
+  "what is electric susceptibility": [
+   "what",
+   "is",
+   "electric",
+   "susceptibility"
+  ],
+  "what is interference": [
+   "what",
+   "is",
+   "interference"
+  ],
+  "what is polarization": [
+   "what",
+   "is",
+   "polarization"
+  ],
+  "what is synchrotron radiation": [
+   "what",
+   "is",
+   "synchrotron",
+   "radiation"
+  ],
+  "what is the capital of France": [
+   "what",
+   "is",
+   "the",
+   "capital",
+   "of",
+   "france"
+  ],
+  "what is the dielectric constant": [
+   "what",
+   "is",
+   "the",
+   "dielectric",
+   "constant"
+  ],
+  "what is vacuum polarization": [
+   "what",
+   "is",
+   "vacuum",
+   "polarization"
+  ],
+  "why can bees see ultraviolet": [
+   "why",
+   "can",
+   "bees",
+   "see",
+   "ultraviolet"
+  ],
+  "why can't I remember yesterday": [
+   "why",
+   "can",
+   "t",
+   "i",
+   "remember",
+   "yesterday"
+  ],
+  "why is a rainbow always seven colours": [
+   "why",
+   "is",
+   "a",
+   "rainbow",
+   "always",
+   "seven",
+   "colours"
+  ],
+  "中微子是什么": [
+   "中微",
+   "微子"
+  ],
+  "为什么 有 空格": [
+   "有",
+   "空格"
+  ],
+  "为什么冰块浮在水上": [
+   "么冰",
+   "冰块",
+   "块浮",
+   "浮在",
+   "在水",
+   "水上"
+  ],
+  "为什么天气会变": [
+   "么天",
+   "天气",
+   "气会",
+   "会变"
+  ],
+  "为什么彩虹总是七种颜色呢": [
+   "么彩",
+   "彩虹",
+   "虹总",
+   "总是",
+   "是七",
+   "七种",
+   "种颜",
+   "颜色",
+   "色呢"
+  ],
+  "为什么暗处看不出颜色": [
+   "么暗",
+   "暗处",
+   "处看",
+   "看不",
+   "不出",
+   "出颜",
+   "颜色"
+  ],
+  "为什么有些事一开始不起眼，后来收不住": [
+   "么有",
+   "有些",
+   "些事",
+   "事一",
+   "一开",
+   "开始",
+   "始不",
+   "不起",
+   "起眼",
+   "后来",
+   "来收",
+   "收不",
+   "不住"
+  ],
+  "为什么端一杯满水走路反而稳": [
+   "么端",
+   "端一",
+   "一杯",
+   "杯满",
+   "满水",
+   "水走",
+   "走路",
+   "路反",
+   "反而",
+   "而稳"
+  ],
+  "什么是": [],
+  "什么是像差": [
+   "是像",
+   "像差"
+  ],
+  "什么是干涉": [
+   "是干",
+   "干涉"
+  ],
+  "什么是扩散": [
+   "是扩",
+   "扩散"
+  ],
+  "什么是电介质": [
+   "是电",
+   "电介",
+   "介质"
+  ],
+  "什么是科学": [
+   "是科",
+   "科学"
+  ],
+  "什么是能量守恒": [
+   "是能",
+   "能量",
+   "量守",
+   "守恒"
+  ],
+  "什么是阻尼": [
+   "是阻",
+   "阻尼"
+  ],
+  "介电常数是什么": [
+   "介电",
+   "电常",
+   "常数",
+   "数是"
+  ],
+  "偏振是什么": [
+   "偏振",
+   "振是"
+  ],
+  "光为什么在水里拐弯": [
+   "光为",
+   "么在",
+   "在水",
+   "水里",
+   "里拐",
+   "拐弯"
+  ],
+  "光栅是怎么分光的": [
+   "光栅",
+   "栅是",
+   "是怎",
+   "么分",
+   "分光",
+   "光的"
+  ],
+  "单个光子怎么过偏振片": [
+   "单个",
+   "个光",
+   "光子",
+   "子怎",
+   "么过",
+   "过偏",
+   "偏振",
+   "振片"
+  ],
+  "受激辐射是什么": [
+   "受激",
+   "激辐",
+   "辐射",
+   "射是"
+  ],
+  "同步辐射是什么": [
+   "同步",
+   "步辐",
+   "辐射",
+   "射是"
+  ],
+  "天空为什么是蓝色的": [
+   "天空",
+   "空为",
+   "是蓝",
+   "蓝色",
+   "色的"
+  ],
+  "夸克为什么不能单独存在": [
+   "夸克",
+   "克为",
+   "么不",
+   "不能",
+   "能单",
+   "单独",
+   "独存",
+   "存在"
+  ],
+  "宇称不守恒是谁发现的": [
+   "宇称",
+   "称不",
+   "不守",
+   "守恒",
+   "恒是",
+   "是谁",
+   "谁发",
+   "发现",
+   "现的"
+  ],
+  "布儒斯特角是什么": [
+   "布儒",
+   "儒斯",
+   "斯特",
+   "特角",
+   "角是"
+  ],
+  "干涉和衍射有什么区别": [
+   "干涉",
+   "涉和",
+   "和衍",
+   "衍射",
+   "射有",
+   "有什",
+   "么区",
+   "区别"
+  ],
+  "干涉是什么": [
+   "干涉",
+   "涉是"
+  ],
+  "库珀对是什么": [
+   "库珀",
+   "珀对",
+   "对是"
+  ],
+  "引力波有能量吗": [
+   "引力",
+   "力波",
+   "波有",
+   "有能",
+   "能量",
+   "量吗"
+  ],
+  "我们上次聊了什么": [
+   "们上",
+   "上次",
+   "次聊",
+   "聊了",
+   "了什"
+  ],
+  "我昨天吃了什么": [
+   "我昨",
+   "昨天",
+   "天吃",
+   "吃了",
+   "了什"
+  ],
+  "极化是什么": [
+   "极化",
+   "化是"
+  ],
+  "水为什么变凉了？": [
+   "水为",
+   "么变",
+   "变凉",
+   "凉了"
+  ],
+  "热水为什么会自己变凉": [
+   "热水",
+   "水为",
+   "会自",
+   "自己",
+   "己变",
+   "变凉"
+  ],
+  "熵": [
+   "熵"
+  ],
+  "熵是什么": [
+   "熵是"
+  ],
+  "电介质极化是什么": [
+   "电介",
+   "介质",
+   "质极",
+   "极化",
+   "化是"
+  ],
+  "电子磁矩为什么不是 2": [
+   "2",
+   "电子",
+   "子磁",
+   "磁矩",
+   "矩为",
+   "么不"
+  ],
+  "相变是什么": [
+   "相变",
+   "变是"
+  ],
+  "真空极化是什么": [
+   "真空",
+   "空极",
+   "极化",
+   "化是"
+  ],
+  "约瑟夫森效应是什么": [
+   "约瑟",
+   "瑟夫",
+   "夫森",
+   "森效",
+   "效应",
+   "应是"
+  ],
+  "蜜蜂为什么能看见紫外": [
+   "蜜蜂",
+   "蜂为",
+   "么能",
+   "能看",
+   "看见",
+   "见紫",
+   "紫外"
+  ],
+  "衍射是什么": [
+   "衍射",
+   "射是"
+  ],
+  "讲个笑话": [
+   "讲个",
+   "个笑",
+   "笑话"
+  ],
+  "费曼": [
+   "费曼"
+  ],
+  "费曼图怎么读": [
+   "费曼",
+   "曼图",
+   "图怎",
+   "么读"
+  ],
+  "费曼怎么看待权威": [
+   "费曼",
+   "曼怎",
+   "么看",
+   "看待",
+   "待权",
+   "权威"
+  ],
+  "费曼是谁": [
+   "费曼",
+   "曼是",
+   "是谁"
+  ],
+  "路径积分是什么意思": [
+   "路径",
+   "径积",
+   "积分",
+   "分是",
+   "么意",
+   "意思"
+  ],
+  "透镜为什么能成像": [
+   "透镜",
+   "镜为",
+   "么能",
+   "能成",
+   "成像"
+  ],
+  "部分子模型是什么": [
+   "部分",
+   "分子",
+   "子模",
+   "模型",
+   "型是"
+  ],
+  "重整化是什么": [
+   "重整",
+   "整化",
+   "化是"
+  ],
+  "量子电动力学是讲什么的": [
+   "量子",
+   "子电",
+   "电动",
+   "动力",
+   "力学",
+   "学是",
+   "是讲",
+   "讲什",
+   "么的"
+  ],
+  "量子电动力学是讲什么的？": [
+   "量子",
+   "子电",
+   "电动",
+   "动力",
+   "力学",
+   "学是",
+   "是讲",
+   "讲什",
+   "么的"
+  ],
+  "量子计算是谁提出的": [
+   "量子",
+   "子计",
+   "计算",
+   "算是",
+   "是谁",
+   "谁提",
+   "提出",
+   "出的"
+  ],
+  "钱不会凭空多出来，那它会去哪": [
+   "钱不",
+   "不会",
+   "会凭",
+   "凭空",
+   "空多",
+   "多出",
+   "出来",
+   "那它",
+   "它会",
+   "会去",
+   "去哪"
+  ],
+  "ＡＢＣ": []
+ },
+ "tokens_en": {
+  "": [],
+  "   ": [],
+  "1650nm": [
+   "1650nm"
+  ],
+  "3.14": [
+   "3.14"
+  ],
+  "COVID-19": [
+   "covid-19"
+  ],
+  "HI THERE": [
+   "hi"
+  ],
+  "How does memory work?": [
+   "memory",
+   "work"
+  ],
+  "What is an atom?": [
+   "atom"
+  ],
+  "What is damping?": [
+   "damp"
+  ],
+  "What is entropy?": [
+   "entropy"
+  ],
+  "What is science?": [
+   "sci"
+  ],
+  "What's an atom?": [
+   "atom"
+  ],
+  "Who are you?": [],
+  "Why does hot water cool down?": [
+   "hot",
+   "water",
+   "cool"
+  ],
+  "Why does ice float?": [
+   "ice",
+   "float"
+  ],
+  "a": [],
+  "conservation conservation conserved conserving": [
+   "conserv",
+   "conserv",
+   "conserv",
+   "conserv"
+  ],
+  "disturbances deviation deviates": [
+   "disturbanc",
+   "devi",
+   "deviat"
+  ],
+  "e=mc^2": [
+   "mc",
+   "2"
+  ],
+  "how does a diffraction grating work": [
+   "diffraction",
+   "grat",
+   "work"
+  ],
+  "tell me a joke": [
+   "tell",
+   "jok"
+  ],
+  "well-known": [
+   "well-known"
+  ],
+  "what is a dielectric": [
+   "dielectric"
+  ],
+  "what is dielectric polarization": [
+   "dielectric",
+   "polariz"
+  ],
+  "what is diffraction": [
+   "diffraction"
+  ],
+  "what is electric susceptibility": [
+   "electric",
+   "susceptibility"
+  ],
+  "what is interference": [
+   "interfer"
+  ],
+  "what is polarization": [
+   "polariz"
+  ],
+  "what is synchrotron radiation": [
+   "synchrotron",
+   "radi"
+  ],
+  "what is the capital of France": [
+   "capital",
+   "franc"
+  ],
+  "what is the dielectric constant": [
+   "dielectric",
+   "constant"
+  ],
+  "what is vacuum polarization": [
+   "vacuum",
+   "polariz"
+  ],
+  "why can bees see ultraviolet": [
+   "bee",
+   "see",
+   "ultraviolet"
+  ],
+  "why can't I remember yesterday": [
+   "remember",
+   "yesterday"
+  ],
+  "why is a rainbow always seven colours": [
+   "rainbow",
+   "alway",
+   "seven",
+   "colour"
+  ],
+  "中微子是什么": [],
+  "为什么 有 空格": [],
+  "为什么冰块浮在水上": [],
+  "为什么天气会变": [],
+  "为什么彩虹总是七种颜色呢": [],
+  "为什么暗处看不出颜色": [],
+  "为什么有些事一开始不起眼，后来收不住": [],
+  "为什么端一杯满水走路反而稳": [],
+  "什么是": [],
+  "什么是像差": [],
+  "什么是干涉": [],
+  "什么是扩散": [],
+  "什么是电介质": [],
+  "什么是科学": [],
+  "什么是能量守恒": [],
+  "什么是阻尼": [],
+  "介电常数是什么": [],
+  "偏振是什么": [],
+  "光为什么在水里拐弯": [],
+  "光栅是怎么分光的": [],
+  "单个光子怎么过偏振片": [],
+  "受激辐射是什么": [],
+  "同步辐射是什么": [],
+  "天空为什么是蓝色的": [],
+  "夸克为什么不能单独存在": [],
+  "宇称不守恒是谁发现的": [],
+  "布儒斯特角是什么": [],
+  "干涉和衍射有什么区别": [],
+  "干涉是什么": [],
+  "库珀对是什么": [],
+  "引力波有能量吗": [],
+  "我们上次聊了什么": [],
+  "我昨天吃了什么": [],
+  "极化是什么": [],
+  "水为什么变凉了？": [],
+  "热水为什么会自己变凉": [],
+  "熵": [],
+  "熵是什么": [],
+  "电介质极化是什么": [],
+  "电子磁矩为什么不是 2": [
+   "2"
+  ],
+  "相变是什么": [],
+  "真空极化是什么": [],
+  "约瑟夫森效应是什么": [],
+  "蜜蜂为什么能看见紫外": [],
+  "衍射是什么": [],
+  "讲个笑话": [],
+  "费曼": [],
+  "费曼图怎么读": [],
+  "费曼怎么看待权威": [],
+  "费曼是谁": [],
+  "路径积分是什么意思": [],
+  "透镜为什么能成像": [],
+  "部分子模型是什么": [],
+  "重整化是什么": [],
+  "量子电动力学是讲什么的": [],
+  "量子电动力学是讲什么的？": [],
+  "量子计算是谁提出的": [],
+  "钱不会凭空多出来，那它会去哪": [],
+  "ＡＢＣ": []
+ },
+ "unigrams": {
+  "": [],
+  "   ": [],
+  "1650nm": [],
+  "3.14": [],
+  "COVID-19": [],
+  "HI THERE": [],
+  "How does memory work?": [],
+  "What is an atom?": [],
+  "What is damping?": [],
+  "What is entropy?": [],
+  "What is science?": [],
+  "What's an atom?": [],
+  "Who are you?": [],
+  "Why does hot water cool down?": [],
+  "Why does ice float?": [],
+  "a": [],
+  "conservation conservation conserved conserving": [],
+  "disturbances deviation deviates": [],
+  "e=mc^2": [],
+  "how does a diffraction grating work": [],
+  "tell me a joke": [],
+  "well-known": [],
+  "what is a dielectric": [],
+  "what is dielectric polarization": [],
+  "what is diffraction": [],
+  "what is electric susceptibility": [],
+  "what is interference": [],
+  "what is polarization": [],
+  "what is synchrotron radiation": [],
+  "what is the capital of France": [],
+  "what is the dielectric constant": [],
+  "what is vacuum polarization": [],
+  "why can bees see ultraviolet": [],
+  "why can't I remember yesterday": [],
+  "why is a rainbow always seven colours": [],
+  "中微子是什么": [
+   "中",
+   "微",
+   "子"
+  ],
+  "为什么 有 空格": [
+   "空",
+   "格"
+  ],
+  "为什么冰块浮在水上": [
+   "冰",
+   "块",
+   "浮",
+   "水",
+   "上"
+  ],
+  "为什么天气会变": [
+   "天",
+   "气",
+   "变"
+  ],
+  "为什么彩虹总是七种颜色呢": [
+   "彩",
+   "虹",
+   "总",
+   "七",
+   "种",
+   "颜",
+   "色"
+  ],
+  "为什么暗处看不出颜色": [
+   "暗",
+   "处",
+   "看",
+   "出",
+   "颜",
+   "色"
+  ],
+  "为什么有些事一开始不起眼，后来收不住": [
+   "事",
+   "开",
+   "始",
+   "起",
+   "眼",
+   "后",
+   "来",
+   "收",
+   "住"
+  ],
+  "为什么端一杯满水走路反而稳": [
+   "端",
+   "杯",
+   "满",
+   "水",
+   "走",
+   "路",
+   "反",
+   "稳"
+  ],
+  "什么是": [],
+  "什么是像差": [
+   "像",
+   "差"
+  ],
+  "什么是干涉": [
+   "干",
+   "涉"
+  ],
+  "什么是扩散": [
+   "扩",
+   "散"
+  ],
+  "什么是电介质": [
+   "电",
+   "介",
+   "质"
+  ],
+  "什么是科学": [
+   "科",
+   "学"
+  ],
+  "什么是能量守恒": [
+   "量",
+   "守",
+   "恒"
+  ],
+  "什么是阻尼": [
+   "阻",
+   "尼"
+  ],
+  "介电常数是什么": [
+   "介",
+   "电",
+   "常",
+   "数"
+  ],
+  "偏振是什么": [
+   "偏",
+   "振"
+  ],
+  "光为什么在水里拐弯": [
+   "光",
+   "水",
+   "里",
+   "拐",
+   "弯"
+  ],
+  "光栅是怎么分光的": [
+   "光",
+   "栅",
+   "分",
+   "光"
+  ],
+  "单个光子怎么过偏振片": [
+   "单",
+   "光",
+   "子",
+   "偏",
+   "振",
+   "片"
+  ],
+  "受激辐射是什么": [
+   "受",
+   "激",
+   "辐",
+   "射"
+  ],
+  "同步辐射是什么": [
+   "同",
+   "步",
+   "辐",
+   "射"
+  ],
+  "天空为什么是蓝色的": [
+   "天",
+   "空",
+   "蓝",
+   "色"
+  ],
+  "夸克为什么不能单独存在": [
+   "夸",
+   "克",
+   "单",
+   "独",
+   "存"
+  ],
+  "宇称不守恒是谁发现的": [
+   "宇",
+   "称",
+   "守",
+   "恒",
+   "发",
+   "现"
+  ],
+  "布儒斯特角是什么": [
+   "布",
+   "儒",
+   "斯",
+   "特",
+   "角"
+  ],
+  "干涉和衍射有什么区别": [
+   "干",
+   "涉",
+   "衍",
+   "射",
+   "区",
+   "别"
+  ],
+  "干涉是什么": [
+   "干",
+   "涉"
+  ],
+  "库珀对是什么": [
+   "库",
+   "珀"
+  ],
+  "引力波有能量吗": [
+   "引",
+   "力",
+   "波",
+   "量"
+  ],
+  "我们上次聊了什么": [
+   "上",
+   "次",
+   "聊"
+  ],
+  "我昨天吃了什么": [
+   "昨",
+   "天",
+   "吃"
+  ],
+  "极化是什么": [
+   "极",
+   "化"
+  ],
+  "水为什么变凉了？": [
+   "水",
+   "变",
+   "凉"
+  ],
+  "热水为什么会自己变凉": [
+   "热",
+   "水",
+   "自",
+   "己",
+   "变",
+   "凉"
+  ],
+  "熵": [
+   "熵"
+  ],
+  "熵是什么": [
+   "熵"
+  ],
+  "电介质极化是什么": [
+   "电",
+   "介",
+   "质",
+   "极",
+   "化"
+  ],
+  "电子磁矩为什么不是 2": [
+   "电",
+   "子",
+   "磁",
+   "矩"
+  ],
+  "相变是什么": [
+   "相",
+   "变"
+  ],
+  "真空极化是什么": [
+   "真",
+   "空",
+   "极",
+   "化"
+  ],
+  "约瑟夫森效应是什么": [
+   "约",
+   "瑟",
+   "夫",
+   "森",
+   "效",
+   "应"
+  ],
+  "蜜蜂为什么能看见紫外": [
+   "蜜",
+   "蜂",
+   "看",
+   "见",
+   "紫",
+   "外"
+  ],
+  "衍射是什么": [
+   "衍",
+   "射"
+  ],
+  "讲个笑话": [
+   "讲",
+   "笑",
+   "话"
+  ],
+  "费曼": [
+   "费",
+   "曼"
+  ],
+  "费曼图怎么读": [
+   "费",
+   "曼",
+   "图",
+   "读"
+  ],
+  "费曼怎么看待权威": [
+   "费",
+   "曼",
+   "看",
+   "待",
+   "权",
+   "威"
+  ],
+  "费曼是谁": [
+   "费",
+   "曼"
+  ],
+  "路径积分是什么意思": [
+   "路",
+   "径",
+   "积",
+   "分",
+   "意",
+   "思"
+  ],
+  "透镜为什么能成像": [
+   "透",
+   "镜",
+   "成",
+   "像"
+  ],
+  "部分子模型是什么": [
+   "部",
+   "分",
+   "子",
+   "模",
+   "型"
+  ],
+  "重整化是什么": [
+   "重",
+   "整",
+   "化"
+  ],
+  "量子电动力学是讲什么的": [
+   "量",
+   "子",
+   "电",
+   "动",
+   "力",
+   "学",
+   "讲"
+  ],
+  "量子电动力学是讲什么的？": [
+   "量",
+   "子",
+   "电",
+   "动",
+   "力",
+   "学",
+   "讲"
+  ],
+  "量子计算是谁提出的": [
+   "量",
+   "子",
+   "计",
+   "算",
+   "提",
+   "出"
+  ],
+  "钱不会凭空多出来，那它会去哪": [
+   "钱",
+   "凭",
+   "空",
+   "多",
+   "出",
+   "来",
+   "去"
+  ],
+  "ＡＢＣ": []
+ }
+}

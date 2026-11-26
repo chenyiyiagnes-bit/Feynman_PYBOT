@@ -20,7 +20,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from . import assoc, spreading
+from . import assoc, lang, spreading
 from .learner import LearnedStore, card_row, normalize
 
 DEFAULT_DIRS = [
@@ -49,69 +49,49 @@ STEM_KIND = {
 _ASCII = re.compile(r"[a-z0-9]+(?:[.\-][a-z0-9]+)*")
 _CJK = re.compile(r"[一-鿿]+")
 
-# Question scaffolding that says nothing about the subject. Left in, these
-# bigrams let any card that happens to contain "什么" win the query.
-_STOP_BIGRAMS = {
-    "什么", "么是", "是什", "为什", "怎么", "么样", "有没", "多少", "哪个", "哪些",
-    "这个", "那个", "就是", "一个", "我们", "你们", "他们", "可以", "是不",
-    "不是", "没有", "一下", "知道", "告诉", "为会", "么会", "子是",
-    # Conversational scaffolding around a real question: "能不能聊聊X到底
-    # 是怎么回事". Left in, these bigrams dilute the subject tokens and push
-    # an on-topic card below the answer gate.
-    "聊聊", "回事", "到底", "能不",
-}
+# Language rules are data under ``lang/<language>/``; the names below stay as
+# the zh/en entry points the rest of the package already calls.
+_ZH = lang.load("zh")
+_EN = lang.load("en")
 
-# English questions carry the same scaffolding problem. These words are
-# dropped from both the index and the query, so "What is an atom?" is a query
-# about atoms rather than a query about "what".
-_EN_STOP = {
-    "a", "an", "the", "of", "to", "in", "on", "at", "for", "from", "by",
-    "with", "and", "or", "but", "is", "are", "was", "were", "be", "been",
-    "being", "am", "do", "does", "did", "has", "have", "had", "can", "could",
-    "will", "would", "should", "may", "might", "must", "i", "you", "he",
-    "she", "it", "we", "they", "me", "him", "her", "us", "them", "my",
-    "your", "his", "its", "our", "their", "this", "that", "these", "those",
-    "what", "why", "how", "when", "where", "which", "who", "whom", "whose",
-    "not", "no", "yes", "so", "than", "then", "there", "here", "as", "if",
-    "about", "into", "over", "under", "again", "more", "most", "some", "any",
-    "all", "own", "same", "such", "only", "very", "just", "up", "down",
-    "out", "off", "also", "because", "while", "during", "before", "after",
-    "between", "through", "against", "without", "within", "upon", "really",
-}
+_STOP_BIGRAMS = _ZH._stop_bigrams
+_ZH_BRIDGE = _ZH._bridge
 
 
 def _stem_en(word: str) -> str:
-    """Light, deterministic English stemming for retrieval and grading.
-
-    It deliberately normalises derivational pairs that matter in concept
-    answers ("deviation"/"deviates", "conservation"/"conserved",
-    "disturbance"/"disturbances"), not just plurals and tense.
-    """
-    if word.endswith("ies") and len(word) > 4:
-        return word[:-3] + "y"
-    if word.endswith("ied") and len(word) > 4:
-        return word[:-3] + "y"
-    for _ in range(2):
-        for suffix in ("ation", "ition", "ance", "ence", "ing", "ed", "es", "s"):
-            if len(word) > len(suffix) + 2 and word.endswith(suffix):
-                word = word[: -len(suffix)]
-                break
-    if len(word) > 3 and word.endswith("e"):
-        word = word[:-1]
-    return word
+    """Light, deterministic English stemming for retrieval and grading."""
+    return _EN.stem(word)
 
 
 def _tokens_en(text: str) -> List[str]:
     """Lowercase word tokens, stopwords removed, light stemming."""
-    out: List[str] = []
-    for tok in _ASCII.findall(text.lower()):
-        if tok.isdigit():
-            out.append(tok)
-            continue
-        if len(tok) < 2 or tok in _EN_STOP:
-            continue
-        out.append(_stem_en(tok))
-    return out
+    return _EN.tokens(text)
+
+
+def _expand_en(text: str) -> str:
+    return _EN.expand(text)
+
+
+def _expand_zh(text: str) -> str:
+    return _ZH.expand(text)
+
+
+def _bridge_zh(text: str) -> str:
+    return _ZH.bridge(text)
+
+
+def _unigrams(text: str) -> List[str]:
+    """Single CJK characters as weak topical evidence.
+
+    Bigrams carry the subject signal; unigrams only widen recall for short
+    or everyday phrasings. They are weighted low enough that they can never
+    pass the precision gate on their own.
+    """
+    return _ZH.unigrams(text)
+
+
+def _tokens(text: str) -> List[str]:
+    return _ZH.tokens(text)
 
 
 # Questions about the speaker's own memory are not questions about
@@ -149,120 +129,6 @@ _ZH_EPISODIC = re.compile(
 # when the question is actually about Feynman.
 _EN_THIRD_PERSON_WHY = re.compile(
     r"^\s*why\s+(?:does|do|is|are|did|can|would)\b", re.I)
-
-_EN_INTENTS = (
-    (re.compile(r"\b(who are you|what are you|your name|introduce yourself)\b", re.I),
-     "selfidentity"),
-    (re.compile(r"\b(what is science|scientific method|how science works)\b", re.I),
-     "sciencemethod"),
-    (re.compile(r"\b(memory|forget|forgot|recall)\b", re.I),
-     "memory remembering forgetting"),
-)
-
-
-def _expand_en(text: str) -> str:
-    extra = [tokens for pattern, tokens in _EN_INTENTS if pattern.search(text)]
-    return text + (" " + " ".join(extra) if extra else "")
-
-
-# Chinese questions need the same treatment: "什么是科学" contributes only
-# generic bigrams, so the science-attitude card has nothing distinctive to
-# match. A narrow intent expansion adds the card's own subject terms.
-_ZH_INTENTS = (
-    (re.compile(r"(什么是科学|科学是什么|科学方法|科学态度)"), "科学 态度 证据 专家 观察 权威"),
-)
-
-
-# A bare concept is often split by question grammar ("熵是什么" tokenises as
-# "熵是", which no card contains). A small curated lexicon re-adds the concept
-# and a couple of subject words so the card's own title/alias can match.
-_ZH_TERMS = (
-    ("熵", "熵 无序 热力学"),
-    ("阻尼", "阻尼 过阻尼 欠阻尼 阻尼比"),
-    ("共振", "共振 振荡 频率"),
-    ("扩散", "扩散 随机 游走"),
-    ("重整化", "重整化 尺度"),
-    ("守恒", "守恒 能量"),
-    ("反馈", "反馈 放大 抑制"),
-    ("权威", "权威 怀疑 尊重 证据 专家"),
-    ("浮力", "浮力 漂浮"),
-    ("浮在水", "浮力 漂浮"),
-    ("费曼是谁", "我是谁 自我介绍"),
-    ("费曼是什么人", "我是谁 自我介绍"),
-)
-
-
-def _expand_zh(text: str) -> str:
-    extra = [tokens for pattern, tokens in _ZH_INTENTS if pattern.search(text)]
-    extra += [tokens for key, tokens in _ZH_TERMS if key in text]
-    return text + (" " + " ".join(extra) if extra else "")
-
-
-# Everyday words rarely appear in the cards, so a natural question about
-# them never reaches the right card's vocabulary. This table is bridging
-# vocabulary, not answers: it adds the words the corpus itself would use.
-_ZH_BRIDGE = (
-    ("发热", "热 能量 擦除"),
-    ("烫手", "热 能量"),
-    ("能量", "能量 热 守恒 动能"),
-    # "光" alone must not drag every light question to the double-slit card:
-    # a question about light speed was being answered with 双缝. The specific
-    # compounds below carry their own vocabulary instead.
-    ("光", "光 干涉 双缝"),
-    ("光速", "光速 相对论 速度 极限"),
-    ("光子", "光子 动量 能量"),
-    ("介质", "电介质 折射 色散"),
-    ("双缝", "双缝 干涉 量子"),
-    ("量子电动力", "路径积分 费曼图 qed 概率幅"),
-    ("量子", "量子 叠加 测量"),
-    ("数字", "概率 巧合 统计"),
-    ("预兆", "概率 巧合 统计"),
-    ("巧合", "概率 巧合"),
-    ("优雅", "美 观察"),
-    ("美", "美 观察 敬畏"),
-    ("代码", "计算 程序"),
-    ("bug", "问题 拆解"),
-    ("头绪", "问题 拆解"),
-)
-
-
-def _bridge_zh(text: str) -> str:
-    lower = text.lower()
-    extra = [tokens for key, tokens in _ZH_BRIDGE if key in lower]
-    return text + (" " + " ".join(extra) if extra else "")
-
-
-_UNIGRAM_STOP = set(
-    "的了吗呢吧啊呀哦嗯是不我你他她它们这那哪谁啥有为在就都也还又很太"
-    "会能要想要说给对把被让从到和与及或个一什么怎怎样如何所以因为但是"
-    "如果而且之着过它所其此该些每各"
-)
-
-
-def _unigrams(text: str) -> List[str]:
-    """Single CJK characters as weak topical evidence.
-
-    Bigrams carry the subject signal; unigrams only widen recall for short
-    or everyday phrasings. They are weighted low enough that they can never
-    pass the precision gate on their own.
-    """
-    out: List[str] = []
-    for run in _CJK.findall(text):
-        out.extend(ch for ch in run if ch not in _UNIGRAM_STOP)
-    return out
-
-
-def _tokens(text: str) -> List[str]:
-    text = text.lower()
-    out: List[str] = _ASCII.findall(text)
-    for run in _CJK.findall(text):
-        if len(run) == 1:
-            out.append(run)
-        else:
-            out.extend(run[i : i + 2] for i in range(len(run) - 1))
-    return [tok for tok in out if tok not in _STOP_BIGRAMS]
-
-
 
 
 def _join(value) -> str:

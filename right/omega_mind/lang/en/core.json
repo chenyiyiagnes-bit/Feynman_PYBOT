@@ -1,0 +1,47 @@
+{
+  "language": "en",
+  "profile": "default",
+  "version": 1,
+  "ascii": "[a-z0-9]+(?:[.\\-][a-z0-9]+)*",
+  "stop": [
+    "a", "an", "the", "of", "to", "in", "on", "at", "for", "from", "by",
+    "with", "and", "or", "but", "is", "are", "was", "were", "be", "been",
+    "being", "am", "do", "does", "did", "has", "have", "had", "can", "could",
+    "will", "would", "should", "may", "might", "must", "i", "you", "he",
+    "she", "it", "we", "they", "me", "him", "her", "us", "them", "my",
+    "your", "his", "its", "our", "their", "this", "that", "these", "those",
+    "what", "why", "how", "when", "where", "which", "who", "whom", "whose",
+    "not", "no", "yes", "so", "than", "then", "there", "here", "as", "if",
+    "about", "into", "over", "under", "again", "more", "most", "some", "any",
+    "all", "own", "same", "such", "only", "very", "just", "up", "down",
+    "out", "off", "also", "because", "while", "during", "before", "after",
+    "between", "through", "against", "without", "within", "upon", "really"
+  ],
+  "stem": {
+    "ies_suffix": "ies",
+    "ied_suffix": "ied",
+    "suffixes": ["ation", "ition", "ance", "ence", "ing", "ed", "es", "s"],
+    "passes": 2,
+    "min_stem_remainder": 2,
+    "trailing_e_min_length": 3
+  },
+  "intents": [
+    {
+      "pattern": "\\b(who are you|what are you|your name|introduce yourself)\\b",
+      "ignore_case": true,
+      "tokens": "selfidentity"
+    },
+    {
+      "pattern": "\\b(what is science|scientific method|how science works)\\b",
+      "ignore_case": true,
+      "tokens": "sciencemethod"
+    },
+    {
+      "pattern": "\\b(memory|forget|forgot|recall)\\b",
+      "ignore_case": true,
+      "tokens": "memory remembering forgetting"
+    }
+  ],
+  "terms": [],
+  "bridge": []
+}
