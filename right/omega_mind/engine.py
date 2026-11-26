@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from . import knowledge, left_brain, reflect, resonance, skepticism
+from . import evidence, knowledge, left_brain, reflect, resonance, skepticism
 from .appraisal import Activation, AppraisalEngine
 from .challenge import ChallengeSession
 from .config import PersonaConfig, get_persona
@@ -347,10 +347,12 @@ class MindEngine:
                 base_reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
 
         directive = self.policy.compute(self.state, activations, self.language)
+        presented = self._present_evidence(base_reply, source, left_policy.detail)
         reply = self.renderer.render(
-            base_reply, directive, self.turn_index, self.language,
+            presented if presented is not None else base_reply,
+            directive, self.turn_index, self.language,
             posture=left_policy.posture,
-            preserve=bool(self.last_retrieval.get("dialogue_act"))
+            preserve=presented is not None or bool(self.last_retrieval.get("dialogue_act"))
             or source.startswith("fallback"))
         # The association is an aside, so it goes after the shell: the
         # answer keeps its own ending, the remark stays one clean line.
@@ -495,6 +497,29 @@ class MindEngine:
         if not body or not _match_language(body, "zh"):
             return None
         return body, "left:typesetter"
+
+    def _present_evidence(self, text: str, source: str, detail: str) -> str | None:
+        act = self.last_retrieval.get("dialogue_act", "")
+        prefix, _, card_id = source.partition(":")
+        own = self.kb.source_prefix
+        if (self.left_responder is None or not self._uses_knowledge_package()
+                or prefix not in (own, own + "_soft") or not card_id
+                or card_id == "no_match" or self.last_retrieval.get("source") != source
+                or act == "repeat" or text.endswith(_HEDGE[self.language])):
+            return None
+        allowed = evidence.candidates(text, self.language)
+        if not allowed:
+            return None
+        try:
+            plan = self.left_responder.plan_evidence(
+                text, source=source, language=self.language, detail=detail,
+                dialogue_act=act, candidates=allowed)
+        except Exception:  # noqa: BLE001 - a display add-on must never break a turn
+            return None
+        presented = evidence.apply_breaks(text, allowed, plan)
+        if presented is not None:
+            self.last_retrieval["evidence_layout"] = list(plan)
+        return presented
 
     def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None,
                     cube_bias: Optional[Any] = None):

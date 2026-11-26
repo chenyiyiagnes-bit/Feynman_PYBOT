@@ -65,8 +65,8 @@ def main(argv=None) -> int:
         r = LeftResponder()
         if not r.enabled:
             add(WARN, "left bridge", "off (OMEGA_LEFT_BRIDGE=1 to enable)")
-        elif r.available():
-            add(PASS, "left bridge", f"vault {r.vault_path.name}")
+        elif r.evidence_available():
+            add(PASS, "left bridge", "card evidence layout (no vault required)")
         else:
             add(WARN, "left bridge", r.last_error or "unavailable")
     except Exception as exc:  # noqa: BLE001

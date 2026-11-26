@@ -35,6 +35,13 @@ class TestChatCLI(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("feynman-zh", proc.stdout)
 
+    def test_evidence_bridge_runs_on_a_fresh_checkout(self):
+        proc = run_chat("为什么天是蓝的？\n/quit\n", "--no-state", "--bridge", "--debug")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("feynman-zh:opt-012", proc.stdout)
+        self.assertNotIn("证据排版不可用", proc.stdout)
+        self.assertIn("\n蓝光的频率", proc.stdout)
+
     def test_unknown_persona_exits_nonzero(self):
         proc = run_chat("", "--persona", "nobody", "--no-state")
         self.assertNotEqual(proc.returncode, 0)
