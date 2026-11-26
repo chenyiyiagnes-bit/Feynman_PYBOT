@@ -5,6 +5,7 @@
 | `contracts/persona.md` | `persona.json` 的字段格式（schema 1），写人设前先看这个 |
 | `contracts/engine-left-bridge.md` | 右脑引擎接入左脑排版器的接口约定、失败关闭语义 |
 | `docs/bridge.md` | 左右脑桥的映射表、环境变量、端到端验证结果与已知限制 |
+| `docs/cards.md` | 拆书工具：覆盖率/台账、`support` 出处校验、匿名盲评；每个工具都写明「不证明什么」 |
 | `docs/reviews/` | 审核报告存放处与模板（Gemini 分支提交到这里） |
 | `COORDINATION.md` | 分支流、文件所有权、语料红线 |
 

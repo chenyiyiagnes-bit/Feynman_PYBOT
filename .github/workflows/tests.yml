@@ -22,3 +22,5 @@ jobs:
       - name: right brain tests
         working-directory: right
         run: python -m unittest discover -s omega_mind/tests
+      - name: card coverage (no row disappears silently)
+        run: python tools/card_coverage.py
