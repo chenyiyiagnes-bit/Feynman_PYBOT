@@ -15,6 +15,7 @@ persona-specific: adding a character means adding a directory, not code.
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import sys
 from pathlib import Path
@@ -24,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "right") not in sys.path:
     sys.path.insert(0, str(ROOT / "right"))
 
-from omega_mind.config import PersonaConfig  # noqa: E402
+from omega_mind.config import PersonaConfig, persona_from_data  # noqa: E402
 from omega_mind.engine import MindEngine  # noqa: E402
 from omega_mind.feynman_kb import FeynmanKB  # noqa: E402
 from omega_mind.pybot_bridge import PyBotBridge  # noqa: E402
@@ -37,30 +38,7 @@ STATE_DIR_ENV = "PYBOT_STATE_DIR"
 
 def to_config(persona: Persona) -> PersonaConfig:
     """Map the data-only persona onto the right brain's PersonaConfig."""
-    cfg = PersonaConfig(name=persona.id or "generic")
-    cfg.baselines.update({k: float(v) for k, v in persona.baselines.items()})
-    cfg.taus.update({k: float(v) for k, v in persona.taus.items()})
-    voice = persona.voice
-    for attr, key in (
-        ("catchphrase_prefixes", "prefixes_zh"),
-        ("ending_particles", "endings_zh"),
-        ("catchphrase_prefixes_en", "prefixes_en"),
-        ("ending_particles_en", "endings_en"),
-    ):
-        values = voice.get(key)
-        if values:
-            setattr(cfg, attr, list(values))
-    switches = persona.switches
-    cfg.correction_as_curiosity = bool(switches.get("correction_as_curiosity", False))
-    cfg.jargon_aversion = bool(switches.get("jargon_aversion", False))
-    try:
-        cfg.politeness = float(switches.get("politeness", 1.0))
-    except (TypeError, ValueError):
-        cfg.politeness = 1.0
-    cfg.disable_cubies = list(persona.disable_cubies)
-    cfg.override_triggers = {k: list(v) for k, v in persona.override_triggers.items()}
-    cfg.extra_effects = {k: dict(v) for k, v in persona.extra_effects.items()}
-    return cfg
+    return persona_from_data(dataclasses.asdict(persona))
 
 
 def knowledge_dir(persona: Persona) -> Optional[Path]:
@@ -86,7 +64,21 @@ def resolve_persona(target: Union[str, Path],
 
 
 def state_base() -> Path:
-    return Path(os.getenv(STATE_DIR_ENV) or (Path.home() / ".feynman_pybot"))
+    """Where every mind's state lives: ``$PYBOT_STATE_DIR`` or ``~/.pybot``.
+
+    Before the rename the state sat in ``~/.feynman_pybot``. If the new
+    directory does not exist yet and the old one does, keep using the old
+    one — an upgrade must not look like a wipe. Nothing is moved or copied.
+    """
+    override = os.getenv(STATE_DIR_ENV)
+    if override:
+        return Path(override)
+    home = Path.home()
+    current = home / ".pybot"
+    legacy = home / ".feynman_pybot"
+    if not current.exists() and legacy.exists():
+        return legacy
+    return current
 
 
 def default_state_path(persona_id: str) -> Path:

@@ -42,7 +42,7 @@ class TestPeakSelection(unittest.TestCase):
 class TestReportRun(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.report = run_report(persona="feynman", turns=40, dream_at=32)
+        cls.report = run_report(persona="feynman-zh", turns=40, dream_at=32)
 
     def test_runs_every_turn(self):
         self.assertEqual(len(self.report.frames), 40)

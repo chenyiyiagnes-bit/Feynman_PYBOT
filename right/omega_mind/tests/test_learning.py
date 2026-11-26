@@ -123,7 +123,7 @@ class TestKnowledgeRetrievalLearns(unittest.TestCase):
 class TestEngineLearnsFromPraise(unittest.TestCase):
     def _engine(self) -> MindEngine:
         return MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(learned_dir=temp_dir()),
             auto_save=False,
@@ -162,7 +162,7 @@ class TestEngineMintsCards(unittest.TestCase):
     def _engine(self, directory: str | None = None) -> MindEngine:
         self.directory = directory or temp_dir()
         return MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(learned_dir=self.directory),
             auto_save=False,
@@ -249,7 +249,7 @@ class TestPendingPromotion(unittest.TestCase):
     def _engine(self) -> MindEngine:
         self.directory = temp_dir()
         return MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(learned_dir=self.directory),
             auto_save=False,
@@ -312,7 +312,7 @@ class TestHardNegatives(unittest.TestCase):
     def test_the_engine_mints_nothing_from_praise(self):
         directory = temp_dir()
         engine = MindEngine(
-            persona=get_persona("feynman"), bridge=PyBotBridge.disabled(),
+            persona=get_persona("feynman-zh"), bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(learned_dir=directory), auto_save=False, language="zh")
         for i, text in enumerate(self.PRAISE):
             engine.turn(text, now=1000.0 + i * 60)
@@ -338,7 +338,7 @@ class TestExplicitConfirmation(unittest.TestCase):
 
     def test_the_quote_promotes_even_at_high_cortisol(self):
         engine = MindEngine(
-            persona=get_persona("feynman"), bridge=PyBotBridge.disabled(),
+            persona=get_persona("feynman-zh"), bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(learned_dir=temp_dir()), auto_save=False,
             language="zh")
         engine.turn(self.LOOSE, now=1000.0)
@@ -350,7 +350,7 @@ class TestExplicitConfirmation(unittest.TestCase):
 
     def test_praise_does_not_promote_while_suspicious(self):
         engine = MindEngine(
-            persona=get_persona("feynman"), bridge=PyBotBridge.disabled(),
+            persona=get_persona("feynman-zh"), bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(learned_dir=temp_dir()), auto_save=False,
             language="zh")
         engine.turn(self.LOOSE, now=1000.0)
@@ -616,7 +616,7 @@ class TestTopicAndAudit(unittest.TestCase):
     def test_a_minted_card_carries_its_topic(self):
         directory = temp_dir()
         engine = MindEngine(
-            persona=get_persona("feynman"), bridge=PyBotBridge.disabled(),
+            persona=get_persona("feynman-zh"), bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(learned_dir=directory), auto_save=False, language="zh")
         engine.turn("哈希指针可以想成一串首尾相扣的蜡封信件，改一封后面全得重盖章。",
                     now=1000.0)

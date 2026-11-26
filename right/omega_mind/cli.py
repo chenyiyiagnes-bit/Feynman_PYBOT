@@ -1,4 +1,4 @@
-"""Interactive CLI: `python -m omega_mind --persona feynman`."""
+"""Interactive CLI: `python -m omega_mind --persona feynman-zh`."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ import argparse
 import select
 import sys
 
-from .config import get_persona
+from .config import PACKAGES_ROOT, get_persona
 from .cube import render_net
 from .engine import LANGUAGES, MindEngine, has_cjk
-from .feynman_kb import DEFAULT_DIRS
+from .feynman_kb import DEFAULT_DIRS, FeynmanKB
 from .profiler import format_profile, profile_corpus
 from .view import render_ascii
 
@@ -52,7 +52,8 @@ def print_profile(engine: MindEngine) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="omega_mind")
-    parser.add_argument("--persona", default="generic", choices=["generic", "feynman"])
+    parser.add_argument("--persona", default="generic",
+                        help="'generic' (no cards), or a package id under personas/")
     parser.add_argument("--save", default="mind_state.json")
     parser.add_argument("--load", action="store_true", help="resume from --save if it exists")
     parser.add_argument("--verbose", "-v", action="store_true")
@@ -65,17 +66,29 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     persona = get_persona(args.persona)
+    kb = None
+    if str(args.persona) != "generic":
+        # One mind, one package: the CLI feeds the package's own cards and
+        # derived state, exactly like app.runtime.build() does.
+        package = PACKAGES_ROOT / str(args.persona)
+        kb = FeynmanKB(
+            knowledge_dir=str(package / "knowledge"),
+            learned_dir=str(package / "data" / "kb_learned"),
+            assoc_path=str(package / "data" / "assoc" / "assoc_edges.jsonl"),
+            source_prefix=package.name,
+        )
 
     import os
     if args.load and os.path.exists(args.save):
-        engine = MindEngine.load(args.save, persona=persona, language=args.lang)
+        engine = MindEngine.load(args.save, persona=persona, language=args.lang,
+                                 kb=kb)
         if engine.load_warning:
             print(f"[warn] {engine.load_warning} — 从空状态开始")
         else:
             print(f"[resumed] {args.save}")
     else:
         engine = MindEngine(persona=persona, store_path=args.save,
-                            language=args.lang or "zh")
+                            kb=kb, language=args.lang or "zh")
     if args.lang:
         engine.set_language(args.lang)
 

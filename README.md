@@ -47,8 +47,10 @@ python3 scripts/chat.py --list
 python3 tools/doctor.py
 ```
 
-不需要 API key、不需要联网。对话状态默认保存在 `~/.feynman_pybot/<id>.mind_state.json`，
-不想保存就加 `--no-state`。用 `--bridge` 或 `OMEGA_LEFT_BRIDGE=1` 开启左脑的证据排版。
+不需要 API key、不需要联网。对话状态默认保存在 `~/.pybot/<id>.mind_state.json`。
+旧版目录 `~/.feynman_pybot` 若已存在且 `~/.pybot` 尚未创建，会继续沿用旧目录。
+可用 `$PYBOT_STATE_DIR` 覆盖，不想保存就加 `--no-state`。
+用 `--bridge` 或 `OMEGA_LEFT_BRIDGE=1` 开启左脑的证据排版。
 它对已选的中文或英文卡片回答断行，保留原词句和出处，无需 vault。见 `docs/bridge.md`。
 
 ## 做一个自己的角色

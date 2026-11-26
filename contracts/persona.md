@@ -50,7 +50,7 @@ personas/laozhuang-en/   老庄 · 英文
 | 知识卡 | `personas/<id>/knowledge/*.jsonl` | 是 |
 | 语料（喂左脑排版器的原文） | `knowledge.corpus` 指向的文件 | 否（版权） |
 | 联想边（卡片间的判断） | `personas/<id>/data/assoc/assoc_edges.jsonl` | 否，`.gitignore` 已覆盖 |
-| 学习覆盖（教给它的新卡片） | `$PYBOT_STATE_DIR/<id>/kb_learned/`，默认 `~/.feynman_pybot/<id>/kb_learned/` | 否（运行时状态） |
+| 学习覆盖（教给它的新卡片） | `$PYBOT_STATE_DIR/<id>/kb_learned/`，默认 `~/.pybot/<id>/kb_learned/`（旧目录 `~/.feynman_pybot` 仍存在且新目录未建时沿用旧目录） | 否（运行时状态） |
 
 引擎里没有指向某个人设的默认路径：换人设就换整个目录，不存在「老庄继承了费曼的联想」。
 

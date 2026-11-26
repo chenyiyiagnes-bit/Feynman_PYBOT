@@ -22,7 +22,7 @@ import tempfile
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
-from .config import get_persona
+from .config import PACKAGES_ROOT, get_persona
 from .cube import render_net
 from .cube_feedback import CubeFeedback, displacement
 from .engine import MindEngine
@@ -154,7 +154,7 @@ def pick_peak(frames: Sequence[Keyframe]) -> Keyframe:
     return max(frames, key=lambda frame: frame.verbosity)
 
 
-def run_report(persona: str = "feynman", turns: int = 40,
+def run_report(persona: str = "generic", turns: int = 40,
                dream_at: int = 32,
                lines: Sequence[str] = DEFAULT_LINES,
                step_seconds: float = 20.0,
@@ -166,8 +166,16 @@ def run_report(persona: str = "feynman", turns: int = 40,
     # The scripted lines are not knowledge questions, so the default run does
     # not load the corpus. ``with_kb`` turns it on (into a throwaway learned
     # directory) when the point of the run is the dream audit itself.
-    kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-keyframe-")) \
-        if with_kb else FeynmanKB.disabled()
+    if with_kb:
+        learned = tempfile.mkdtemp(prefix="omega-keyframe-")
+        package = PACKAGES_ROOT / persona
+        if persona != "generic" and (package / "knowledge").is_dir():
+            kb = FeynmanKB(knowledge_dir=str(package / "knowledge"),
+                           learned_dir=learned, source_prefix=package.name)
+        else:
+            kb = FeynmanKB(learned_dir=learned)
+    else:
+        kb = FeynmanKB.disabled()
     engine = MindEngine(
         persona=get_persona(persona),
         bridge=PyBotBridge.disabled(),
@@ -222,8 +230,9 @@ def run_report(persona: str = "feynman", turns: int = 40,
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--persona", default="feynman",
-                        help="generic or feynman (default: feynman)")
+    parser.add_argument("--persona", default="generic",
+                        help="'generic' or a package id under personas/ "
+                             "(default: generic)")
     parser.add_argument("--turns", type=int, default=40)
     parser.add_argument("--dream-at", type=int, default=32,
                         help="turn number that triggers a forced dream")

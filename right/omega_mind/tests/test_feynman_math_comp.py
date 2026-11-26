@@ -155,7 +155,7 @@ class TestMathCompInTheEngine(unittest.TestCase):
     def test_answer_comes_from_the_new_pack(self):
         _kb_or_skip()
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(),
             auto_save=False,
@@ -168,7 +168,7 @@ class TestMathCompInTheEngine(unittest.TestCase):
     def test_language_switch_uses_the_english_card(self):
         _kb_or_skip()
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB(language="en"),
             auto_save=False,

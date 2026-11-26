@@ -29,6 +29,35 @@ class TestStatePaths(unittest.TestCase):
             with mock.patch.dict(os.environ, {runtime.STATE_DIR_ENV: tmp}):
                 self.assertEqual(runtime.state_base(), Path(tmp))
 
+    def _home(self, tmp: str) -> dict:
+        env = {k: v for k, v in os.environ.items()
+               if k != runtime.STATE_DIR_ENV}
+        return mock.patch.dict(os.environ, env, clear=True), \
+            mock.patch.object(Path, "home", return_value=Path(tmp))
+
+    def test_default_state_base_is_dot_pybot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env, home = self._home(tmp)
+            with env, home:
+                self.assertEqual(runtime.state_base(), Path(tmp) / ".pybot")
+
+    def test_an_existing_legacy_dir_is_still_used(self):
+        # An upgrade must not look like a wipe: old state stays readable.
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy = Path(tmp) / ".feynman_pybot"
+            legacy.mkdir()
+            env, home = self._home(tmp)
+            with env, home:
+                self.assertEqual(runtime.state_base(), legacy)
+
+    def test_the_new_dir_wins_once_it_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / ".feynman_pybot").mkdir()
+            (Path(tmp) / ".pybot").mkdir()
+            env, home = self._home(tmp)
+            with env, home:
+                self.assertEqual(runtime.state_base(), Path(tmp) / ".pybot")
+
     def test_learned_dir_is_per_persona(self):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.dict(os.environ, {runtime.STATE_DIR_ENV: tmp}):

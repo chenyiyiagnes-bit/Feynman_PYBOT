@@ -6,8 +6,13 @@ Times are seconds. Taus are exponential-decay time constants.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
-from typing import Dict, List
+from pathlib import Path
+from typing import Dict, List, Mapping, Union
+
+#: Where packages live relative to this module (right/omega_mind/config.py).
+PACKAGES_ROOT = Path(__file__).resolve().parents[2] / "personas"
 
 DIMENSIONS = (
     "dopamine",      # curiosity / reward
@@ -84,62 +89,76 @@ def generic_persona() -> PersonaConfig:
     return PersonaConfig()
 
 
-def feynman_persona() -> PersonaConfig:
-    """High curiosity, low social anxiety, allergic to jargon and authority."""
-    p = PersonaConfig(name="feynman")
-    p.baselines.update({
-        "dopamine": 0.60,
-        "cortisol": 0.12,
-        "valence": 0.15,
-        "arousal": 0.40,
-        "affinity": 0.25,
-        "defensiveness": 0.0,
-        "energy": 0.85,
-    })
-    p.taus.update({
-        "dopamine": 120.0,
-        "cortisol": 60.0,   # shakes it off quickly
-        "defensiveness": 45.0,
-    })
-    p.catchphrase_prefixes = ["等等，", "嘿，", "说真的，"]
-    p.ending_particles = ["嘛", "，你说呢？", "，对不对？", "——就这么简单。"]
-    p.catchphrase_prefixes_en = ["Wait, ", "Hey, ", "Honestly, "]
-    p.ending_particles_en = [" — you know?", ", right?", ".", " — that's the whole thing."]
-    p.correction_as_curiosity = True
-    p.jargon_aversion = True
-    p.politeness = 0.1
+def persona_from_data(data: Mapping) -> PersonaConfig:
+    """Map a persona.json (or anything shaped like one) onto a config.
 
-    # Being corrected is a gift, not a threat.
-    p.disable_cubies = ["corner_shame", "edge_persona"]
-    p.override_triggers["core_intuition"] = [
-        r"说错|错了|不对|纠正|盲区|搞错",
-        # Saying "I don't know" is an invitation, not a failure state.
-        r"我不懂|我不知道|搞不懂|弄不明白|不明白",
-    ]
-    p.extra_effects["core_intuition"] = {
-        "dopamine": 0.30,
-        "valence": 0.10,
-    }
+    This is the only conversion from data to affect; ``app.runtime`` and the
+    CLI both go through it, so a package's parameters are read one way.
+    """
+    cfg = PersonaConfig(name=str(data.get("id") or "generic"))
+    cfg.baselines.update({k: float(v) for k, v in (data.get("baselines") or {}).items()})
+    cfg.taus.update({k: float(v) for k, v in (data.get("taus") or {}).items()})
+    voice = data.get("voice") or {}
+    for attr, key in (
+        ("catchphrase_prefixes", "prefixes_zh"),
+        ("ending_particles", "endings_zh"),
+        ("catchphrase_prefixes_en", "prefixes_en"),
+        ("ending_particles_en", "endings_en"),
+    ):
+        values = voice.get(key)
+        if values:
+            setattr(cfg, attr, list(values))
+    switches = data.get("switches") or {}
+    cfg.correction_as_curiosity = bool(switches.get("correction_as_curiosity", False))
+    cfg.jargon_aversion = bool(switches.get("jargon_aversion", False))
+    try:
+        cfg.politeness = float(switches.get("politeness", 1.0))
+    except (TypeError, ValueError):
+        cfg.politeness = 1.0
+    cfg.disable_cubies = list(data.get("disable_cubies") or [])
+    cfg.override_triggers = {k: list(v)
+                             for k, v in (data.get("override_triggers") or {}).items()}
+    cfg.extra_effects = {k: dict(v)
+                         for k, v in (data.get("extra_effects") or {}).items()}
+    return cfg
 
-    # Jargon and appeals to authority raise cortisol instead.
-    p.override_triggers["corner_pedantry"] = [
-        r"权威专家|高深理论|背诵|定义是|学术八股|术语|掉书袋|众所周知",
-    ]
-    p.extra_effects["corner_pedantry"] = {
-        "cortisol": 0.35,
-        "valence": -0.20,
-    }
-    return p
+
+def load_package_persona(target: Union[str, Path],
+                         root: Union[str, Path] = PACKAGES_ROOT) -> PersonaConfig:
+    """The affect config of one persona package, read from its persona.json.
+
+    ``target`` may be a package id, a package directory, or the JSON file.
+    Nothing about any persona is compiled in: a package that is not on disk
+    is an error, not a silent default.
+    """
+    path = Path(target)
+    if path.is_file():
+        manifest = path
+    elif (path / "persona.json").is_file():
+        manifest = path / "persona.json"
+    else:
+        manifest = Path(root) / str(target) / "persona.json"
+    if not manifest.is_file():
+        raise ValueError(f"no persona package named {str(target)!r} "
+                         f"(looked for {manifest})")
+    data = json.loads(manifest.read_text(encoding="utf-8"))
+    return persona_from_data(data)
 
 
 PERSONAS = {
     "generic": generic_persona,
-    "feynman": feynman_persona,
 }
 
+#: Names saved states used before the package split. They still mean the
+#: same package; the alias only keeps an old save readable, it is not a
+#: second copy of the persona's parameters.
+LEGACY_PERSONA_IDS = {"feynman": "feynman-zh"}
 
-def get_persona(name: str = "generic") -> PersonaConfig:
-    try:
-        return PERSONAS[name]()
-    except KeyError as exc:
-        raise ValueError(f"unknown persona: {name}") from exc
+
+def get_persona(name: Union[str, Path] = "generic",
+                root: Union[str, Path] = PACKAGES_ROOT) -> PersonaConfig:
+    """``"generic"``, or any persona package id under ``personas/``."""
+    name = LEGACY_PERSONA_IDS.get(str(name), name)
+    if str(name) == "generic":
+        return generic_persona()
+    return load_package_persona(name, root=root)

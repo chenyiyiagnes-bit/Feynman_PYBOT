@@ -4,7 +4,7 @@ This is the bridge between the code-first persona definitions and the
 data-first format the released repo uses (``personas/<id>/persona.json``).
 
 Usage:
-    python3 tools/export_persona.py feynman personas/feynman-zh/persona.json
+    python3 tools/export_persona.py feynman-zh personas/feynman-zh/persona.json
     python3 tools/export_persona.py laozhuang personas/laozhuang-zh/persona.json
 
 The right brain is imported from ``QBOT_RIGHT_ROOT`` (default: ``right/``),

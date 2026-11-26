@@ -136,7 +136,7 @@ class TestScenarios(unittest.TestCase):
 
     # 9
     def test_feynman_correction_raises_dopamine(self):
-        e = engine("feynman")
+        e = engine("feynman-zh")
         before = e.state.get("dopamine")
         r = e.turn("你这里说错了", now=1000.0)
         self.assertGreater(e.state.get("dopamine"), before + 0.15)
@@ -146,7 +146,7 @@ class TestScenarios(unittest.TestCase):
 
     # 10
     def test_feynman_jargon_raises_cortisol(self):
-        e = engine("feynman")
+        e = engine("feynman-zh")
         r = e.turn("根据权威专家的高深理论，这个概念的定义是这样的", now=1000.0)
         self.assertGreater(e.state.get("cortisol"), 0.35)
         self.assertIn("corner_pedantry", [a.name for a in r.activations])
