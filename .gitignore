@@ -1,0 +1,29 @@
+# --- runtime state: never commit ---
+*.state.json
+mind_state*.json
+snapshots/
+left/data/kb_learned/
+right/omega_mind/data/kb_learned/
+right/omega_mind/data/assoc/
+*.sqlite
+*.sqlite3
+*.db
+
+# --- corpora you must supply yourself ---
+corpora/
+**/corpus/raw/
+*.jsonl.private
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- os / editor ---
+.DS_Store
+.idea/
+.vscode/
