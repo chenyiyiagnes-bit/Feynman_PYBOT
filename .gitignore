@@ -16,6 +16,7 @@ right/omega_mind/data/assoc/
 left/data/assoc/
 **/data/kb_learned/
 **/data/assoc/
+**/data/lexicon/
 *.sqlite
 *.sqlite3
 *.db
