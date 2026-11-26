@@ -453,6 +453,87 @@ class TestEngineSpeaks(unittest.TestCase):
         self.assertNotIn("\u63a5\u7740\u521a\u624d", association)
 
 
+class TestWhyChain(unittest.TestCase):
+    """A bare "why?" after an answer walks one confirmed premise hop."""
+
+    def _graph(self):
+        return assoc.AssocGraph([
+            _edge(a="x", b="y", kind="premise", mechanism="x 要先有 y",
+                  mechanism_en="x needs y first", difference="",
+                  difference_en=""),
+            assoc.Edge(a="y", b="z", kind="premise", origin="cooccur",
+                       mechanism="机器猜的", mechanism_en="machine guess"),
+        ])
+
+    def test_premise_step_returns_the_card_and_the_link(self):
+        self.assertEqual(self._graph().premise_step("x"), ("y", "x 要先有 y"))
+
+    def test_premise_step_speaks_english(self):
+        self.assertEqual(self._graph().premise_step("x", language="en"),
+                         ("y", "x needs y first"))
+
+    def test_premise_points_one_way(self):
+        self.assertIsNone(self._graph().premise_step("y"))
+
+    def test_cooccurrence_is_never_a_premise(self):
+        graph = assoc.AssocGraph([
+            assoc.Edge(a="y", b="z", kind="premise", origin="cooccur",
+                       mechanism="机器猜的")])
+        self.assertIsNone(graph.premise_step("y"))
+
+    def test_avoid_stops_the_chain_going_in_a_circle(self):
+        self.assertIsNone(self._graph().premise_step("x", avoid={"y"}))
+
+
+class TestWhyFollowUp(unittest.TestCase):
+    """Engine-level: "为什么？" continues from the previous card's premise."""
+
+    def _mind(self, language="zh"):
+        from omega_mind.config import get_persona
+        from omega_mind.engine import MindEngine
+        from omega_mind.pybot_bridge import PyBotBridge
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
+        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-why-"))
+        if not kb.available():
+            self.skipTest("feynman-open knowledge not on this machine")
+        return MindEngine(
+            persona=get_persona("generic"), store_path=None,
+            clock=lambda: 1000.0, bridge=PyBotBridge.disabled(), kb=kb,
+            auto_save=False, language=language)
+
+    def test_a_bare_why_walks_one_premise_hop(self):
+        mind = self._mind()
+        first = mind.turn("彩虹为什么是弯的", now=1000.0)
+        self.assertEqual(first.source, "feynman_kb:opt-009")
+        why = mind.turn("为什么？", now=1001.0)
+        self.assertEqual(why.source, "feynman_kb:opt-002")
+        self.assertTrue(why.base_reply)
+        self.assertIn("折射率", why.base_reply)
+
+    def test_the_hop_uses_the_english_branch_too(self):
+        mind = self._mind("en")
+        first = mind.turn("Why is a rainbow curved?", now=1000.0)
+        self.assertEqual(first.source, "feynman_kb_en:opt-009")
+        why = mind.turn("Why?", now=1001.0)
+        self.assertEqual(why.source, "feynman_kb_en:opt-002")
+        self.assertNotRegex(why.reply, r"[一-鿿]")
+
+    def test_an_unrelated_turn_breaks_the_chain(self):
+        mind = self._mind()
+        mind.turn("彩虹为什么是弯的", now=1000.0)
+        mind.turn("今天天气不错", now=1001.0)
+        why = mind.turn("为什么？", now=1002.0)
+        self.assertNotEqual(why.source, "feynman_kb:opt-002")
+
+    def test_a_why_with_its_own_subject_is_not_a_follow_up(self):
+        mind = self._mind()
+        mind.turn("彩虹为什么是弯的", now=1000.0)
+        why = mind.turn("为什么天空是蓝的", now=1001.0)
+        self.assertNotEqual(why.source, "feynman_kb:opt-002")
+        self.assertEqual(why.source, "feynman_kb:opt-012")
+
+
 class TestCandidateReview(unittest.TestCase):
     """Every mined pair has a human verdict, and promotions are real edges."""
 

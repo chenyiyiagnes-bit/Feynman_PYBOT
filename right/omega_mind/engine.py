@@ -94,6 +94,16 @@ _HEDGE = {
 }
 _HEDGE_MARGIN = 0.06
 
+# A bare follow-up that asks for the reason behind the last answer. It must
+# carry no subject of its own: "为什么天空是蓝的" is a new question, not a
+# request to go deeper into the rainbow.
+_WHY_ZH = re.compile(
+    r"^(?:为什么|为啥|凭什么|何以|怎么知道|依据是什么|根据是什么)"
+    r"(?:呢|呀|啊|嘛)?[？?。！!~～\s]*$")
+_WHY_EN = re.compile(
+    r"^(?:why|why so|how come|how so|on what grounds|what makes that so)"
+    r"[?.! ]*$", re.IGNORECASE)
+
 # Questions the semantic tier can answer directly. These are the only paths
 # by which stored facts reach a reply; the KB still owns everything else.
 _FACT_QUESTIONS = {
@@ -213,6 +223,9 @@ class MindEngine:
         # neighbour counts, and only when that turn was answered from a card.
         self._last_card: Optional[str] = None
         self._last_card_turn: int = -10
+        # Cards already visited by a "why?" chain, so a cyclic pair of
+        # premise edges cannot ping-pong forever.
+        self._why_seen: set = set()
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -327,10 +340,12 @@ class MindEngine:
         directive = self.policy.compute(self.state, activations, self.language)
         reply = self.renderer.render(base_reply, directive, self.turn_index,
                                      self.language, posture=left_policy.posture)
-        # The association is an aside, so it goes after the shell: the
-        # answer keeps its own ending, the remark stays one clean line.
-        reply = _with_association(reply, self.last_retrieval.get("association"),
-                                  left_policy.detail)
+        # An aside goes after the shell: the answer keeps its own ending,
+        # and at most one remark follows. A verified magnitude anchor wins
+        # over the association when the question asked for one.
+        aside = (self.last_retrieval.get("scale")
+                 or self.last_retrieval.get("association"))
+        reply = _with_association(reply, aside, left_policy.detail)
 
         result = TurnResult(
             reply=reply,
@@ -445,6 +460,14 @@ class MindEngine:
             return self._last_card
         return None
 
+    def _is_why_followup(self, text: str) -> bool:
+        """A short, subject-free "why?" that asks to go one step deeper."""
+        stripped = text.strip()
+        if not stripped or len(stripped) > 12:
+            return False
+        pattern = _WHY_EN if self.language == "en" else _WHY_ZH
+        return bool(pattern.match(stripped))
+
     def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None):
         """Left brain by language. Chinese and English never mix in one reply."""
         if policy is None:
@@ -453,6 +476,25 @@ class MindEngine:
         if personal is not None:
             self.last_retrieval = {}
             return personal
+        # A bare "why?" is not a new query: it asks the previous answer to go
+        # one premise deeper. Only a confirmed premise edge counts, so this
+        # never invents a reason; with no edge the ordinary lookup runs.
+        if self._is_why_followup(text):
+            previous = self._continuity_card()
+            if previous:
+                deeper = self.kb.follow_premise(
+                    previous, language=self.language,
+                    detail=policy.detail, avoid=self._why_seen)
+                if deeper is not None:
+                    self.last_retrieval = deeper.to_dict()
+                    self._why_seen.add(previous)
+                    if ":" in deeper.source:
+                        self._why_seen.add(deeper.source.split(":", 1)[1])
+                    return deeper.text, deeper.source
+            else:
+                self._why_seen.clear()
+        else:
+            self._why_seen.clear()
         if self.language == "zh":
             # PyBot only answers in English, so Chinese mode uses the cards.
             found = self.kb.lookup(
@@ -463,6 +505,7 @@ class MindEngine:
                 detail=policy.detail,
                 associate=True,
                 previous_card=self._continuity_card(),
+                scale=True,
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source
@@ -479,6 +522,7 @@ class MindEngine:
                 detail=policy.detail,
                 associate=True,
                 previous_card=self._continuity_card(),
+                scale=True,
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source

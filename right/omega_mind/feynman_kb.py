@@ -20,7 +20,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from . import assoc, spreading
+from . import assoc, scales, spreading
 from .learner import LearnedStore, card_row, normalize
 
 DEFAULT_DIRS = [
@@ -56,6 +56,10 @@ _STOP_BIGRAMS = {
     # 是怎么回事". Left in, these bigrams dilute the subject tokens and push
     # an on-topic card below the answer gate.
     "聊聊", "回事", "到底", "能不",
+    # Magnitude scaffolding: "原子有多大" is a question about atoms and a
+    # scale, not about the bigrams 多大/有多.
+    "多大", "多小", "多快", "多慢", "多高", "多重", "多远", "多长", "多久",
+    "有多", "几倍",
 }
 
 # English questions carry the same scaffolding problem. These words are
@@ -140,6 +144,15 @@ _ZH_EPISODIC = re.compile(
     r"(?:我|我们|你|咱们)(?:昨天|前天|上次|上回|刚才|刚刚|今早|今天早上)"
     r".{0,8}(?:吃|喝|干|做|聊|说|去|见)(?:了|过)?(?:什么|啥|谁|哪儿|哪里)"
 )
+
+# "How big is it?" questions: only these invite a stored magnitude anchor.
+# An ordinary "what is X" keeps its answer uncluttered.
+_SCALE_ZH = re.compile(
+    r"多大|多小|多快|多慢|多高|多重|多远|多长|多久|多少|几倍|数量级|量级|尺度")
+_SCALE_EN = re.compile(
+    r"how (?:big|large|small|fast|slow|far|heavy|hot|cold|long)|"
+    r"what(?:'s| is) the (?:size|scale|mass|speed)|order of magnitude",
+    re.IGNORECASE)
 
 # "Why does ice float?" is a physics question, not a request for an anecdote
 # from the biography. A biography/persona card may only answer a why-question
@@ -289,6 +302,9 @@ class Lookup:
     # neighbour (see assoc.py). It is never part of the answer and never
     # changes the source.
     association: Optional[str] = None
+    # A characteristic magnitude on the answering card, spoken only when the
+    # question asks for a size / speed / order of magnitude.
+    scale: Optional[str] = None
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -300,6 +316,7 @@ class Lookup:
             "alternatives": [[card_id, round(score, 4)]
                              for card_id, score in self.alternatives],
             "association": self.association,
+            "scale": self.scale,
         }
 
 
@@ -428,6 +445,7 @@ class FeynmanKB:
                           if spreading is None else bool(spreading))
         self._spread: Optional[Dict[str, List[Tuple[str, float]]]] = None
         self._assoc: Optional[assoc.AssocGraph] = None
+        self._scales: Optional[scales.ScaleBook] = None
         self.dir: Optional[Path] = None
         self.en_dir: Optional[Path] = None
         self.learned_dir: Optional[Path] = Path(learned_dir) if learned_dir else None
@@ -940,7 +958,8 @@ class FeynmanKB:
                prefer_kinds: Iterable[str] = (),
                detail: str = "normal",
                associate: bool = False,
-               previous_card: Optional[str] = None) -> Lookup:
+               previous_card: Optional[str] = None,
+               scale: bool = False) -> Lookup:
         """Retrieve one answer plus the score, runner-up margin and how many
         candidates were considered. ``limit`` is what makes the margin
         observable: with limit=1 there is no runner-up to compare against.
@@ -950,14 +969,107 @@ class FeynmanKB:
         the source or the score. ``previous_card`` is the card answered on
         the previous turn; if an edge joins it to this answer, the remark
         continues that thought instead of introducing a new card cold.
+
+        ``scale=True`` adds the card's verified magnitude anchor, but only
+        when the question itself asks for a size, speed or order of
+        magnitude. The association never changes the source or the score; a
+        curated scale question may pick its anchored card on purpose.
         """
         found = self._lookup(text, language=language, min_score=min_score,
                              limit=limit, prefer_kinds=prefer_kinds,
                              detail=detail)
+        if scale:
+            # A curated magnitude question goes straight to the card its
+            # anchor was written for; ordinary retrieval loses these
+            # ("原子有多大") because the noun is too common to discriminate.
+            routed = self._scale_route(text, language, detail)
+            if routed is not None:
+                found = routed
         if associate and found.text:
-            return replace(found, association=self._association_for(
+            found = replace(found, association=self._association_for(
                 found, language, previous_card=previous_card))
+        if scale and found.text and not found.scale:
+            anchor = self._scale_for(text, found, language)
+            if anchor:
+                found = replace(found, scale=anchor)
         return found
+
+    def _scale_route(self, text: str, language: str, detail: str
+                     ) -> Optional[Lookup]:
+        """Answer a curated magnitude question from the anchored card."""
+        pattern = _SCALE_EN if language == "en" else _SCALE_ZH
+        if not pattern.search(text or ""):
+            return None
+        book = self._scale_book()
+        hit = book.anchor_for(text, language)
+        if hit is None:
+            return None
+        card_id, ask = hit
+        docs = self.docs_en if language == "en" else self.docs
+        doc = next((d for d in docs if d.id == card_id), None)
+        if doc is None:
+            return None
+        body = doc.answer_for(detail)
+        if not body:
+            return None
+        if language == "en" and _CJK.search(body):
+            return None
+        anchor = book.line(card_id, language)
+        prefix = "feynman_kb_en" if language == "en" else "feynman_kb"
+        # The score is a fixed evidence mark for "the curated phrasing
+        # matched", not a TF-IDF value: there is exactly one candidate.
+        return Lookup(text=body, source=f"{prefix}:{card_id}", score=1.0,
+                      considered=1, matched=(ask,), scale=anchor)
+
+    def _scale_for(self, text: str, found: Lookup, language: str
+                   ) -> Optional[str]:
+        """The card's magnitude anchor, only for a magnitude question."""
+        pattern = _SCALE_EN if language == "en" else _SCALE_ZH
+        if not pattern.search(text or ""):
+            return None
+        if ":" not in found.source:
+            return None
+        card_id = found.source.split(":", 1)[1]
+        if card_id.startswith("learned-") or card_id == "no_match":
+            return None
+        anchor = self._scale_book().line(card_id, language)
+        if not anchor or anchor in (found.text or ""):
+            return None
+        return anchor
+
+    def follow_premise(self, card_id: str, language: str = "zh",
+                       detail: str = "normal",
+                       avoid: Iterable[str] = ()) -> Optional[Lookup]:
+        """Answer a bare "why?" by walking one confirmed premise hop.
+
+        The body is the premise card's own answer; the sentence in front of
+        it is the hand-written link. Nothing is generated here: the link is
+        confirmed data and the prose comes from the row. None means the card
+        has no confirmed premise, so the caller answers normally instead.
+        """
+        if (not card_id or card_id.startswith("learned-")
+                or card_id == "no_match"):
+            return None
+        graph = self._assoc_graph()
+        if graph is None or not graph.edges:
+            return None
+        step = graph.premise_step(card_id, language=language, avoid=avoid)
+        if step is None:
+            return None
+        premise_id, link = step
+        docs = self.docs_en if language == "en" else self.docs
+        doc = next((d for d in docs if d.id == premise_id), None)
+        if doc is None:
+            return None
+        body = doc.answer_for(detail)
+        if not body:
+            return None
+        if language == "en" and _CJK.search(body):
+            return None
+        lead = (f"One step down: {link}. " if language == "en"
+                else f"往下追一层：{link}。")
+        prefix = "feynman_kb_en" if language == "en" else "feynman_kb"
+        return Lookup(text=lead + body, source=f"{prefix}:{premise_id}")
 
     def _association_for(self, found: Lookup, language: str,
                          previous_card: Optional[str] = None
@@ -983,6 +1095,11 @@ class FeynmanKB:
         if self._assoc is None:
             self._assoc = assoc.load()
         return self._assoc
+
+    def _scale_book(self) -> scales.ScaleBook:
+        if self._scales is None:
+            self._scales = scales.load()
+        return self._scales
 
     def _lookup(self, text: str, language: str = "zh",
                 min_score: Optional[float] = None, limit: int = 3,

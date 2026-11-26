@@ -22,7 +22,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 # Spoken kinds, strongest first. "same_domain" is filing, not explanation;
 # it stays in the data so the graph is complete, but it is never said aloud.
@@ -184,6 +184,29 @@ class AssocGraph:
 
     def candidates(self, card_id: str) -> List[Edge]:
         return [e for e in self.of_card(card_id) if e.origin == "cooccur"]
+
+    def premise_step(self, card_id: str, language: str = "zh",
+                     avoid: Iterable[str] = ()) -> Optional[Tuple[str, str]]:
+        """The next card down the why-chain, with the link that gets there.
+
+        Only a confirmed premise edge written from ``card_id`` counts:
+        premise points one way (a is explained by b), and a mined
+        co-occurrence is attention, not an explanation. ``avoid`` keeps a
+        chain from walking in a circle. Returns ``(card_id, link)`` or None.
+        """
+        skip: Set[str] = set(avoid)
+        for edge in self.confirmed(card_id):
+            if edge.kind != "premise" or edge.a != card_id:
+                continue
+            if edge.b in skip:
+                continue
+            link = _text(edge, "mechanism", language)
+            if not link:
+                continue
+            if language == "en" and _CJK.search(link):
+                continue
+            return edge.b, link
+        return None
 
     def sentence(self, card_id: str, language: str = "zh",
                  titles: Optional[Mapping[str, str]] = None,
