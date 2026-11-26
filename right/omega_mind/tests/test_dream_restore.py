@@ -32,7 +32,7 @@ from omega_mind.pybot_bridge import PyBotBridge
 
 def offline_engine() -> MindEngine:
     return MindEngine(
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         bridge=PyBotBridge.disabled(),
         kb=FeynmanKB.disabled(),
         auto_save=False,

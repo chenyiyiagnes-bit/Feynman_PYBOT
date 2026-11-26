@@ -89,7 +89,7 @@ NOON = 12 * 3600.0
 def fresh_engine(learned_dir: Any = None, auto_save: bool = False) -> MindEngine:
     kb = FeynmanKB(learned_dir=str(learned_dir)) if learned_dir else FeynmanKB()
     return MindEngine(
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         bridge=PyBotBridge.disabled(),
         kb=kb,
         auto_save=auto_save,
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     if fresh:
         import tempfile
         learned = Path(tempfile.mkdtemp(prefix="omega-learned-"))
-    target = Path(args[0]) if args else (ROOT / "snapshots" / "evolved_feynman_snapshot.json")
+    target = Path(args[0]) if args else (ROOT / "snapshots" / "evolved_snapshot.json")
     report = run(target, learned_dir=learned)
     queue = load_queue(LearnedStore(learned) if learned else None)
     if queue:

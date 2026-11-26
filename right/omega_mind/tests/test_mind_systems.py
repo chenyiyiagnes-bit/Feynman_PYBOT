@@ -25,7 +25,7 @@ from omega_mind.pybot_bridge import PyBotBridge
 from omega_mind.relations import RelationshipGraph
 
 
-def offline_engine(persona="feynman") -> MindEngine:
+def offline_engine(persona="feynman-zh") -> MindEngine:
     return MindEngine(
         persona=get_persona(persona),
         store_path=tempfile.mktemp(suffix=".json"),
@@ -305,7 +305,7 @@ class FakeRuntime:
 
 def mixed_engine(language: str, runtime: FakeRuntime) -> MindEngine:
     return MindEngine(
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         store_path=tempfile.mktemp(suffix=".json"),
         bridge=PyBotBridge(runtime=runtime),
         kb=FeynmanKB.disabled(),
@@ -634,7 +634,7 @@ class TestEnglishKnowledge(unittest.TestCase):
 
     def test_engine_english_mode_prefers_the_cards(self):
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=self.en,
             auto_save=False,
@@ -646,7 +646,7 @@ class TestEnglishKnowledge(unittest.TestCase):
 
     def test_engine_chinese_mode_is_unchanged(self):
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=self.zh,
             auto_save=False,
@@ -661,7 +661,7 @@ class TestEnglishChallenge(unittest.TestCase):
     def setUp(self):
         self.kb = real_kb("en")
         self.engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=self.kb,
             auto_save=False,
@@ -738,7 +738,7 @@ class TestResonance(unittest.TestCase):
         from omega_mind import resonance as r
         clock = [1000.0]
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             clock=lambda: clock[0],
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB.disabled(),
@@ -793,7 +793,7 @@ class TestFactSkepticism(unittest.TestCase):
 
     def test_engine_reacts_with_a_jolt_and_a_breakthrough(self):
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB.disabled(),
             auto_save=False,
@@ -809,7 +809,7 @@ class TestFactSkepticism(unittest.TestCase):
 
     def test_english_mode_answers_the_english_rumour_in_english(self):
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=FeynmanKB.disabled(),
             auto_save=False,
@@ -848,7 +848,7 @@ class TestChallengeSession(unittest.TestCase):
         # No KB supplied: the mind owns its package and may switch to the
         # other package's mind on set_language.
         return MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             auto_save=False,
             language=language,
@@ -882,7 +882,7 @@ class TestChallengeSession(unittest.TestCase):
         self.assertEqual(data["challenge"]["active"], first_id)
 
         restored = MindEngine.load_from_dict(
-            data, persona=get_persona("feynman"),
+            data, persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(), kb=self.kb, auto_save=False)
         resumed = restored.challenge()
         self.assertEqual(resumed.snapshot()["active"], first_id)
@@ -928,7 +928,7 @@ class TestChallengeSession(unittest.TestCase):
         session.mastery[uid] = {"asked": 2, "strong": 1}
         data = engine.snapshot()
         restored = MindEngine.load_from_dict(
-            data, persona=get_persona("feynman"),
+            data, persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(), kb=self.kb, auto_save=False)
         self.assertEqual(restored.challenge().mastery.get(uid),
                          {"asked": 2, "strong": 1})
@@ -958,7 +958,7 @@ class TestChallengeServer(unittest.TestCase):
         from omega_mind.server import build_server
         cls.kb = real_kb()
         cls.engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=cls.kb,
             auto_save=False,

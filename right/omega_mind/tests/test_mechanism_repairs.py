@@ -122,7 +122,7 @@ class TestStyleIsConsumed(unittest.TestCase):
 
 class TestLeftBrainThresholdsAreReachable(unittest.TestCase):
     def test_high_but_reachable_dopamine_explores(self):
-        p = get_persona("feynman")
+        p = get_persona("feynman-zh")
         state = AffectState.from_persona(p, 0.0)
         state.set("dopamine", 0.72)  # observed peak after a strong compliment
         policy = plan_for(state, p, [])

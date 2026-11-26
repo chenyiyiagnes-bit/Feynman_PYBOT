@@ -1,6 +1,6 @@
 # 费曼（示例人设）
 
-由 `right/omega_mind/config.py` 的 `feynman_persona()` + 26 方块导出，`tools/export_persona.py` 可复现。
+情感参数与外壳就在本目录的 `persona.json`（数据即配置，代码里没有第二份），换人设就换整个目录。
 
 - 知识卡：`knowledge/` 下的 jsonl 拷自项目自建的 `feynman-open/knowledge`（CC-BY-4.0
   整理，310 张生效卡片），就该目录的 `MANIFEST.json` 保留逐文件哈希，便于追溯。

@@ -5,7 +5,7 @@ actually differs. Hold-out questions are deliberately not in the curriculum,
 and no question's wording is a card alias, so a hit means real retrieval.
 
 Usage:
-    python3 scripts/evaluate_ab.py snapshots/evolved_feynman_snapshot.json
+    python3 scripts/evaluate_ab.py snapshots/evolved_snapshot.json
 """
 
 from __future__ import annotations
@@ -66,7 +66,7 @@ def engine_fresh() -> MindEngine:
     # A pristine baseline must not see cards the curriculum learned, or the
     # comparison would secretly measure the same knowledge twice.
     return MindEngine(
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         bridge=PyBotBridge.disabled(),
         kb=FeynmanKB(learned_dir=tempfile.mkdtemp()),
         auto_save=False,
@@ -78,7 +78,7 @@ def engine_from(path: Path, learned_dir: str = None) -> MindEngine:
     kb = FeynmanKB(learned_dir=learned_dir) if learned_dir else FeynmanKB()
     return MindEngine.load(
         str(path),
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         bridge=PyBotBridge.disabled(),
         kb=kb,
         auto_save=False,
@@ -119,7 +119,7 @@ def suite(engine: MindEngine, name: str) -> Dict[str, Any]:
         "avg_verbosity": round(statistics.mean(verbosity), 3),
         "max_cortisol": round(max(cortisol), 3),
         "cortisol_std": round(statistics.pstdev(cortisol), 4),
-        "kb_rate": round(sum(r["source"].startswith("feynman_kb")
+        "kb_rate": round(sum(r["source"].startswith(engine.kb.source_prefix + ":")
                              for r in records) / len(records) * 100, 1),
         "records": records,
     }
@@ -164,7 +164,7 @@ def main() -> None:
         learned = args[idx + 1]
         del args[idx:idx + 2]
     snapshot = Path(args[0]) if args else (
-        ROOT / "snapshots" / "evolved_feynman_snapshot.json")
+        ROOT / "snapshots" / "evolved_snapshot.json")
     if not snapshot.exists():
         raise SystemExit(f"missing snapshot: {snapshot} (run evolve_curriculum.py first)")
     a = suite(engine_fresh(), "fresh")

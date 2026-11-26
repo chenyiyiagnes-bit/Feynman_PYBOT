@@ -65,7 +65,7 @@ class TestEngineWithCards(unittest.TestCase):
     def test_cards_take_priority_over_bridge(self):
         kb = real_kb()
         e = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=kb,
             auto_save=False,
@@ -79,7 +79,7 @@ class TestChallenge(unittest.TestCase):
     def setUp(self):
         self.kb = real_kb()
         self.e = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=self.kb,
             auto_save=False,

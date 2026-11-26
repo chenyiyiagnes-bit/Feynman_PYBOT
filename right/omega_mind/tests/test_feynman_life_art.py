@@ -109,14 +109,14 @@ class TestLifeArtRetrieval(unittest.TestCase):
 
 class TestFeynmanPersonaSwitches(unittest.TestCase):
     def test_curiosity_baseline_and_low_stress(self):
-        p = get_persona("feynman")
+        p = get_persona("feynman-zh")
         self.assertGreaterEqual(p.baseline("dopamine"), 0.60)
         self.assertLessEqual(p.baseline("cortisol"), 0.12)
         self.assertIn("corner_shame", p.disable_cubies)
         self.assertTrue(p.correction_as_curiosity)
 
     def test_admitting_ignorance_reads_as_invitation(self):
-        engine = AppraisalEngine(get_persona("feynman"))
+        engine = AppraisalEngine(get_persona("feynman-zh"))
         acts = engine.evaluate("我不懂这个，你能再讲一遍吗", turn=1)
         by_name = {a.name: a for a in acts}
         self.assertIn("core_intuition", by_name)
@@ -124,7 +124,7 @@ class TestFeynmanPersonaSwitches(unittest.TestCase):
         self.assertNotIn("corner_shame", by_name)
 
     def test_being_corrected_is_a_reward_not_a_threat(self):
-        engine = AppraisalEngine(get_persona("feynman"))
+        engine = AppraisalEngine(get_persona("feynman-zh"))
         acts = engine.evaluate("你刚才说错了，这个数是 3 不是 4", turn=1)
         by_name = {a.name: a for a in acts}
         self.assertIn("core_intuition", by_name)

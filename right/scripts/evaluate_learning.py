@@ -66,7 +66,7 @@ TEACH_THEN_TEST = [
 
 def engine(directory: str) -> MindEngine:
     return MindEngine(
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         bridge=PyBotBridge.disabled(),
         kb=FeynmanKB(learned_dir=directory),
         auto_save=False,
@@ -91,7 +91,8 @@ def run_paraphrase() -> float:
     hits, card_id = 0, None
     for i, question in enumerate(PARAPHRASES):
         result = mind.turn(question, now=1_100.0 + i * 60)
-        ok = result.source.startswith("feynman_kb") and "learned-" in result.source
+        ok = (result.source.startswith(mind.kb.source_prefix + ":")
+              and "learned-" in result.source)
         if ok:
             hits += 1
             card_id = card_id or result.source.split(":", 1)[-1]

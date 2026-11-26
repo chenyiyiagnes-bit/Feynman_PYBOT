@@ -83,13 +83,13 @@ class TestLeftBrainRetrieval(unittest.TestCase):
 
     def test_engine_exposes_the_policy_and_shrinks_under_stress(self):
         normal = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=self.kb,
             auto_save=False,
         )
         stressed = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=self.kb,
             auto_save=False,
@@ -135,7 +135,7 @@ class TestPostureIsBehavioral(unittest.TestCase):
         # on one package cannot switch languages at turn time.
         kb = real_kb("en")
         engine = MindEngine(
-            persona=get_persona("feynman"),
+            persona=get_persona("feynman-zh"),
             bridge=PyBotBridge.disabled(),
             kb=kb,
             auto_save=False,

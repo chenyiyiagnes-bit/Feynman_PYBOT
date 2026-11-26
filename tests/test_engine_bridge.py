@@ -23,7 +23,7 @@ QUESTION = "光为什么沿直线走？"
 
 def make_engine(responder=None):
     return MindEngine(
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         bridge=PyBotBridge.disabled(),
         kb=FeynmanKB.disabled(),
         left_responder=responder,

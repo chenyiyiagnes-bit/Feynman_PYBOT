@@ -30,7 +30,7 @@ from omega_mind.relations import RelationshipGraph
 
 def offline_engine() -> MindEngine:
     return MindEngine(
-        persona=get_persona("feynman"),
+        persona=get_persona("feynman-zh"),
         bridge=PyBotBridge.disabled(),
         kb=FeynmanKB.disabled(),
         auto_save=False,
@@ -158,7 +158,7 @@ class TestLoadFromDiskSurvivesBadShape(unittest.TestCase):
                            ("relations", {"nodes": [], "edges": []})):
             with self.subTest(key=key):
                 path = self._write({
-                    "persona": "feynman", "state": {}, "memory": {},
+                    "persona": "feynman-zh", "state": {}, "memory": {},
                     "tiers": {}, "relations": {}, "cube": {},
                     "cube_feedback": {}, "dreams": {}, "renderer": {},
                     key: value,
