@@ -24,6 +24,11 @@ from omega_mind import assoc
 from omega_mind.feynman_kb import FeynmanKB
 
 
+def _edge_data_present() -> bool:
+    """data/assoc/ is local-only (gitignored); tests skip without it."""
+    return assoc.DEFAULT_PATH.exists() and bool(assoc.load().edges)
+
+
 class FakeDoc:
     def __init__(self, doc_id: str, weights: dict):
         self.id = doc_id
@@ -209,11 +214,15 @@ class TestMining(unittest.TestCase):
 class TestRuntimeLine(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if not _edge_data_present():
+            raise unittest.SkipTest("data/assoc/assoc_edges.jsonl not present")
         cls.kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
         if not cls.kb.available():
             raise unittest.SkipTest("feynman-open knowledge not on this machine")
 
     def test_default_lookup_has_no_association(self):
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
         found = self.kb.lookup("极化是什么")
         self.assertEqual(found.source, "feynman_kb:opt-020")
         self.assertIsNone(found.association)
@@ -246,6 +255,8 @@ class TestEngineSpeaks(unittest.TestCase):
         from omega_mind.config import get_persona
         from omega_mind.engine import MindEngine
         from omega_mind.pybot_bridge import PyBotBridge
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
         kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
         if not kb.available():
             self.skipTest("feynman-open knowledge not on this machine")
@@ -262,6 +273,8 @@ class TestEngineSpeaks(unittest.TestCase):
         from omega_mind.config import get_persona
         from omega_mind.engine import MindEngine
         from omega_mind.pybot_bridge import PyBotBridge
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
         kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
         if not kb.available():
             self.skipTest("feynman-open knowledge not on this machine")
@@ -299,6 +312,8 @@ class TestCandidateReview(unittest.TestCase):
             self.assertTrue(row["reason"].strip(), row)
 
     def test_promoted_pairs_exist_as_confirmed_edges(self):
+        if not _edge_data_present():
+            self.skipTest("data/assoc/assoc_edges.jsonl not present")
         review = self._load("assoc_review.json")["decisions"]
         graph = assoc.load()
         have = {(min(e.a, e.b), max(e.a, e.b))
@@ -315,6 +330,8 @@ class TestCommittedEdges(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not _edge_data_present():
+            raise unittest.SkipTest("data/assoc/assoc_edges.jsonl not present")
         cls.graph = assoc.load()
         cls.kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
         if not cls.kb.available():
