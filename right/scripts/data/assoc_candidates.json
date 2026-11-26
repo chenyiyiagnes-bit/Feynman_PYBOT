@@ -1,0 +1,2998 @@
+{
+ "generated": "2026-11-26",
+ "corpus_docs": 310,
+ "note": "候选，不是结论。origin=cooccur 的边不得直接说出口；人工补上 mechanism 与 difference 并把 origin 改成 human 后，才写入 omega_mind/data/assoc/assoc_edges.jsonl。",
+ "pairs": [
+  {
+   "a": "math-comp-006",
+   "b": "comp-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "原子",
+    "型机",
+    "大空",
+    "尺度",
+    "很大",
+    "微型",
+    "技术",
+    "有很",
+    "机器",
+    "空间",
+    "米技",
+    "米机",
+    "纳米",
+    "还有"
+   ],
+   "score": 64.725
+  },
+  {
+   "a": "math-comp-004",
+   "b": "comp-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一位",
+    "么发",
+    "位信",
+    "信息",
+    "发热",
+    "可逆",
+    "掉一",
+    "擦掉",
+    "擦除",
+    "要付",
+    "计算",
+    "逆计",
+    "除信"
+   ],
+   "score": 60.136
+  },
+  {
+   "a": "cosmo-horizon-001",
+   "b": "astro-horizon",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "与史",
+    "勃半",
+    "半径",
+    "史瓦",
+    "哈勃",
+    "宇宙",
+    "宙视",
+    "概念",
+    "瓦西",
+    "界与",
+    "西半",
+    "视界"
+   ],
+   "score": 53.521
+  },
+  {
+   "a": "bio-025",
+   "b": "comp-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "原子",
+    "大空",
+    "底部",
+    "很大",
+    "微型",
+    "操纵",
+    "有很",
+    "空间",
+    "纳米",
+    "还有",
+    "部还"
+   ],
+   "score": 51.099
+  },
+  {
+   "a": "opt-003",
+   "b": "opt-011",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "光为",
+    "原理",
+    "小时",
+    "时间",
+    "最小",
+    "最短",
+    "短时",
+    "费马",
+    "间原",
+    "马原"
+   ],
+   "score": 44.836
+  },
+  {
+   "a": "self-005",
+   "b": "bio-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "1946",
+    "出的",
+    "寄出",
+    "封没",
+    "年那",
+    "没寄",
+    "的信",
+    "那封",
+    "阿琳"
+   ],
+   "score": 42.47
+  },
+  {
+   "a": "bio-023",
+   "b": "part-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "分子",
+    "夸克",
+    "子模",
+    "度非",
+    "弹性",
+    "模型",
+    "深度",
+    "部分",
+    "非弹"
+   ],
+   "score": 41.158
+  },
+  {
+   "a": "math-comp-005",
+   "b": "comp-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "子模",
+    "子比",
+    "子计",
+    "拟自",
+    "模拟",
+    "比特",
+    "自然",
+    "计算",
+    "量子"
+   ],
+   "score": 38.524
+  },
+  {
+   "a": "math-comp-001",
+   "b": "qed-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "么理",
+    "分怎",
+    "径积",
+    "概率",
+    "理解",
+    "积分",
+    "箭头",
+    "费曼",
+    "路径"
+   ],
+   "score": 37.323
+  },
+  {
+   "a": "bio-025",
+   "b": "math-comp-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "原子",
+    "大空",
+    "很大",
+    "微型",
+    "有很",
+    "空间",
+    "纳米",
+    "还有"
+   ],
+   "score": 35.969
+  },
+  {
+   "a": "life-art-007",
+   "b": "persona-safecrack-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "保险",
+    "开锁",
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉",
+    "险箱"
+   ],
+   "score": 33.974
+  },
+  {
+   "a": "beyond-002",
+   "b": "bio-033",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "天飞",
+    "战者",
+    "挑战",
+    "者号",
+    "航天",
+    "调查",
+    "飞机"
+   ],
+   "score": 32.531
+  },
+  {
+   "a": "bio-007",
+   "b": "bio-042",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "么时",
+    "么死",
+    "传记",
+    "候死",
+    "去世",
+    "时候",
+    "死的",
+    "生平"
+   ],
+   "score": 32.243
+  },
+  {
+   "a": "opt-017",
+   "b": "opt-018",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "么不",
+    "叠加",
+    "干涉",
+    "波源",
+    "涉和",
+    "源的",
+    "的叠"
+   ],
+   "score": 32.126
+  },
+  {
+   "a": "work-002",
+   "b": "math-comp-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "力学",
+    "动力",
+    "子电",
+    "径积",
+    "电动",
+    "积分",
+    "路径",
+    "量子"
+   ],
+   "score": 30.095
+  },
+  {
+   "a": "persona-family-001",
+   "b": "persona-family-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "卡尔",
+    "尼丝",
+    "格温",
+    "歇尔",
+    "温尼",
+    "米歇"
+   ],
+   "score": 29.855
+  },
+  {
+   "a": "life-art-007",
+   "b": "learned-038cd6e0f4",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "保险",
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉",
+    "险箱"
+   ],
+   "score": 29.336
+  },
+  {
+   "a": "persona-safecrack-001",
+   "b": "learned-038cd6e0f4",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "保险",
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉",
+    "险箱"
+   ],
+   "score": 29.336
+  },
+  {
+   "a": "flp-iii-01",
+   "b": "opt-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "子行",
+    "干涉",
+    "概率",
+    "测量",
+    "率幅",
+    "行为",
+    "量子"
+   ],
+   "score": 28.607
+  },
+  {
+   "a": "C_PERCOLATE",
+   "b": "S_RG",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "不变",
+    "不同",
+    "处尺",
+    "尺度",
+    "度不",
+    "点处"
+   ],
+   "score": 27.776
+  },
+  {
+   "a": "work-002",
+   "b": "qed-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "力学",
+    "动力",
+    "子电",
+    "电动",
+    "研究",
+    "究什",
+    "量子"
+   ],
+   "score": 27.626
+  },
+  {
+   "a": "bio-033",
+   "b": "persona-inquiry-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "o",
+    "冰水",
+    "战者",
+    "挑战",
+    "者号",
+    "调查"
+   ],
+   "score": 27.488
+  },
+  {
+   "a": "flp-i-47",
+   "b": "flp-i-49-pitch",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "49",
+    "一卷",
+    "卷第",
+    "常模",
+    "正常",
+    "章",
+    "第一"
+   ],
+   "score": 27.32
+  },
+  {
+   "a": "opt-016",
+   "b": "opt-018",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "么分",
+    "光的",
+    "分辨",
+    "是一",
+    "是怎",
+    "辨率"
+   ],
+   "score": 27.147
+  },
+  {
+   "a": "grav-003",
+   "b": "cosmo-horizon-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "半径",
+    "史瓦",
+    "瓦西",
+    "西半",
+    "视界",
+    "黑洞"
+   ],
+   "score": 26.965
+  },
+  {
+   "a": "web-67b6d462ef",
+   "b": "web-85b680b650",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "feynman",
+    "of",
+    "official",
+    "richard",
+    "site",
+    "the"
+   ],
+   "score": 26.847
+  },
+  {
+   "a": "self-002",
+   "b": "persona-family-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "伯克",
+    "克基",
+    "尔伯",
+    "第一",
+    "阿尔",
+    "阿琳"
+   ],
+   "score": 26.279
+  },
+  {
+   "a": "part-004",
+   "b": "part-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "w",
+    "力是",
+    "弱力",
+    "玻色",
+    "理论",
+    "色子"
+   ],
+   "score": 26.231
+  },
+  {
+   "a": "part-004",
+   "b": "part-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "中微",
+    "互作",
+    "作用",
+    "弱相",
+    "微子",
+    "相互"
+   ],
+   "score": 25.845
+  },
+  {
+   "a": "bio-018",
+   "b": "qed-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "qed",
+    "力学",
+    "动力",
+    "子电",
+    "电动",
+    "电子",
+    "量子"
+   ],
+   "score": 25.698
+  },
+  {
+   "a": "flp-iii-01",
+   "b": "flp-iii-03",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "三卷",
+    "卷第",
+    "干涉",
+    "概率",
+    "率幅",
+    "章",
+    "第三"
+   ],
+   "score": 25.085
+  },
+  {
+   "a": "bio-026",
+   "b": "math-comp-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "子模",
+    "子计",
+    "模拟",
+    "算机",
+    "计算",
+    "量子"
+   ],
+   "score": 24.78
+  },
+  {
+   "a": "flp-iii-17",
+   "b": "part-009",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动量",
+    "守恒",
+    "对称",
+    "恒律",
+    "称性",
+    "能量"
+   ],
+   "score": 24.759
+  },
+  {
+   "a": "bio-035",
+   "b": "core-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "不知",
+    "不确",
+    "学态",
+    "态度",
+    "确定",
+    "科学"
+   ],
+   "score": 24.739
+  },
+  {
+   "a": "persona-language-001",
+   "b": "persona-language-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "旅行",
+    "牙语",
+    "萄牙",
+    "葡萄",
+    "语言"
+   ],
+   "score": 24.119
+  },
+  {
+   "a": "beyond-003",
+   "b": "bio-027",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "学讲",
+    "曼物",
+    "物理",
+    "理学",
+    "讲义",
+    "费曼"
+   ],
+   "score": 23.787
+  },
+  {
+   "a": "beyond-003",
+   "b": "flp-map-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "学讲",
+    "曼物",
+    "物理",
+    "理学",
+    "讲义",
+    "费曼"
+   ],
+   "score": 23.787
+  },
+  {
+   "a": "bio-027",
+   "b": "flp-map-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "学讲",
+    "曼物",
+    "物理",
+    "理学",
+    "讲义",
+    "费曼"
+   ],
+   "score": 23.787
+  },
+  {
+   "a": "qed-006",
+   "b": "qed-009",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "常数",
+    "构常",
+    "精细",
+    "细结",
+    "结构"
+   ],
+   "score": 23.713
+  },
+  {
+   "a": "flp-i-44",
+   "b": "sm-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二定",
+    "力学",
+    "定律",
+    "热力",
+    "熵",
+    "第二"
+   ],
+   "score": 23.628
+  },
+  {
+   "a": "qed-010",
+   "b": "part-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "子为",
+    "子有",
+    "有质",
+    "质量",
+    "量吗"
+   ],
+   "score": 22.732
+  },
+  {
+   "a": "grav-003",
+   "b": "astro-horizon",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "半径",
+    "史瓦",
+    "瓦西",
+    "西半",
+    "视界"
+   ],
+   "score": 22.614
+  },
+  {
+   "a": "work-001",
+   "b": "bio-018",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "qed",
+    "力学",
+    "动力",
+    "子电",
+    "电动",
+    "量子"
+   ],
+   "score": 22.36
+  },
+  {
+   "a": "bio-018",
+   "b": "math-comp-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "qed",
+    "力学",
+    "动力",
+    "子电",
+    "电动",
+    "量子"
+   ],
+   "score": 22.36
+  },
+  {
+   "a": "beyond-001",
+   "b": "beyond-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一段",
+    "后来",
+    "才知",
+    "来才",
+    "那一"
+   ],
+   "score": 22.327
+  },
+  {
+   "a": "self-006",
+   "b": "bio-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "恋人",
+    "是谁",
+    "琳是",
+    "阿琳",
+    "高中"
+   ],
+   "score": 22.26
+  },
+  {
+   "a": "bio-015",
+   "b": "bio-016",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "个妻",
+    "任妻",
+    "传记",
+    "妻子",
+    "婚姻",
+    "生平"
+   ],
+   "score": 21.933
+  },
+  {
+   "a": "flp-ii-04",
+   "b": "flp-ii-17",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二卷",
+    "卷第",
+    "定律",
+    "章",
+    "第二",
+    "通量"
+   ],
+   "score": 21.834
+  },
+  {
+   "a": "opt-011",
+   "b": "opt-013",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "光学",
+    "小时",
+    "时间",
+    "是最",
+    "最小"
+   ],
+   "score": 21.634
+  },
+  {
+   "a": "self-002",
+   "b": "self-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "是谁",
+    "核病",
+    "结核",
+    "阿玲",
+    "阿琳"
+   ],
+   "score": 21.449
+  },
+  {
+   "a": "persona-inquiry-001",
+   "b": "persona-inquiry-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "战者",
+    "挑战",
+    "者号",
+    "证据",
+    "调查"
+   ],
+   "score": 21.346
+  },
+  {
+   "a": "sm-001",
+   "b": "sm-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "兹曼",
+    "力学",
+    "尔兹",
+    "热力",
+    "玻尔"
+   ],
+   "score": 21.005
+  },
+  {
+   "a": "bio-022",
+   "b": "part-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "互作",
+    "作用",
+    "弱相",
+    "相互",
+    "衰变"
+   ],
+   "score": 20.802
+  },
+  {
+   "a": "bio-011",
+   "b": "life-art-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉"
+   ],
+   "score": 20.636
+  },
+  {
+   "a": "bio-011",
+   "b": "persona-family-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉"
+   ],
+   "score": 20.636
+  },
+  {
+   "a": "bio-011",
+   "b": "persona-safecrack-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉"
+   ],
+   "score": 20.636
+  },
+  {
+   "a": "bio-011",
+   "b": "learned-038cd6e0f4",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉"
+   ],
+   "score": 20.636
+  },
+  {
+   "a": "life-art-007",
+   "b": "persona-family-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉"
+   ],
+   "score": 20.636
+  },
+  {
+   "a": "persona-family-003",
+   "b": "persona-safecrack-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉"
+   ],
+   "score": 20.636
+  },
+  {
+   "a": "persona-family-003",
+   "b": "learned-038cd6e0f4",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "拉莫",
+    "斯阿",
+    "洛斯",
+    "莫斯",
+    "阿拉"
+   ],
+   "score": 20.636
+  },
+  {
+   "a": "beyond-003",
+   "b": "beyond-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一段",
+    "加州",
+    "州理",
+    "理工",
+    "那一"
+   ],
+   "score": 20.271
+  },
+  {
+   "a": "flp-i-44",
+   "b": "flp-i-46",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "卷第",
+    "可逆",
+    "熵",
+    "章",
+    "第一"
+   ],
+   "score": 20.262
+  },
+  {
+   "a": "learned-13f3bb219f",
+   "b": "learned-a13fbcbba1",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "像给",
+    "就像"
+   ],
+   "score": 20.247
+  },
+  {
+   "a": "flp-i-04",
+   "b": "flp-i-15",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "动能",
+    "卷第",
+    "章",
+    "第一",
+    "能量"
+   ],
+   "score": 20.197
+  },
+  {
+   "a": "self-001",
+   "b": "bio-010",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "博士",
+    "斯顿",
+    "普林",
+    "林斯"
+   ],
+   "score": 20.174
+  },
+  {
+   "a": "flp-i-06",
+   "b": "C_DIFFUSE",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "与随",
+    "机游",
+    "游走",
+    "随机"
+   ],
+   "score": 20.174
+  },
+  {
+   "a": "learned-c8691fbb6a",
+   "b": "learned-68d75c6d7e",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "learned",
+    "metaphor",
+    "同一",
+    "就像",
+    "进同"
+   ],
+   "score": 19.842
+  },
+  {
+   "a": "flp-i-09",
+   "b": "flp-i-15",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "动量",
+    "卷第",
+    "章",
+    "第一",
+    "速度"
+   ],
+   "score": 19.771
+  },
+  {
+   "a": "q-pauli-shell",
+   "b": "learned-68d75c6d7e",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "不相",
+    "利不",
+    "泡利",
+    "相容"
+   ],
+   "score": 19.768
+  },
+  {
+   "a": "bio-026",
+   "b": "comp-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "子模",
+    "子计",
+    "模拟",
+    "计算",
+    "量子"
+   ],
+   "score": 19.736
+  },
+  {
+   "a": "bio-034",
+   "b": "bio-041",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "传记",
+    "学态",
+    "态度",
+    "生平",
+    "科学",
+    "自己"
+   ],
+   "score": 19.7
+  },
+  {
+   "a": "life-art-006",
+   "b": "persona-theater-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "别人",
+    "扮演",
+    "演别",
+    "表演"
+   ],
+   "score": 19.481
+  },
+  {
+   "a": "persona-authority-001",
+   "b": "persona-authority-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "主义",
+    "仪式",
+    "式主",
+    "形式"
+   ],
+   "score": 19.363
+  },
+  {
+   "a": "grav-001",
+   "b": "mech-inertia-gravity",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "区分",
+    "引力",
+    "性质",
+    "惯性",
+    "质量"
+   ],
+   "score": 19.236
+  },
+  {
+   "a": "move-002",
+   "b": "move-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "再算",
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 19.236
+  },
+  {
+   "a": "rel-lt-time",
+   "b": "rel-simultaneity-dilation",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "区分",
+    "时间",
+    "易混",
+    "概念",
+    "混概",
+    "膨胀",
+    "间膨"
+   ],
+   "score": 19.198
+  },
+  {
+   "a": "opt-015",
+   "b": "opt-016",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "是怎",
+    "眼为",
+    "眼睛",
+    "视觉"
+   ],
+   "score": 19.075
+  },
+  {
+   "a": "flp-i-09",
+   "b": "flp-i-44",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "力学",
+    "卷第",
+    "定律",
+    "章",
+    "第一"
+   ],
+   "score": 18.981
+  },
+  {
+   "a": "sm-002",
+   "b": "sm-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "因斯",
+    "子的",
+    "斯坦",
+    "爱因"
+   ],
+   "score": 18.921
+  },
+  {
+   "a": "cosmo-001",
+   "b": "rel-doppler-cosmo-redshift",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "学红",
+    "宇宙",
+    "宙学",
+    "红移"
+   ],
+   "score": 18.446
+  },
+  {
+   "a": "bio-012",
+   "b": "life-art-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "保险",
+    "开锁",
+    "撬锁",
+    "险箱"
+   ],
+   "score": 18.382
+  },
+  {
+   "a": "bio-012",
+   "b": "persona-safecrack-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "保险",
+    "开保",
+    "开锁",
+    "险箱"
+   ],
+   "score": 18.382
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-04",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二卷",
+    "卷第",
+    "章",
+    "第二",
+    "静电"
+   ],
+   "score": 18.294
+  },
+  {
+   "a": "sm-002",
+   "b": "sm-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "不能",
+    "克斯",
+    "斯韦",
+    "麦克"
+   ],
+   "score": 18.264
+  },
+  {
+   "a": "work-001",
+   "b": "work-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "力学",
+    "动力",
+    "子电",
+    "电动",
+    "量子"
+   ],
+   "score": 18.232
+  },
+  {
+   "a": "work-002",
+   "b": "bio-018",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "力学",
+    "动力",
+    "子电",
+    "电动",
+    "量子"
+   ],
+   "score": 18.232
+  },
+  {
+   "a": "opt-009",
+   "b": "opt-010",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "光谱",
+    "彩虹",
+    "是怎",
+    "颜色"
+   ],
+   "score": 18.159
+  },
+  {
+   "a": "life-art-003",
+   "b": "persona-music-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "戈鼓",
+    "节奏",
+    "邦戈",
+    "音乐"
+   ],
+   "score": 18.094
+  },
+  {
+   "a": "method-001",
+   "b": "core-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "大问",
+    "把大",
+    "方法",
+    "问题"
+   ],
+   "score": 18.063
+  },
+  {
+   "a": "math-comp-004",
+   "b": "learned-c8691fbb6a",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一位",
+    "位信",
+    "信息",
+    "擦除"
+   ],
+   "score": 18.041
+  },
+  {
+   "a": "comp-003",
+   "b": "learned-c8691fbb6a",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一位",
+    "位信",
+    "信息",
+    "擦除"
+   ],
+   "score": 18.041
+  },
+  {
+   "a": "sm-001",
+   "b": "sm-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "兹曼",
+    "尔兹",
+    "玻尔",
+    "统计"
+   ],
+   "score": 17.976
+  },
+  {
+   "a": "self-003",
+   "b": "self-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "家人",
+    "母亲",
+    "西尔",
+    "露西"
+   ],
+   "score": 17.859
+  },
+  {
+   "a": "self-003",
+   "b": "bio-009",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "家人",
+    "母亲",
+    "西尔",
+    "露西"
+   ],
+   "score": 17.859
+  },
+  {
+   "a": "self-004",
+   "b": "bio-009",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "家人",
+    "母亲",
+    "西尔",
+    "露西"
+   ],
+   "score": 17.859
+  },
+  {
+   "a": "beyond-001",
+   "b": "bio-031",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "尔奖",
+    "诺奖",
+    "诺贝",
+    "贝尔"
+   ],
+   "score": 17.689
+  },
+  {
+   "a": "beyond-001",
+   "b": "persona-authority-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "尔奖",
+    "诺奖",
+    "诺贝",
+    "贝尔"
+   ],
+   "score": 17.689
+  },
+  {
+   "a": "bio-031",
+   "b": "persona-authority-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "尔奖",
+    "诺奖",
+    "诺贝",
+    "贝尔"
+   ],
+   "score": 17.689
+  },
+  {
+   "a": "bio-037",
+   "b": "life-art-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "戈鼓",
+    "打鼓",
+    "邦戈",
+    "音乐"
+   ],
+   "score": 17.689
+  },
+  {
+   "a": "self-005",
+   "b": "life-art-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "丧偶",
+    "悲伤",
+    "那封",
+    "阿琳"
+   ],
+   "score": 17.658
+  },
+  {
+   "a": "flp-ii-19",
+   "b": "qed-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "作用",
+    "小作",
+    "最小",
+    "用量"
+   ],
+   "score": 17.571
+  },
+  {
+   "a": "flp-ii-18",
+   "b": "sm-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "克斯",
+    "斯韦",
+    "第二",
+    "麦克"
+   ],
+   "score": 17.453
+  },
+  {
+   "a": "card-003",
+   "b": "move-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "怀疑",
+    "权威",
+    "疑权",
+    "证据"
+   ],
+   "score": 17.417
+  },
+  {
+   "a": "beyond-002",
+   "b": "persona-inquiry-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "战者",
+    "挑战",
+    "者号",
+    "调查"
+   ],
+   "score": 17.401
+  },
+  {
+   "a": "bio-033",
+   "b": "persona-inquiry-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "战者",
+    "挑战",
+    "者号",
+    "调查"
+   ],
+   "score": 17.401
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-17",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二卷",
+    "卷第",
+    "电磁",
+    "章",
+    "第二"
+   ],
+   "score": 17.378
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-18",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二卷",
+    "卷第",
+    "电磁",
+    "章",
+    "第二"
+   ],
+   "score": 17.378
+  },
+  {
+   "a": "flp-ii-17",
+   "b": "flp-ii-18",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二卷",
+    "卷第",
+    "电磁",
+    "章",
+    "第二"
+   ],
+   "score": 17.378
+  },
+  {
+   "a": "bio-034",
+   "b": "core-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "自己",
+    "自欺",
+    "诚实",
+    "骗自"
+   ],
+   "score": 17.216
+  },
+  {
+   "a": "cm-004",
+   "b": "sm-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "凝聚",
+    "玻色",
+    "色凝",
+    "量子"
+   ],
+   "score": 17.178
+  },
+  {
+   "a": "web-a7b3020dd7",
+   "b": "web-8d99249d92",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "feynman",
+    "his",
+    "richard",
+    "to"
+   ],
+   "score": 17.166
+  },
+  {
+   "a": "flp-i-15",
+   "b": "grav-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "义相",
+    "对论",
+    "相对",
+    "速度"
+   ],
+   "score": 17.129
+  },
+  {
+   "a": "qed-008",
+   "b": "part-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "么来",
+    "交换",
+    "力是",
+    "来的"
+   ],
+   "score": 17.019
+  },
+  {
+   "a": "C_THRESHOLD",
+   "b": "C_PERCOLATE",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "c",
+    "不同",
+    "临界",
+    "存在"
+   ],
+   "score": 16.841
+  },
+  {
+   "a": "flp-i-06",
+   "b": "flp-i-07",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "卷第",
+    "平方",
+    "章",
+    "第一"
+   ],
+   "score": 16.828
+  },
+  {
+   "a": "flp-i-15",
+   "b": "flp-i-47",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "卷第",
+    "章",
+    "第一",
+    "至"
+   ],
+   "score": 16.828
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-19",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二卷",
+    "作用",
+    "卷第",
+    "章",
+    "第二"
+   ],
+   "score": 16.79
+  },
+  {
+   "a": "flp-i-06",
+   "b": "flp-i-46",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "卷第",
+    "涨落",
+    "章",
+    "第一"
+   ],
+   "score": 16.54
+  },
+  {
+   "a": "thermo-heat-internal",
+   "b": "thermo-free-energy",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "与内",
+    "内能",
+    "区分",
+    "易混",
+    "概念",
+    "混概"
+   ],
+   "score": 16.351
+  },
+  {
+   "a": "bio-005",
+   "b": "bio-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "么时",
+    "传记",
+    "时候",
+    "生平",
+    "阿琳"
+   ],
+   "score": 16.325
+  },
+  {
+   "a": "self-002",
+   "b": "life-art-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "丧偶",
+    "去世",
+    "妻子",
+    "阿琳"
+   ],
+   "score": 16.231
+  },
+  {
+   "a": "qed-004",
+   "b": "qed-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "传播",
+    "播子",
+    "电子",
+    "粒子"
+   ],
+   "score": 16.071
+  },
+  {
+   "a": "web-3e87985e75",
+   "b": "web-ba6e40a2a7",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "feynman",
+    "nobelprize.org",
+    "p",
+    "richard"
+   ],
+   "score": 16.067
+  },
+  {
+   "a": "web-3e87985e75",
+   "b": "web-404200e9d0",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "feynman",
+    "nobelprize.org",
+    "p",
+    "richard"
+   ],
+   "score": 16.067
+  },
+  {
+   "a": "web-ba6e40a2a7",
+   "b": "web-404200e9d0",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "feynman",
+    "nobelprize.org",
+    "p",
+    "richard"
+   ],
+   "score": 16.067
+  },
+  {
+   "a": "flp-i-15",
+   "b": "opt-014",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "光速",
+    "动量",
+    "对论",
+    "相对"
+   ],
+   "score": 16.031
+  },
+  {
+   "a": "flp-i-01",
+   "b": "flp-i-44",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "一卷",
+    "卷第",
+    "温度",
+    "章",
+    "第一"
+   ],
+   "score": 15.981
+  },
+  {
+   "a": "astro-redshift-distance",
+   "b": "rel-doppler-cosmo-redshift",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "区分",
+    "易混",
+    "概念",
+    "混概",
+    "移与",
+    "红移"
+   ],
+   "score": 15.946
+  },
+  {
+   "a": "astro-dark-energy-mass",
+   "b": "astro-darkmatter-modifiedgravity",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "区分",
+    "易混",
+    "暗物",
+    "概念",
+    "混概",
+    "物质"
+   ],
+   "score": 15.946
+  },
+  {
+   "a": "bio-034",
+   "b": "bio-035",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "传记",
+    "学态",
+    "态度",
+    "生平",
+    "科学"
+   ],
+   "score": 15.909
+  },
+  {
+   "a": "bio-035",
+   "b": "bio-041",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "传记",
+    "学态",
+    "态度",
+    "生平",
+    "科学"
+   ],
+   "score": 15.909
+  },
+  {
+   "a": "qed-002",
+   "b": "opt-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "径积",
+    "最小",
+    "积分",
+    "路径"
+   ],
+   "score": 15.807
+  },
+  {
+   "a": "bio-022",
+   "b": "part-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "互作",
+    "作用",
+    "弱相",
+    "相互"
+   ],
+   "score": 15.759
+  },
+  {
+   "a": "q-superposition-mixture",
+   "b": "wave-linear-nonlinear",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "加与",
+    "区分",
+    "叠加",
+    "易混",
+    "概念",
+    "混概"
+   ],
+   "score": 15.658
+  },
+  {
+   "a": "thermo-carnot",
+   "b": "thermo-reversible-real",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "与真",
+    "区分",
+    "易混",
+    "概念",
+    "混概",
+    "真实"
+   ],
+   "score": 15.54
+  },
+  {
+   "a": "thermo-carnot",
+   "b": "mk-model-reality",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "与真",
+    "区分",
+    "易混",
+    "概念",
+    "混概",
+    "真实"
+   ],
+   "score": 15.54
+  },
+  {
+   "a": "thermo-reversible-real",
+   "b": "mk-model-reality",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "与真",
+    "区分",
+    "易混",
+    "概念",
+    "混概",
+    "真实"
+   ],
+   "score": 15.54
+  },
+  {
+   "a": "qed-001",
+   "b": "opt-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "光子",
+    "子的",
+    "概率",
+    "率幅"
+   ],
+   "score": 15.402
+  },
+  {
+   "a": "bio-034",
+   "b": "core-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "学态",
+    "态度",
+    "科学",
+    "诚实"
+   ],
+   "score": 15.25
+  },
+  {
+   "a": "part-001",
+   "b": "part-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "互作",
+    "作用",
+    "力是",
+    "相互"
+   ],
+   "score": 15.248
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-68d75c6d7e",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-13f3bb219f",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-ce8cbfd6ed",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-a13fbcbba1",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-68d75c6d7e",
+   "b": "learned-13f3bb219f",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-68d75c6d7e",
+   "b": "learned-ce8cbfd6ed",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-68d75c6d7e",
+   "b": "learned-a13fbcbba1",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-13f3bb219f",
+   "b": "learned-ce8cbfd6ed",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "learned-ce8cbfd6ed",
+   "b": "learned-a13fbcbba1",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "curriculum",
+    "learned",
+    "metaphor",
+    "就像"
+   ],
+   "score": 15.204
+  },
+  {
+   "a": "self-001",
+   "b": "self-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "28",
+    "岁",
+    "年龄"
+   ],
+   "score": 15.13
+  },
+  {
+   "a": "cm-002",
+   "b": "cm-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "振动",
+    "晶格",
+    "格振"
+   ],
+   "score": 14.725
+  },
+  {
+   "a": "grav-001",
+   "b": "rel-gravity-force",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "力与",
+    "区分",
+    "引力",
+    "时空"
+   ],
+   "score": 14.662
+  },
+  {
+   "a": "cosmo-horizon-001",
+   "b": "astro-mass-horizon",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "半径",
+    "概念",
+    "视界",
+    "黑洞"
+   ],
+   "score": 14.613
+  },
+  {
+   "a": "flp-i-49-pitch",
+   "b": "C_OSCILLATE",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "固有",
+    "有频",
+    "频率"
+   ],
+   "score": 14.437
+  },
+  {
+   "a": "life-art-005",
+   "b": "core-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "奇心",
+    "好奇",
+    "好玩"
+   ],
+   "score": 14.437
+  },
+  {
+   "a": "opt-013",
+   "b": "opt-018",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "分辨",
+    "本领",
+    "辨本"
+   ],
+   "score": 14.437
+  },
+  {
+   "a": "em-e-v",
+   "b": "em-field-energy-density",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "与电",
+    "区分",
+    "易混",
+    "概念",
+    "混概",
+    "电场"
+   ],
+   "score": 14.336
+  },
+  {
+   "a": "bio-018",
+   "b": "qed-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "整化",
+    "自能",
+    "重整"
+   ],
+   "score": 14.319
+  },
+  {
+   "a": "bio-021",
+   "b": "cm-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "流氦",
+    "液氦",
+    "超流"
+   ],
+   "score": 14.319
+  },
+  {
+   "a": "bio-024",
+   "b": "sm-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "布朗",
+    "朗运",
+    "运动"
+   ],
+   "score": 14.319
+  },
+  {
+   "a": "cm-008",
+   "b": "learned-ce8cbfd6ed",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "只有",
+    "米面",
+    "费米"
+   ],
+   "score": 14.319
+  },
+  {
+   "a": "flp-ii-04",
+   "b": "em-e-v",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "场与",
+    "电势",
+    "电场"
+   ],
+   "score": 14.214
+  },
+  {
+   "a": "flp-iii-08",
+   "b": "opt-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "二态",
+    "态系",
+    "系统"
+   ],
+   "score": 14.214
+  },
+  {
+   "a": "part-007",
+   "b": "sm-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "对称",
+    "破缺",
+    "称破"
+   ],
+   "score": 14.214
+  },
+  {
+   "a": "opt-009",
+   "b": "opt-012",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "色的",
+    "蓝光",
+    "颜色"
+   ],
+   "score": 14.214
+  },
+  {
+   "a": "move-001",
+   "b": "move-002",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-001",
+   "b": "move-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-001",
+   "b": "move-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-001",
+   "b": "move-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-001",
+   "b": "move-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-001",
+   "b": "move-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-001",
+   "b": "move-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-002",
+   "b": "move-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-002",
+   "b": "move-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-002",
+   "b": "move-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-002",
+   "b": "move-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-002",
+   "b": "move-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-003",
+   "b": "move-004",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-003",
+   "b": "move-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-003",
+   "b": "move-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-003",
+   "b": "move-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-003",
+   "b": "move-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-004",
+   "b": "move-005",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-004",
+   "b": "move-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-004",
+   "b": "move-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-004",
+   "b": "move-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-005",
+   "b": "move-006",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-005",
+   "b": "move-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-005",
+   "b": "move-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-006",
+   "b": "move-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-006",
+   "b": "move-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "move-007",
+   "b": "move-008",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "动作",
+    "思维",
+    "方法",
+    "维动"
+   ],
+   "score": 14.192
+  },
+  {
+   "a": "bio-006",
+   "b": "bio-042",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "么病",
+    "传记",
+    "得的",
+    "生平"
+   ],
+   "score": 14.085
+  },
+  {
+   "a": "flp-ii-04",
+   "b": "flp-iii-17",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "卷第",
+    "对称",
+    "称性",
+    "章"
+   ],
+   "score": 14.062
+  },
+  {
+   "a": "self-004",
+   "b": "bio-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "妹妹",
+    "家人",
+    "琼"
+   ],
+   "score": 14.032
+  },
+  {
+   "a": "bio-036",
+   "b": "life-art-001",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "画展",
+    "画画",
+    "绘画"
+   ],
+   "score": 14.032
+  },
+  {
+   "a": "flp-i-44",
+   "b": "thermo-reversible-real",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "可逆",
+    "过程",
+    "逆过"
+   ],
+   "score": 14.032
+  },
+  {
+   "a": "flp-i-46",
+   "b": "sm-007",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "棘轮",
+    "涨落",
+    "热涨"
+   ],
+   "score": 14.032
+  },
+  {
+   "a": "life-art-001",
+   "b": "life-art-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "你会",
+    "你喜",
+    "喜欢"
+   ],
+   "score": 14.032
+  },
+  {
+   "a": "math-comp-002",
+   "b": "opt-003",
+   "kind": "same_domain",
+   "origin": "cooccur",
+   "mechanism": "",
+   "shared": [
+    "本质",
+    "的本",
+    "积分"
+   ],
+   "score": 14.032
+  }
+ ]
+}

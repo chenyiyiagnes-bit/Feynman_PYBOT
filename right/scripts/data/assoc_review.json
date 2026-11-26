@@ -1,0 +1,1412 @@
+{
+ "generated": "2026-11-26",
+ "source": "scripts/data/assoc_candidates.json",
+ "reviewed_by": "Claude（代用户审）",
+ "counts": {
+  "reject": 164,
+  "already": 10,
+  "promote": 26
+ },
+ "decisions": [
+  {
+   "a": "math-comp-006",
+   "b": "comp-001",
+   "score": 64.725,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "math-comp-004",
+   "b": "comp-003",
+   "score": 60.136,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "cosmo-horizon-001",
+   "b": "astro-horizon",
+   "score": 53.521,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-025",
+   "b": "comp-001",
+   "score": 51.099,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "opt-003",
+   "b": "opt-011",
+   "score": 44.836,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "self-005",
+   "b": "bio-008",
+   "score": 42.47,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-023",
+   "b": "part-002",
+   "score": 41.158,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "math-comp-005",
+   "b": "comp-002",
+   "score": 38.524,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "math-comp-001",
+   "b": "qed-002",
+   "score": 37.323,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-025",
+   "b": "math-comp-006",
+   "score": 35.969,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "life-art-007",
+   "b": "persona-safecrack-001",
+   "score": 33.974,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "beyond-002",
+   "b": "bio-033",
+   "score": 32.531,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-007",
+   "b": "bio-042",
+   "score": 32.243,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "opt-017",
+   "b": "opt-018",
+   "score": 32.126,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "work-002",
+   "b": "math-comp-001",
+   "score": 30.095,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "persona-family-001",
+   "b": "persona-family-004",
+   "score": 29.855,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "life-art-007",
+   "b": "learned-038cd6e0f4",
+   "score": 29.336,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "persona-safecrack-001",
+   "b": "learned-038cd6e0f4",
+   "score": 29.336,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "flp-iii-01",
+   "b": "opt-005",
+   "score": 28.607,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "C_PERCOLATE",
+   "b": "S_RG",
+   "score": 27.776,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "work-002",
+   "b": "qed-001",
+   "score": 27.626,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "bio-033",
+   "b": "persona-inquiry-002",
+   "score": 27.488,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-i-47",
+   "b": "flp-i-49-pitch",
+   "score": 27.32,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "opt-016",
+   "b": "opt-018",
+   "score": 27.147,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "grav-003",
+   "b": "cosmo-horizon-001",
+   "score": 26.965,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "web-67b6d462ef",
+   "b": "web-85b680b650",
+   "score": 26.847,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "self-002",
+   "b": "persona-family-003",
+   "score": 26.279,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "part-004",
+   "b": "part-007",
+   "score": 26.231,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "part-004",
+   "b": "part-006",
+   "score": 25.845,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "bio-018",
+   "b": "qed-001",
+   "score": 25.698,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-iii-01",
+   "b": "flp-iii-03",
+   "score": 25.085,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "bio-026",
+   "b": "math-comp-005",
+   "score": 24.78,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-iii-17",
+   "b": "part-009",
+   "score": 24.759,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-035",
+   "b": "core-002",
+   "score": 24.739,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "persona-language-001",
+   "b": "persona-language-002",
+   "score": 24.119,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "beyond-003",
+   "b": "bio-027",
+   "score": 23.787,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "beyond-003",
+   "b": "flp-map-001",
+   "score": 23.787,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-027",
+   "b": "flp-map-001",
+   "score": 23.787,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "qed-006",
+   "b": "qed-009",
+   "score": 23.713,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "flp-i-44",
+   "b": "sm-005",
+   "score": 23.628,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "qed-010",
+   "b": "part-006",
+   "score": 22.732,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "grav-003",
+   "b": "astro-horizon",
+   "score": 22.614,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "work-001",
+   "b": "bio-018",
+   "score": 22.36,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-018",
+   "b": "math-comp-001",
+   "score": 22.36,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "beyond-001",
+   "b": "beyond-002",
+   "score": 22.327,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "self-006",
+   "b": "bio-004",
+   "score": 22.26,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-015",
+   "b": "bio-016",
+   "score": 21.933,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-ii-04",
+   "b": "flp-ii-17",
+   "score": 21.834,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "opt-011",
+   "b": "opt-013",
+   "score": 21.634,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "self-002",
+   "b": "self-006",
+   "score": 21.449,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "persona-inquiry-001",
+   "b": "persona-inquiry-002",
+   "score": 21.346,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "sm-001",
+   "b": "sm-005",
+   "score": 21.005,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "bio-022",
+   "b": "part-004",
+   "score": 20.802,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-011",
+   "b": "life-art-007",
+   "score": 20.636,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-011",
+   "b": "persona-family-003",
+   "score": 20.636,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-011",
+   "b": "persona-safecrack-001",
+   "score": 20.636,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-011",
+   "b": "learned-038cd6e0f4",
+   "score": 20.636,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "life-art-007",
+   "b": "persona-family-003",
+   "score": 20.636,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "persona-family-003",
+   "b": "persona-safecrack-001",
+   "score": 20.636,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "persona-family-003",
+   "b": "learned-038cd6e0f4",
+   "score": 20.636,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "beyond-003",
+   "b": "beyond-004",
+   "score": 20.271,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "flp-i-44",
+   "b": "flp-i-46",
+   "score": 20.262,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "learned-13f3bb219f",
+   "b": "learned-a13fbcbba1",
+   "score": 20.247,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "flp-i-04",
+   "b": "flp-i-15",
+   "score": 20.197,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "self-001",
+   "b": "bio-010",
+   "score": 20.174,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "flp-i-06",
+   "b": "C_DIFFUSE",
+   "score": 20.174,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "learned-c8691fbb6a",
+   "b": "learned-68d75c6d7e",
+   "score": 19.842,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "flp-i-09",
+   "b": "flp-i-15",
+   "score": 19.771,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "q-pauli-shell",
+   "b": "learned-68d75c6d7e",
+   "score": 19.768,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "bio-026",
+   "b": "comp-002",
+   "score": 19.736,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-034",
+   "b": "bio-041",
+   "score": 19.7,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "life-art-006",
+   "b": "persona-theater-001",
+   "score": 19.481,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "persona-authority-001",
+   "b": "persona-authority-002",
+   "score": 19.363,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "grav-001",
+   "b": "mech-inertia-gravity",
+   "score": 19.236,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "move-002",
+   "b": "move-004",
+   "score": 19.236,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "rel-lt-time",
+   "b": "rel-simultaneity-dilation",
+   "score": 19.198,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "opt-015",
+   "b": "opt-016",
+   "score": 19.075,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "flp-i-09",
+   "b": "flp-i-44",
+   "score": 18.981,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "sm-002",
+   "b": "sm-006",
+   "score": 18.921,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "cosmo-001",
+   "b": "rel-doppler-cosmo-redshift",
+   "score": 18.446,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "bio-012",
+   "b": "life-art-007",
+   "score": 18.382,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-012",
+   "b": "persona-safecrack-001",
+   "score": 18.382,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-04",
+   "score": 18.294,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "sm-002",
+   "b": "sm-007",
+   "score": 18.264,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "work-001",
+   "b": "work-002",
+   "score": 18.232,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "work-002",
+   "b": "bio-018",
+   "score": 18.232,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "opt-009",
+   "b": "opt-010",
+   "score": 18.159,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "life-art-003",
+   "b": "persona-music-001",
+   "score": 18.094,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "method-001",
+   "b": "core-006",
+   "score": 18.063,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "math-comp-004",
+   "b": "learned-c8691fbb6a",
+   "score": 18.041,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "comp-003",
+   "b": "learned-c8691fbb6a",
+   "score": 18.041,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "sm-001",
+   "b": "sm-002",
+   "score": 17.976,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "self-003",
+   "b": "self-004",
+   "score": 17.859,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "self-003",
+   "b": "bio-009",
+   "score": 17.859,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "self-004",
+   "b": "bio-009",
+   "score": 17.859,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "beyond-001",
+   "b": "bio-031",
+   "score": 17.689,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "beyond-001",
+   "b": "persona-authority-002",
+   "score": 17.689,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-031",
+   "b": "persona-authority-002",
+   "score": 17.689,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-037",
+   "b": "life-art-003",
+   "score": 17.689,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "self-005",
+   "b": "life-art-008",
+   "score": 17.658,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-ii-19",
+   "b": "qed-002",
+   "score": 17.571,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "flp-ii-18",
+   "b": "sm-007",
+   "score": 17.453,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "card-003",
+   "b": "move-007",
+   "score": 17.417,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "beyond-002",
+   "b": "persona-inquiry-001",
+   "score": 17.401,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-033",
+   "b": "persona-inquiry-001",
+   "score": 17.401,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-17",
+   "score": 17.378,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-18",
+   "score": 17.378,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "flp-ii-17",
+   "b": "flp-ii-18",
+   "score": 17.378,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "bio-034",
+   "b": "core-003",
+   "score": 17.216,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "cm-004",
+   "b": "sm-002",
+   "score": 17.178,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "web-a7b3020dd7",
+   "b": "web-8d99249d92",
+   "score": 17.166,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "flp-i-15",
+   "b": "grav-001",
+   "score": 17.129,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "qed-008",
+   "b": "part-001",
+   "score": 17.019,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "C_THRESHOLD",
+   "b": "C_PERCOLATE",
+   "score": 16.841,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "flp-i-06",
+   "b": "flp-i-07",
+   "score": 16.828,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "flp-i-15",
+   "b": "flp-i-47",
+   "score": 16.828,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "flp-ii-01",
+   "b": "flp-ii-19",
+   "score": 16.79,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "flp-i-06",
+   "b": "flp-i-46",
+   "score": 16.54,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "thermo-heat-internal",
+   "b": "thermo-free-energy",
+   "score": 16.351,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "bio-005",
+   "b": "bio-007",
+   "score": 16.325,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "self-002",
+   "b": "life-art-008",
+   "score": 16.231,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "qed-004",
+   "b": "qed-008",
+   "score": 16.071,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "web-3e87985e75",
+   "b": "web-ba6e40a2a7",
+   "score": 16.067,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "web-3e87985e75",
+   "b": "web-404200e9d0",
+   "score": 16.067,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "web-ba6e40a2a7",
+   "b": "web-404200e9d0",
+   "score": 16.067,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-i-15",
+   "b": "opt-014",
+   "score": 16.031,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "flp-i-01",
+   "b": "flp-i-44",
+   "score": 15.981,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "astro-redshift-distance",
+   "b": "rel-doppler-cosmo-redshift",
+   "score": 15.946,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "astro-dark-energy-mass",
+   "b": "astro-darkmatter-modifiedgravity",
+   "score": 15.946,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "bio-034",
+   "b": "bio-035",
+   "score": 15.909,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-035",
+   "b": "bio-041",
+   "score": 15.909,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "qed-002",
+   "b": "opt-003",
+   "score": 15.807,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "bio-022",
+   "b": "part-006",
+   "score": 15.759,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "q-superposition-mixture",
+   "b": "wave-linear-nonlinear",
+   "score": 15.658,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "thermo-carnot",
+   "b": "thermo-reversible-real",
+   "score": 15.54,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "thermo-carnot",
+   "b": "mk-model-reality",
+   "score": 15.54,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "thermo-reversible-real",
+   "b": "mk-model-reality",
+   "score": 15.54,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "qed-001",
+   "b": "opt-004",
+   "score": 15.402,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "bio-034",
+   "b": "core-002",
+   "score": 15.25,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "part-001",
+   "b": "part-004",
+   "score": 15.248,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-68d75c6d7e",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-13f3bb219f",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-ce8cbfd6ed",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-dfadf5e389",
+   "b": "learned-a13fbcbba1",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-68d75c6d7e",
+   "b": "learned-13f3bb219f",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-68d75c6d7e",
+   "b": "learned-ce8cbfd6ed",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-68d75c6d7e",
+   "b": "learned-a13fbcbba1",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-13f3bb219f",
+   "b": "learned-ce8cbfd6ed",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "learned-ce8cbfd6ed",
+   "b": "learned-a13fbcbba1",
+   "score": 15.204,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "self-001",
+   "b": "self-004",
+   "score": 15.13,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "cm-002",
+   "b": "cm-007",
+   "score": 14.725,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "grav-001",
+   "b": "rel-gravity-force",
+   "score": 14.662,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "cosmo-horizon-001",
+   "b": "astro-mass-horizon",
+   "score": 14.613,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "flp-i-49-pitch",
+   "b": "C_OSCILLATE",
+   "score": 14.437,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "life-art-005",
+   "b": "core-007",
+   "score": 14.437,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "opt-013",
+   "b": "opt-018",
+   "score": 14.437,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "em-e-v",
+   "b": "em-field-energy-density",
+   "score": 14.336,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "bio-018",
+   "b": "qed-005",
+   "score": 14.319,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "bio-021",
+   "b": "cm-004",
+   "score": 14.319,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-024",
+   "b": "sm-006",
+   "score": 14.319,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "cm-008",
+   "b": "learned-ce8cbfd6ed",
+   "score": 14.319,
+   "verdict": "reject",
+   "reason": "learned-* 是临时学习卡，不作为稳定语料的边"
+  },
+  {
+   "a": "flp-ii-04",
+   "b": "em-e-v",
+   "score": 14.214,
+   "verdict": "already",
+   "reason": "候选清单挖出时已有确认边，跳过"
+  },
+  {
+   "a": "flp-iii-08",
+   "b": "opt-004",
+   "score": 14.214,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "part-007",
+   "b": "sm-003",
+   "score": 14.214,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "opt-009",
+   "b": "opt-012",
+   "score": 14.214,
+   "verdict": "promote",
+   "reason": "转正：机制可写清，已补中英文两句"
+  },
+  {
+   "a": "move-001",
+   "b": "move-002",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-001",
+   "b": "move-003",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-001",
+   "b": "move-004",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-001",
+   "b": "move-005",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-001",
+   "b": "move-006",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-001",
+   "b": "move-007",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-001",
+   "b": "move-008",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-002",
+   "b": "move-003",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-002",
+   "b": "move-005",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-002",
+   "b": "move-006",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-002",
+   "b": "move-007",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-002",
+   "b": "move-008",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-003",
+   "b": "move-004",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-003",
+   "b": "move-005",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-003",
+   "b": "move-006",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-003",
+   "b": "move-007",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-003",
+   "b": "move-008",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-004",
+   "b": "move-005",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-004",
+   "b": "move-006",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-004",
+   "b": "move-007",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-004",
+   "b": "move-008",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-005",
+   "b": "move-006",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-005",
+   "b": "move-007",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-005",
+   "b": "move-008",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-006",
+   "b": "move-007",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-006",
+   "b": "move-008",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "move-007",
+   "b": "move-008",
+   "score": 14.192,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-006",
+   "b": "bio-042",
+   "score": 14.085,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-ii-04",
+   "b": "flp-iii-17",
+   "score": 14.062,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "self-004",
+   "b": "bio-003",
+   "score": 14.032,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "bio-036",
+   "b": "life-art-001",
+   "score": 14.032,
+   "verdict": "reject",
+   "reason": "两张卡说同一件事/同一人物事件，是重复不是联系"
+  },
+  {
+   "a": "flp-i-44",
+   "b": "thermo-reversible-real",
+   "score": 14.032,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "flp-i-46",
+   "b": "sm-007",
+   "score": 14.032,
+   "verdict": "reject",
+   "reason": "只是同一卷相邻章节，章节共现不构成机制联系"
+  },
+  {
+   "a": "life-art-001",
+   "b": "life-art-003",
+   "score": 14.032,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  },
+  {
+   "a": "math-comp-002",
+   "b": "opt-003",
+   "score": 14.032,
+   "verdict": "reject",
+   "reason": "只共享词形或泛用词，没有可写出的机制"
+  }
+ ]
+}
