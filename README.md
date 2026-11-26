@@ -13,19 +13,36 @@
 ```
 personas/<id>/persona.json   人设定义（格式见 contracts/persona.md）
 personas/<id>/knowledge/     该人设的知识卡
-contracts/                   接口与人设格式契约
+app/                         装配层：人设 → 可运行的 MindEngine
 bridge/                      右脑 → 左脑的映射层
+contracts/                   接口与人设格式契约
 right/                       右脑引擎（omega_mind）
+left/                        左脑排版器（代码，语料自备）
+scripts/chat.py              终端聊天入口
 tools/                       导出/校验工具
 tests/                       合并层测试
 ```
 
-## 快速上手（发布后）
+## 快速上手
 
 ```bash
-python3 -m pybot init --persona feynman
-python3 -m pybot chat
+# 费曼，中文，读 personas/feynman/knowledge 的卡片回答
+python3 scripts/chat.py
+
+# 换人设
+python3 scripts/chat.py --persona laozhuang
+
+# 英文模式 / 看每句答案来自哪张卡
+python3 scripts/chat.py --lang en
+python3 scripts/chat.py --debug
+
+# 列出仓库里的人设
+python3 scripts/chat.py --list
 ```
+
+不需要 API key、不需要联网。对话状态默认保存在 `~/.feynman_pybot/<id>.mind_state.json`，
+不想保存就加 `--no-state`。左脑排版器默认关闭（`--bridge` 或 `OMEGA_LEFT_BRIDGE=1` 才开，
+需要自备 vault，见 `docs/bridge.md`）。
 
 ## 两套示例人设
 

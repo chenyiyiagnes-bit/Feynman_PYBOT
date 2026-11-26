@@ -1,0 +1,101 @@
+{
+  "source": "feynman_agent/knowledge",
+  "files": {
+    "persona_core.jsonl": {
+      "rows": 11,
+      "withheld_private_rows": 0,
+      "sha256": "0227b2baacf2470a4cea96c3d15536d6981b87510544bb179aef2d59ac2abf84"
+    },
+    "persona_memories.jsonl": {
+      "rows": 34,
+      "withheld_private_rows": 0,
+      "sha256": "504ce8c028fbb228ec6a7dab2ec7a81b2401501c0b16be762599a0dc8a3f93a3"
+    },
+    "feynman_biography.jsonl": {
+      "rows": 42,
+      "withheld_private_rows": 0,
+      "sha256": "2e8b64610ad0fb3db25b30c7037962d905b902352372abc792c73ee4e340e1ed"
+    },
+    "feynman_lectures.jsonl": {
+      "rows": 20,
+      "withheld_private_rows": 0,
+      "sha256": "f6cf077ab36a2a780b2fe4bacc49b9f8039e5d8d38acdadfeb1ee8e31bd71754"
+    },
+    "facts.jsonl": {
+      "rows": 15,
+      "withheld_private_rows": 1,
+      "sha256": "3c547d6b2a15a6f36fe00c86fad35965132c3bd9456866792ffc7f2680516b42"
+    },
+    "verified_facts.jsonl": {
+      "rows": 9,
+      "withheld_private_rows": 0,
+      "sha256": "2d7ff4347d034a31e18addf50818dbf7b61ab4ff33d0ddc7fc2e8f432d75334f"
+    },
+    "people.jsonl": {
+      "rows": 5,
+      "withheld_private_rows": 0,
+      "sha256": "5b9a8b0ae551c090c7af314f077a8f1c4f9b6b2056a89d9b28b09b5e6cb82632"
+    },
+    "relations.jsonl": {
+      "rows": 60,
+      "withheld_private_rows": 0,
+      "sha256": "1490b77cf207c07bcc0995a0a417e0ba1333f70c6f64a4662168dfcfedb067a8"
+    },
+    "thinking_moves.jsonl": {
+      "rows": 8,
+      "withheld_private_rows": 0,
+      "sha256": "74f35598723d76777849de02ef935fc719bcdcd2200652e8fc32b98243b80b04"
+    },
+    "method_cards.jsonl": {
+      "rows": 5,
+      "withheld_private_rows": 0,
+      "sha256": "30eee962a0d437f01c71293dc3711524e7cf3a6243430e183025625e70c623b1"
+    },
+    "teachable_units.jsonl": {
+      "rows": 4,
+      "withheld_private_rows": 0,
+      "sha256": "04eca1f9685d39c1863f6f70a21752ea781826f1e043c864211f2b0c118d6cc3"
+    },
+    "taste_discriminants.jsonl": {
+      "rows": 10,
+      "withheld_private_rows": 0,
+      "sha256": "ad5259038e07918f11dec5e4aa446336d0674d8cb5769ea9a9cd906d3636f13a"
+    },
+    "physics_guardrails.jsonl": {
+      "rows": 66,
+      "withheld_private_rows": 0,
+      "sha256": "302ea1803a32a72b3520271ac7124c5591a6bd9d7d6dde789975996c3cf93092"
+    },
+    "physics_edges.jsonl": {
+      "rows": 12,
+      "withheld_private_rows": 0,
+      "sha256": "80bbc85acb967ca58aef1da0ab7de9cc31bf4dfb7c59645fc14d8515c55b2b72"
+    },
+    "feynman_physics.jsonl": {
+      "rows": 60,
+      "withheld_private_rows": 0,
+      "sha256": "aae5b9549843734eed307dfb841fb5e407e42acb7e9f79850ac97d7f06dd2727"
+    },
+    "feynman_life_art.jsonl": {
+      "rows": 8,
+      "withheld_private_rows": 0,
+      "sha256": "06b272ebc6af146f2ef57b403981826e7582ed2e64c4c72120432f52d2945f16",
+      "note": "public-repo only, no private source"
+    },
+    "feynman_math_comp.jsonl": {
+      "rows": 8,
+      "withheld_private_rows": 0,
+      "sha256": "d00d11ab1b40b43de2e03b46ac788965b9a9ae208de81c2f3ea5cda2b0250b9f",
+      "note": "public-repo only, no private source"
+    }
+  },
+  "excluded": {
+    "her_profile.jsonl": "private: the owner's profile",
+    "intimacy_memories.jsonl": "private: the owner's relationship rules",
+    "daisy_canon.jsonl": "private: the owner's novel",
+    "daisy_dance.jsonl": "private: the owner's novel",
+    "daisy_dance_identity.jsonl": "private: the owner's identity",
+    "feynman_life_books.jsonl": "copyright: verbatim excerpts from published books",
+    "life.jsonl": "derived index; rebuild from the public cards"
+  }
+}
