@@ -36,6 +36,8 @@ TOOL_VERSION = 1
 MIN_SHARED = 3        # two cards sharing two words is a coincidence
 MAX_PER_CARD = 8      # a hub that links to everything carries no signal
 EVIDENCE = 5          # shared terms kept in the row, for review
+CANDIDATES = "assoc_candidates.jsonl"   # never the confirmed set
+MANIFEST = "assoc_candidates.manifest.json"
 
 
 def card_terms(core, cards: Sequence[Dict]) -> Dict[str, set]:
@@ -113,7 +115,13 @@ def build(persona_dir: Path, out_dir: Path | None = None,
 
     out_dir = Path(out_dir) if out_dir else persona_dir / "data" / "assoc"
     out_dir.mkdir(parents=True, exist_ok=True)
-    target = out_dir / "assoc_edges.jsonl"
+    target = out_dir / CANDIDATES
+    if target.is_file():
+        confirmed = [json.loads(line) for line in
+                     target.read_text(encoding="utf-8").splitlines() if line.strip()]
+        if any(row.get("origin") != "cooccur" for row in confirmed):
+            raise SystemExit(f"{target} holds confirmed edges; refusing to overwrite — "
+                             "candidates go to a separate file")
     target.write_text("".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
                               for row in rows), encoding="utf-8")
     manifest = {
@@ -126,10 +134,11 @@ def build(persona_dir: Path, out_dir: Path | None = None,
         "min_shared": MIN_SHARED,
         "max_per_card": MAX_PER_CARD,
         "source_digest": build_lexicon.digest(persona_dir / "knowledge"),
-        "note": ("cooccur edges only: candidates for review, never spoken; "
+        "note": ("cooccur candidates only, never spoken; ``assoc_edges.jsonl`` "
+                 "is the confirmed set and this tool never touches it; "
                  "derived from knowledge/*.jsonl, never committed"),
     }
-    (out_dir / "assoc_edges.manifest.json").write_text(
+    (out_dir / MANIFEST).write_text(
         json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
         encoding="utf-8")
     return manifest

@@ -85,7 +85,7 @@ class Output(unittest.TestCase):
         tmp = Path(tempfile.mkdtemp(prefix="assoc-"))
         package = make_package(tmp)
         manifest = ba.build(package, built="2026-11-26")
-        path = package / "data" / "assoc" / "assoc_edges.jsonl"
+        path = package / "data" / "assoc" / ba.CANDIDATES
         self.assertTrue(path.is_file())
         graph = assoc.load(path)
         self.assertEqual(graph.dropped, 0)
@@ -99,10 +99,28 @@ class Output(unittest.TestCase):
         tmp = Path(tempfile.mkdtemp(prefix="assoc-"))
         package = make_package(tmp)
         ba.build(package, built="2026-11-26")
-        path = package / "data" / "assoc" / "assoc_edges.jsonl"
+        path = package / "data" / "assoc" / ba.CANDIDATES
         first = path.read_bytes()
         ba.build(package, built="2026-11-26")
         self.assertEqual(first, path.read_bytes())
+
+    def test_confirmed_edges_are_never_overwritten(self) -> None:
+        """The mine writes candidates; a hand-confirmed file is left alone."""
+        tmp = Path(tempfile.mkdtemp(prefix="assoc-"))
+        package = make_package(tmp)
+        out = package / "data" / "assoc"
+        out.mkdir(parents=True, exist_ok=True)
+        confirmed = out / "assoc_edges.jsonl"
+        confirmed.write_text(json.dumps({
+            "a": "a", "b": "b", "kind": "same_mechanism", "origin": "human",
+            "mechanism": "手写", "difference": "手写"}) + "\n", encoding="utf-8")
+        before = confirmed.read_bytes()
+        ba.build(package, built="2026-11-26")
+        self.assertEqual(confirmed.read_bytes(), before)
+        # Even the candidates file refuses to clobber a confirmed row.
+        (out / ba.CANDIDATES).write_bytes(before)
+        with self.assertRaises(SystemExit):
+            ba.build(package, built="2026-11-26")
 
     def test_empty_package_is_refused(self) -> None:
         tmp = Path(tempfile.mkdtemp(prefix="assoc-"))

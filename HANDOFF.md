@@ -115,9 +115,9 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 
 | # | 任务 | 验收标准 | 依赖 |
 |---|---|---|---|
-| D1 | 合并 `persona/laozhuang` | 分支先拉到 `dev`，再迁入卡片；两套测试全绿后才进 `dev` | — |
-| D2 | `laozhuang-en` 语气重写 | 用原文对应表达替换占位，不靠中文回译 | D1 |
-| D3 | 文言语料随包发布 | 仅限公有领域原文（《道德经》《庄子》）；仓库体积评估后再定 | 所有者确认 |
+| D1 | 合并 `persona/laozhuang` | **已完成**：不 merge 旧分支（其 content 只有 `TASK.md` 是新东西，`persona.json`/`README` 反而是旧版），TASK 按新结构重写进 `personas/laozhuang-zh/`；旧分支留档 | — |
+| D2 | `laozhuang-en` 语气重写 | **已决定：占位先留**，中文卡定稿后按原文对应表达重写，不靠中文回译 | D1 |
+| D3 | 文言语料随包发布 | **已决定：不随包发布**，与费曼包一致——仓库只放卡片，语料自备；已写进 README/TASK | 所有者确认 |
 | D4 | `tools/build_assoc.py` | **已完成** `5296c9c`：由卡片重建 `origin="cooccur"` 候选边，扇出封顶，重建逐字节一致 | B1（可复用 PMI） |
 | D5 | 通知协作者目录改名 | Gemini / Astra 的脚本不再引用 `personas/feynman`、`personas/laozhuang` | — |
 
@@ -128,15 +128,13 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 | E1 | 人格 = 阈值与偏好 | 让语料决定「什么算答得上、遇边界补一句还是闭嘴、偏爱机制还是反例」，而不是落在词汇表上 |
 | E2 | `knowledge.corpus` 接左脑 vault | 目前没有消费方，缺一个 `tools/build_vault.py` |
 
-## 5. 等仓库所有者拍板的三件事
+## 5. 已拍板的三件事（2026-11-26，所有者）
 
-在这三个有答案之前，相关任务不要动：
-
-1. **老庄分支怎么合**：直接 `merge dev` 进 `persona/laozhuang`，还是从 `dev` 新开
-   `persona/laozhuang-migrate` 再把内容搬过去？
-2. **英文老庄的占位语气**：先留着，还是等 D1 完成后按原文重写？
-3. **《道德经》《庄子》原文是否随仓库发布**：公版合法，但会明显增大仓库体积；
-   不发布则老庄包与费曼包一致——只有卡片，语料自备。
+1. **老庄分支**：不 merge 旧分支，内容按新结构迁入 `personas/laozhuang-zh/`，旧分支留档。
+   同一批不重复折腾：以后所有协作者只按 `COORDINATION.md` 的流程往 `dev` 提 PR。
+2. **英文老庄语气**：占位先留；中文卡定稿后按原文对应表达重写。
+3. **文言语料**：**不随仓库发布**，与费曼包一致。这条是定规：任何语料原文都不入库，
+   不只文言——不要再就「某个语料要不要随包发」重新提问。
 
 C1 的提升阈值目前取 `MIN_F1_GAIN = 0.0005`（暂定）：A4/A5 的基线只够证明切分集不回归，
 不足以校准具体数字；有更多人工切分样本后应重新标定，代码里只承认这一个常量。
@@ -149,6 +147,10 @@ C1 的提升阈值目前取 `MIN_F1_GAIN = 0.0005`（暂定）：A4/A5 的基线
   的正文在 `phenomenon`、`force_invariant`、`pattern` 等字段里。任何「按 `text` 判断」
   的代码都会静默丢卡——`_already_english` 就踩过，丢了 21 张。
 - **`data/assoc/` 与 `data/lexicon/` 都不入库。** 新克隆只有卡片，没有边。不要假设它们存在。
+- **挖矿产物和人工边分文件。** `assoc_edges.jsonl` 是人工确认边（带 mechanism），
+  `tools/build_assoc.py` 只写 `assoc_candidates.jsonl`，且拒绝覆盖含非 `cooccur` 行的文件。
+  2026-11-26 曾用早期版本把 148 条人工边覆盖成 685 条候选，从 `Feynman_PYBOT-assoc`
+  worktree 副本恢复；教训：派生工具不要在别人的产物路径上覆盖写。
 - **未知词串会整段粘连。** FMM 把不认识的 CJK 连续段合成一个 token（≤6 字整段保留），
   所以「相邻词对」永远由已知词构成；想促销生词，先得让它能被切开。按字符偏移回指时
   一律用 `segment_spans`，别用 `str.find`——粘连跨空白会让偏移对不上（B2 踩过）。
