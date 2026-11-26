@@ -18,45 +18,66 @@ from omega_mind.feynman_kb import FeynmanKB
 from omega_mind.golden_queries import GOLDEN, NEGATIVES
 
 
-def real_kb() -> FeynmanKB:
-    kb = FeynmanKB()
-    if not kb.available():
-        raise unittest.SkipTest("feynman-open knowledge not on this machine")
+def real_kb(language: str = "zh") -> FeynmanKB:
+    """One package, one language: the golden set is split the same way."""
+    kb = FeynmanKB(language=language)
+    if not kb.available() or kb.language != language:
+        raise unittest.SkipTest(f"no {language!r} knowledge package installed")
     return kb
 
 
 class TestGoldenRetrieval(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.kb = real_kb()
+        cls.kbs = {}
+        for language in {lang for _, lang, _ in GOLDEN}:
+            try:
+                cls.kbs[language] = real_kb(language)
+            except unittest.SkipTest:
+                continue
+
+    def kb_for(self, language: str) -> FeynmanKB:
+        if language not in self.kbs:
+            raise unittest.SkipTest(f"no {language!r} package installed")
+        return self.kbs[language]
 
     def test_known_questions_hit_the_right_card(self):
         for query, language, acceptable in GOLDEN:
             with self.subTest(query=query, language=language):
-                _, source = self.kb.answer(query, language=language)
-                prefix = "feynman_kb_en" if language == "en" else "feynman_kb"
-                self.assertTrue(source.startswith(prefix + ":"), source)
-                card = source.split(":", 1)[1]
+                kb = self.kb_for(language)
+                _, source = kb.answer(query)
+                root = kb.source_root + ":"
+                self.assertTrue(source.startswith(root), source)
+                card = source[len(root):]
                 self.assertIn(card, acceptable,
                               f"{query!r} -> {card}, expected {acceptable}")
+
+    def test_other_language_is_a_miss_not_a_fallback(self):
+        zh = self.kb_for("zh")
+        if "en" not in self.kbs:
+            self.skipTest("no English package installed")
+        text, source = zh.answer("what is diffraction", language="en")
+        self.assertIsNone(text, source)
+        self.assertTrue(source.endswith(":no_match"), source)
 
     def test_traps_stay_unanswered(self):
         for query, language in NEGATIVES:
             with self.subTest(query=query, language=language):
-                text, source = self.kb.answer(query, language=language)
+                kb = self.kb_for(language)
+                text, source = kb.answer(query)
                 self.assertIsNone(text, f"{query!r} answered with {source}")
                 self.assertTrue(source.endswith(":no_match"), source)
 
     def test_lookup_reports_margin_and_limit(self):
-        wide = self.kb.lookup("什么是阻尼", limit=3)
+        wide = self.kb_for("zh").lookup("什么是阻尼", limit=3)
         self.assertIsNotNone(wide.margin)
         self.assertLess(wide.margin, 0.05)
-        narrow = self.kb.lookup("什么是阻尼", limit=1)
+        narrow = self.kb_for("zh").lookup("什么是阻尼", limit=1)
         self.assertIsNone(narrow.margin)
         self.assertEqual(narrow.considered, 1)
 
     def test_lookup_exposes_score_and_source(self):
-        found = self.kb.lookup("什么是扩散")
+        found = self.kb_for("zh").lookup("什么是扩散")
         self.assertEqual(found.source, "feynman_kb:C_DIFFUSE")
         self.assertGreater(found.score, 0.3)
         self.assertEqual(found.to_dict()["source"], "feynman_kb:C_DIFFUSE")
