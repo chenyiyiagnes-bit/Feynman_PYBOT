@@ -208,6 +208,11 @@ class MindEngine:
         # learned alias.
         self._last_query: Optional[str] = None
         self._last_source: Optional[str] = None
+        # The card answered on the previous turn, for the association line to
+        # continue: "following on from what I just said". Only an immediate
+        # neighbour counts, and only when that turn was answered from a card.
+        self._last_card: Optional[str] = None
+        self._last_card_turn: int = -10
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -359,6 +364,14 @@ class MindEngine:
             "text": text,
             **result.to_dict(),
         })
+        # Remember where this answer came from, so the next turn's aside can
+        # continue the thought. Only a card counts; small talk breaks the
+        # thread on purpose.
+        if source.startswith(("feynman_kb:", "feynman_kb_en:")):
+            self._last_card = source.split(":", 1)[1]
+        else:
+            self._last_card = None
+        self._last_card_turn = self.turn_index
         self.turn_index += 1
         self.last_interaction = now
         self.state.last_ts = now
@@ -426,6 +439,12 @@ class MindEngine:
         self.kb.learn_card(text, origin="conversation-pending",
                            topic=self.kb.topic_for(text))
 
+    def _continuity_card(self) -> Optional[str]:
+        """The previous turn's card, only if that turn was the one before."""
+        if self._last_card and self._last_card_turn == self.turn_index - 1:
+            return self._last_card
+        return None
+
     def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None):
         """Left brain by language. Chinese and English never mix in one reply."""
         if policy is None:
@@ -443,6 +462,7 @@ class MindEngine:
                 prefer_kinds=policy.prefer_kinds,
                 detail=policy.detail,
                 associate=True,
+                previous_card=self._continuity_card(),
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source
@@ -458,6 +478,7 @@ class MindEngine:
                 prefer_kinds=policy.prefer_kinds,
                 detail=policy.detail,
                 associate=True,
+                previous_card=self._continuity_card(),
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source

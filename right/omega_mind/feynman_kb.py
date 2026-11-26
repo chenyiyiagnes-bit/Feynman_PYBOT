@@ -939,25 +939,29 @@ class FeynmanKB:
                min_score: Optional[float] = None, limit: int = 3,
                prefer_kinds: Iterable[str] = (),
                detail: str = "normal",
-               associate: bool = False) -> Lookup:
+               associate: bool = False,
+               previous_card: Optional[str] = None) -> Lookup:
         """Retrieve one answer plus the score, runner-up margin and how many
         candidates were considered. ``limit`` is what makes the margin
         observable: with limit=1 there is no runner-up to compare against.
 
         ``associate=True`` appends at most one hand-confirmed association
         remark. It is chosen *after* the answer is fixed and never touches
-        the source or the score.
+        the source or the score. ``previous_card`` is the card answered on
+        the previous turn; if an edge joins it to this answer, the remark
+        continues that thought instead of introducing a new card cold.
         """
         found = self._lookup(text, language=language, min_score=min_score,
                              limit=limit, prefer_kinds=prefer_kinds,
                              detail=detail)
         if associate and found.text:
             return replace(found, association=self._association_for(
-                found, language))
+                found, language, previous_card=previous_card))
         return found
 
-    def _association_for(self, found: Lookup,
-                         language: str) -> Optional[str]:
+    def _association_for(self, found: Lookup, language: str,
+                         previous_card: Optional[str] = None
+                         ) -> Optional[str]:
         if ":" not in found.source:
             return None
         card_id = found.source.split(":", 1)[1]
@@ -973,7 +977,7 @@ class FeynmanKB:
         skip = {card_id}
         skip.update(other for other, _score in found.alternatives)
         return graph.sentence(card_id, language=language, titles=titles,
-                              exclude=skip)
+                              exclude=skip, continuity_with=previous_card)
 
     def _assoc_graph(self) -> Optional[assoc.AssocGraph]:
         if self._assoc is None:
