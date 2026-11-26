@@ -305,6 +305,10 @@ class Lookup:
     # A characteristic magnitude on the answering card, spoken only when the
     # question asks for a size / speed / order of magnitude.
     scale: Optional[str] = None
+    # One question the right brain may ask after answering, built only from
+    # real data: a genuine near-tie between two cards, or the existence of a
+    # confirmed premise edge below the answered card.
+    question: Optional[str] = None
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -317,7 +321,45 @@ class Lookup:
                              for card_id, score in self.alternatives],
             "association": self.association,
             "scale": self.scale,
+            "question": self.question,
         }
+
+
+# A near-tie this close is not a confident answer: two cards are within a
+# few hundredths of each other. The hedge (engine) and the clarifying
+# question (below) share the threshold so they cannot disagree.
+QUESTION_MARGIN = 0.06
+
+
+def _question_for(found: "Lookup", titles: Dict[str, str], language: str,
+                  premise_ok: bool) -> Optional[str]:
+    """The one question the right brain may ask, or None.
+
+    It names only real things: the two near-tied cards' own titles, or the
+    fact that a confirmed premise edge sits below the answered card. A
+    missing title is never papered over with a card id.
+    """
+    if not found.text or ":" not in found.source:
+        return None
+    card_id = found.source.split(":", 1)[1]
+    if (found.margin is not None and found.margin <= QUESTION_MARGIN
+            and len(found.alternatives) >= 2):
+        top = titles.get(card_id)
+        alt = titles.get(found.alternatives[1][0])
+        if top and alt:
+            if language == "en":
+                if _CJK.search(top) or _CJK.search(alt):
+                    return None
+                return (f"I'm not sure which you meant — “{top}”, "
+                        f"or “{alt}”?")
+            return f"我拿不太准：你想问的是「{top}」，还是「{alt}」那边？"
+        return None
+    if premise_ok:
+        if language == "en":
+            return ("There is another layer under this one; ask “why” "
+                    "to go down.")
+        return "这一层底下还有一层；想往下走，就再问一句“为什么”。"
+    return None
 
 
 @dataclass
@@ -959,7 +1001,8 @@ class FeynmanKB:
                detail: str = "normal",
                associate: bool = False,
                previous_card: Optional[str] = None,
-               scale: bool = False) -> Lookup:
+               scale: bool = False,
+               curiosity: bool = False) -> Lookup:
         """Retrieve one answer plus the score, runner-up margin and how many
         candidates were considered. ``limit`` is what makes the margin
         observable: with limit=1 there is no runner-up to compare against.
@@ -992,6 +1035,16 @@ class FeynmanKB:
             anchor = self._scale_for(text, found, language)
             if anchor:
                 found = replace(found, scale=anchor)
+        if curiosity and found.text and ":" in found.source:
+            card_id = found.source.split(":", 1)[1]
+            titles = {doc.id: doc.title
+                      for doc in (self.docs_en if language == "en"
+                                  else self.docs)}
+            graph = self._assoc_graph()
+            premise_ok = bool(graph and graph.has_premise(card_id))
+            question = _question_for(found, titles, language, premise_ok)
+            if question:
+                found = replace(found, question=question)
         return found
 
     def _scale_route(self, text: str, language: str, detail: str
@@ -1070,6 +1123,28 @@ class FeynmanKB:
                 else f"往下追一层：{link}。")
         prefix = "feynman_kb_en" if language == "en" else "feynman_kb"
         return Lookup(text=lead + body, source=f"{prefix}:{premise_id}")
+
+    def recast(self, card_id: str, language: str = "zh"
+               ) -> Optional[Tuple[str, str]]:
+        """Say the card a second way, or None.
+
+        Wraps the association graph's confirmed analogy: the mind may recast
+        a card only through an edge that already exists, and only when both
+        halves (the shared mechanism and where it breaks) are written.
+        """
+        if (not card_id or card_id.startswith("learned-")
+                or card_id == "no_match"):
+            return None
+        graph = self._assoc_graph()
+        if graph is None or not graph.edges:
+            return None
+        docs = self.docs_en if language == "en" else self.docs
+        titles = {doc.id: doc.title for doc in docs}
+        hit = graph.recast(card_id, language=language, titles=titles)
+        if hit is None:
+            return None
+        line, key = hit
+        return line, f"analogy:{key}"
 
     def _association_for(self, found: Lookup, language: str,
                          previous_card: Optional[str] = None

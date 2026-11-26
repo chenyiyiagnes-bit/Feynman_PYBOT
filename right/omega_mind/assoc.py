@@ -208,6 +208,68 @@ class AssocGraph:
             return edge.b, link
         return None
 
+    def has_premise(self, card_id: str) -> bool:
+        """Is there a confirmed why-step below this card?
+
+        Used by the curiosity question: it may invite the user one step down
+        only when a real, hand-confirmed premise edge will be there.
+        """
+        return any(e.kind == "premise" and e.a == card_id
+                   and e.b != card_id
+                   for e in self.confirmed(card_id))
+
+    def recast(self, card_id: str, language: str = "zh",
+               titles: Optional[Mapping[str, str]] = None
+               ) -> Optional[Tuple[str, str]]:
+        """Say the card a second way, through a confirmed analogy.
+
+        Used when the user signals "I don't get it": repeating the card is
+        useless, so the mind recasts it through the nearest hand-confirmed
+        ``same_mechanism``/``same_equation`` edge and states where the
+        analogy breaks. Returns ``(line, edge key)``, or None when the card
+        has no analogy with both halves written. Never invents the analogy.
+        """
+        titles = titles or {}
+        for kind in ("same_mechanism", "same_equation"):
+            for edge in self.confirmed(card_id):
+                if edge.kind != kind:
+                    continue
+                if edge.a != card_id and edge.b != card_id:
+                    continue
+                other = edge.b if edge.a == card_id else edge.a
+                mechanism = _text(edge, "mechanism", language)
+                difference = _text(edge, "difference", language)
+                mapping = _text(edge, "mapping", language)
+                if not mechanism or not difference:
+                    continue
+                if kind == "same_equation" and not mapping:
+                    continue
+                name = _title(titles, other)
+                if language == "en":
+                    if (_CJK.search(name) or _CJK.search(mechanism)
+                            or _CJK.search(difference)):
+                        continue
+                    tail = (f" Match the symbols: {mapping}." if kind ==
+                            "same_equation" else "")
+                    line = (f"Put another way — this is the same "
+                            f"{'equation' if kind == 'same_equation' else 'mechanism'} "
+                            f"as \"{name}\": {mechanism}.{tail} The analogy "
+                            f"breaks here: {difference}")
+                else:
+                    if kind == "same_equation":
+                        line = (f"换个说法——它和《{name}》是同一个方程："
+                                f"{mechanism}；把符号对上：{mapping}。"
+                                f"这个比方到这儿就不成立了：{difference}")
+                    else:
+                        line = (f"换个说法——它和《{name}》是同一个机制："
+                                f"{mechanism}。这个比方到这儿就不成立了："
+                                f"{difference}")
+                cap = (MAX_SENTENCE_CHARS_EN * 2 if language == "en"
+                       else MAX_SENTENCE_CHARS * 2)
+                if len(line) <= cap:
+                    return line, f"{edge.key}"
+        return None
+
     def sentence(self, card_id: str, language: str = "zh",
                  titles: Optional[Mapping[str, str]] = None,
                  exclude: Iterable[str] = (),

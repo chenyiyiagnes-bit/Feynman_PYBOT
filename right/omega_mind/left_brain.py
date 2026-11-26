@@ -30,6 +30,12 @@ CURIOSITY_GATE = 0.09
 FATIGUE_REF = 0.70
 FATIGUE_GATE = 0.10
 
+# Momentum gates, in displaced cubies per turn. Closing this many is a real
+# settling step (one quarter turn can move 9-12 cubies, but only some change
+# side); opening this many is a fresh stir. Below the gate a turn is noise.
+SETTLING_DELTA = -2
+CHURN_DELTA = 2
+
 
 @dataclass(frozen=True)
 class LeftBrainPolicy:
@@ -49,6 +55,10 @@ class LeftBrainPolicy:
     stress: float = 0.0
     curiosity: float = 0.0
     fatigue: float = 0.0
+    # The cube's continuous reading for this turn (displacement / delta /
+    # front_load). Reported for the dashboard; only ``delta`` has a policy
+    # effect, applied in ``plan_for``.
+    cube: Dict[str, object] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -60,17 +70,24 @@ class LeftBrainPolicy:
             "stress": round(self.stress, 4),
             "curiosity": round(self.curiosity, 4),
             "fatigue": round(self.fatigue, 4),
+            "cube": dict(self.cube),
         }
 
 
 def plan_for(state: AffectState, persona: PersonaConfig,
              activations: List[Activation],
-             cube_bias=None) -> LeftBrainPolicy:
+             cube_bias=None, cube_signal=None) -> LeftBrainPolicy:
     """Compute the left-brain policy from the current affect state.
 
     ``cube_bias`` is the feedback layer's read of the front corners: it can
     widen or narrow the aperture, but the stress gate still wins — a guarded
     mind stays terse even when an inquisitive corner is on stage.
+
+    ``cube_signal`` is the arrangement's momentum for this turn. A cube that
+    just closed two or more cubies of displacement is integrating; a cube
+    that just took a fresh stir of the same size is still reacting. Only
+    those two directions change ``detail``, and neither can override the
+    stress gate.
     """
     v = state.values
     baseline_cortisol = persona.baseline("cortisol")
@@ -140,6 +157,19 @@ def plan_for(state: AffectState, persona: PersonaConfig,
         elif cube_bias.verbosity <= -0.20:
             detail = "brief"
 
+    if cube_signal is not None:
+        # Momentum, after the corner bias so a fresh stir can pull back an
+        # aperture the bias just opened. A settling cube is the only path
+        # that may widen a calm mind's answer; a stir never forces brief on
+        # its own, because that would double-count the stress channel.
+        if cube_signal.delta >= CHURN_DELTA:
+            if detail == "rich":
+                detail = "normal"
+        elif cube_signal.delta <= SETTLING_DELTA:
+            if (detail == "normal" and stress < 0.20
+                    and v["energy"] >= 0.55):
+                detail = "rich"
+
     return LeftBrainPolicy(
         min_score=min_score,
         limit=limit,
@@ -149,4 +179,5 @@ def plan_for(state: AffectState, persona: PersonaConfig,
         stress=stress,
         curiosity=curiosity,
         fatigue=fatigue,
+        cube=cube_signal.to_dict() if cube_signal is not None else {},
     )

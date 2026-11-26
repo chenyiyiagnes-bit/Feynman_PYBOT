@@ -94,6 +94,11 @@ _HEDGE = {
 }
 _HEDGE_MARGIN = 0.06
 
+# A curious mind may ask one question, and then has to listen for a while.
+# Three turns is long enough that a question reads as interest rather than
+# as an interview.
+QUESTION_COOLDOWN = 3
+
 # A bare follow-up that asks for the reason behind the last answer. It must
 # carry no subject of its own: "为什么天空是蓝的" is a new question, not a
 # request to go deeper into the rainbow.
@@ -103,6 +108,17 @@ _WHY_ZH = re.compile(
 _WHY_EN = re.compile(
     r"^(?:why|why so|how come|how so|on what grounds|what makes that so)"
     r"[?.! ]*$", re.IGNORECASE)
+
+# A bare "I don't get it". Repeating the card is useless, so the mind may
+# recast it through a confirmed analogy — once per card, never twice.
+_CONFUSION_ZH = re.compile(
+    r"^(?:没懂|没听懂|没明白|不明白|什么意思|啥意思|换个说法|再说一遍|"
+    r"说人话|打个比方)[？?。！!~～\s]*$")
+_CONFUSION_EN = re.compile(
+    r"^(?:i (?:don'?t|do not) (?:get|understand)(?: it)?|"
+    r"what do you mean|explain (?:that )?(?:again|simpler)|"
+    r"in plain (?:english|words)|put it another way)[?.! ]*$",
+    re.IGNORECASE)
 
 # Questions the semantic tier can answer directly. These are the only paths
 # by which stored facts reach a reply; the KB still owns everything else.
@@ -226,6 +242,13 @@ class MindEngine:
         # Cards already visited by a "why?" chain, so a cyclic pair of
         # premise edges cannot ping-pong forever.
         self._why_seen: set = set()
+        # Cards already recast through an analogy after "I don't get it".
+        # Saying the same recast twice is worse than saying nothing.
+        self._recast_seen: set = set()
+        # When the mind last asked a question of its own. A curious mind may
+        # ask, but not every turn: an engine that interrogates the user is
+        # not curious, it is tiresome.
+        self._last_question_turn: int = -10 ** 9
         # Loose comparisons ("相当于", "可以看作") wait one or two turns for a
         # confirmation signal before becoming cards; explicit ones don't.
         self._pending_metaphors: List[Dict[str, Any]] = []
@@ -297,7 +320,8 @@ class MindEngine:
         # should look for and compose facts. It never supplies facts itself.
         left_policy = left_brain.plan_for(
             self.state, self.persona, activations,
-            cube_bias=self.cube_feedback.bias(self.cube))
+            cube_bias=self.cube_feedback.bias(self.cube),
+            cube_signal=self.cube_feedback.signal)
         self.last_left_brain = left_policy.to_dict()
 
         self.relations.touch(user, now)
@@ -346,6 +370,18 @@ class MindEngine:
         aside = (self.last_retrieval.get("scale")
                  or self.last_retrieval.get("association"))
         reply = _with_association(reply, aside, left_policy.detail)
+        # Curiosity, if there is room: the question was built by the lookup
+        # from a real near-tie or a confirmed premise edge. It rides in the
+        # same single trailing slot as an aside, and only in ``explore``.
+        question = self.last_retrieval.get("question")
+        if (question and not aside
+                and left_policy.posture == "explore"
+                and self.turn_index - self._last_question_turn
+                >= QUESTION_COOLDOWN):
+            spoken = _with_association(reply, question, left_policy.detail)
+            if spoken != reply:
+                reply = spoken
+                self._last_question_turn = self.turn_index
 
         result = TurnResult(
             reply=reply,
@@ -468,6 +504,14 @@ class MindEngine:
         pattern = _WHY_EN if self.language == "en" else _WHY_ZH
         return bool(pattern.match(stripped))
 
+    def _is_confusion(self, text: str) -> bool:
+        """A short, subject-free "I don't get it" — a recast, not a query."""
+        stripped = text.strip()
+        if not stripped or len(stripped) > 24:
+            return False
+        pattern = _CONFUSION_EN if self.language == "en" else _CONFUSION_ZH
+        return bool(pattern.match(stripped))
+
     def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None):
         """Left brain by language. Chinese and English never mix in one reply."""
         if policy is None:
@@ -476,6 +520,20 @@ class MindEngine:
         if personal is not None:
             self.last_retrieval = {}
             return personal
+        # "I don't get it" is not a new question. Say the last card a second
+        # way, through a confirmed analogy — and only once per card, because
+        # a recast repeated is just the same explanation again.
+        if self._is_confusion(text):
+            previous = self._continuity_card()
+            if previous and previous not in self._recast_seen:
+                again = self.kb.recast(previous, language=self.language)
+                if again is not None:
+                    self._recast_seen.add(previous)
+                    self.last_retrieval = {"source": again[1],
+                                           "recast": again[0]}
+                    return again[0], again[1]
+        else:
+            self._recast_seen.clear()
         # A bare "why?" is not a new query: it asks the previous answer to go
         # one premise deeper. Only a confirmed premise edge counts, so this
         # never invents a reason; with no edge the ordinary lookup runs.
@@ -506,6 +564,7 @@ class MindEngine:
                 associate=True,
                 previous_card=self._continuity_card(),
                 scale=True,
+                curiosity=policy.posture == "explore",
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source
@@ -523,6 +582,7 @@ class MindEngine:
                 associate=True,
                 previous_card=self._continuity_card(),
                 scale=True,
+                curiosity=policy.posture == "explore",
             )
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source
@@ -758,6 +818,7 @@ class MindEngine:
             "resonance": self.resonance_snapshot(),
             "left_brain": self.last_left_brain,
             "retrieval": self.last_retrieval,
+            "last_question_turn": self._last_question_turn,
             "challenge": (self.challenge_session.snapshot()
                           if self.challenge_session is not None else {}),
             "pybot": self._pybot_snapshot(),
@@ -893,6 +954,8 @@ class MindEngine:
         # be saved and silently dropped on load.
         engine.last_left_brain = dict(data.get("left_brain") or {})
         engine.last_retrieval = dict(data.get("retrieval") or {})
+        engine._last_question_turn = int(data.get("last_question_turn",
+                                                  -10 ** 9))
         challenge = data.get("challenge") or {}
         if challenge:
             engine.challenge().restore(challenge)
@@ -933,5 +996,6 @@ class MindEngine:
         self.last_left_brain = {}
         self.last_retrieval = {}
         self.challenge_session = None
+        self._last_question_turn = -10 ** 9
         if self.store_path and self.store_path.exists():
             self.store_path.unlink()
