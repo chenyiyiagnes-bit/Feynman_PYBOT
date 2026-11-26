@@ -49,6 +49,20 @@ def package_language(package_dir: Path) -> Optional[str]:
     return language if language in ("zh", "en") else None
 
 
+def _wants_recall_expansion(package_dir: Path) -> bool:
+    """Whether a package opted into the derived term graph.
+
+    ``recall_expansion`` is a persona-level switch, read from the package's
+    own ``persona.json``. Unreadable or absent means off: a rebuilt graph is
+    never allowed to change answers unless the package asked for it.
+    """
+    try:
+        data = json.loads((Path(package_dir) / "persona.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return bool(data.get("recall_expansion"))
+
+
 def _shipped_knowledge_dirs() -> Tuple[Path, ...]:
     return tuple(sorted(
         path for path in PACKAGES_ROOT.glob("*/knowledge")
@@ -495,6 +509,7 @@ class FeynmanKB:
     @classmethod
     def for_language(cls, language: str,
                      profile: Optional[str] = None) -> Optional["FeynmanKB"]:
+
         """A KB for the installed package of ``language``, or None.
 
         Used when a mind changes language at runtime: the new language needs
@@ -509,11 +524,15 @@ class FeynmanKB:
             return None
         root = path.parent
         data = root / "data"
+        # Recall expansion is the package's choice, same as in app.runtime:
+        # a machine that once built the term graph must not answer differently
+        # from a fresh clone unless the package asked for the graph.
+        lexicon = str(data / "lexicon") if _wants_recall_expansion(root) else None
         return cls(
             knowledge_dir=str(path),
             learned_dir=str(data / "kb_learned"),
             assoc_path=str(data / "assoc" / "assoc_edges.jsonl"),
-            lexicon_dir=str(data / "lexicon"),
+            lexicon_dir=lexicon,
             language=language,
             profile=profile,
             source_prefix=root.name,

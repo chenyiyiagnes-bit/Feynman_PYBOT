@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "language": "en",
+  "golden": [
+    {
+      "query": "What is entropy?",
+      "acceptable": [
+        "flp-i-44",
+        "sm-005",
+        "thermo-entropy-disorder"
+      ]
+    },
+    {
+      "query": "Why does hot water cool down?",
+      "acceptable": [
+        "U0_RELAX"
+      ]
+    },
+    {
+      "query": "What is science?",
+      "acceptable": [
+        "persona-science-001"
+      ]
+    },
+    {
+      "query": "What is damping?",
+      "acceptable": [
+        "C_DAMP",
+        "U0_DAMP"
+      ]
+    },
+    {
+      "query": "Who are you?",
+      "acceptable": [
+        "self-001"
+      ]
+    },
+    {
+      "query": "What is an atom?",
+      "acceptable": [
+        "flp-i-01"
+      ]
+    },
+    {
+      "query": "why is a rainbow always seven colours",
+      "acceptable": [
+        "opt-009",
+        "opt-010"
+      ]
+    },
+    {
+      "query": "what is synchrotron radiation",
+      "acceptable": [
+        "opt-014"
+      ]
+    },
+    {
+      "query": "why can bees see ultraviolet",
+      "acceptable": [
+        "opt-016"
+      ]
+    },
+    {
+      "query": "what is interference",
+      "acceptable": [
+        "opt-017"
+      ]
+    },
+    {
+      "query": "what is diffraction",
+      "acceptable": [
+        "opt-018"
+      ]
+    },
+    {
+      "query": "what is polarization",
+      "acceptable": [
+        "opt-019"
+      ]
+    },
+    {
+      "query": "what is vacuum polarization",
+      "acceptable": [
+        "qed-007"
+      ]
+    },
+    {
+      "query": "what is dielectric polarization",
+      "acceptable": [
+        "opt-020"
+      ]
+    },
+    {
+      "query": "what is the dielectric constant",
+      "acceptable": [
+        "opt-020"
+      ]
+    },
+    {
+      "query": "what is a dielectric",
+      "acceptable": [
+        "em-dielectric-conductor",
+        "opt-020"
+      ]
+    },
+    {
+      "query": "what is electric susceptibility",
+      "acceptable": [
+        "opt-020"
+      ]
+    },
+    {
+      "query": "how does a diffraction grating work",
+      "acceptable": [
+        "opt-018"
+      ]
+    }
+  ],
+  "negatives": [
+    "tell me a joke",
+    "what is the capital of France",
+    "why can't I remember yesterday",
+    "How does memory work?",
+    "Why does ice float?"
+  ]
+}

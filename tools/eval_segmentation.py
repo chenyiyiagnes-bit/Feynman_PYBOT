@@ -1,13 +1,16 @@
-"""Compare segmentation schemes on the golden retrieval set.
+"""Compare segmentation schemes on each package's own golden set.
 
 A change to how text is cut into words can quietly move retrieval: the index
 and the query are both built from tokens, so a different boundary is a
 different vector. This tool scores each scheme on two things that matter —
 
-* the golden questions (``omega_mind.golden_queries``): does the right card
-  still win, do the traps stay unanswered;
+* the package's golden questions (``personas/<id>/evals/golden.json``): does
+  the right card still win, do the traps stay unanswered;
 * the hand-segmented reference set (``tests/data/segmentation_reference.json``):
   boundary precision/recall against words a human wrote down.
+
+Each package is scored with its own cards and its own net; a package without
+``evals/golden.json`` is skipped, not judged against another package's net.
 
 Usage::
 
@@ -36,9 +39,10 @@ for extra in (ROOT, ROOT / "right"):
 
 from omega_mind import feynman_kb  # noqa: E402
 from omega_mind import lang  # noqa: E402
-from omega_mind.golden_queries import GOLDEN, NEGATIVES  # noqa: E402
+from omega_mind.golden_queries import for_package, nets_by_package  # noqa: E402
 
 REFERENCE = ROOT / "tests" / "data" / "segmentation_reference.json"
+PACKAGES_ROOT = ROOT / "personas"
 BASELINE = "bigram"
 
 
@@ -147,42 +151,77 @@ def evaluate_reference(scheme: Callable[[str], List[str]]) -> Dict[str, object]:
             "exact": exact, "total": len(rows)}
 
 
-def evaluate_retrieval(scheme: Callable[[str], List[str]]) -> Dict[str, object]:
+def _package_language(package: Path) -> str:
+    try:
+        data = json.loads((package / "persona.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "zh"
+    return str(data.get("language") or "zh")
+
+
+def packages_with_nets(root: Path = PACKAGES_ROOT) -> List[Path]:
+    """Packages that ship an eval net; one language, one index, one score."""
+    return [root / name for name in sorted(nets_by_package(root))]
+
+
+def evaluate_retrieval(scheme: Callable[[str], List[str]],
+                       package: Path) -> Dict[str, object]:
+    golden, negatives = for_package(package.name)
+    language = _package_language(package)
     with patched(scheme):
-        kb = feynman_kb.FeynmanKB()
+        kb = feynman_kb.FeynmanKB(
+            knowledge_dir=str(package / "knowledge"),
+            language=language, source_prefix=package.name)
         if not kb.available():
-            raise SystemExit("feynman knowledge is not on this machine; "
-                             "set QBOT_FEYNMAN_CORPUS or run where it exists")
+            return {"unavailable": f"no cards in {package / 'knowledge'}"}
+        prefix = kb.source_root + ":"
         hits, misses = 0, []
-        for query, language, acceptable in GOLDEN:
-            _, source = kb.answer(query, language=language)
-            card = source.split(":", 1)[1] if ":" in source else ""
+        for query, _, acceptable in golden:
+            _, source = kb.answer(query)
+            card = source[len(prefix):] if source.startswith(prefix) else ""
             if card in acceptable:
                 hits += 1
             else:
-                misses.append({"query": query, "language": language,
-                               "got": card, "expected": sorted(acceptable)})
+                misses.append({"query": query, "got": card,
+                               "expected": sorted(acceptable)})
         rejected, leaks = 0, []
-        for query, language in NEGATIVES:
-            text, source = kb.answer(query, language=language)
+        for query, _ in negatives:
+            text, source = kb.answer(query)
             if text is None and source.endswith(":no_match"):
                 rejected += 1
             else:
-                leaks.append({"query": query, "language": language, "source": source})
-    return {"hits": hits, "total": len(GOLDEN), "misses": misses,
-            "rejected": rejected, "negatives": len(NEGATIVES), "leaks": leaks}
+                leaks.append({"query": query, "source": source})
+    return {"hits": hits, "total": len(golden), "misses": misses,
+            "rejected": rejected, "negatives": len(negatives), "leaks": leaks}
+
+
+def _merge_totals(rows: Dict[str, Dict[str, object]]) -> Dict[str, object]:
+    totals = {"hits": 0, "total": 0, "rejected": 0, "negatives": 0}
+    misses, leaks = [], []
+    for package, row in rows.items():
+        for key in totals:
+            totals[key] += int(row.get(key) or 0)
+        misses.extend(dict(miss, package=package) for miss in row.get("misses") or [])
+        leaks.extend(dict(leak, package=package) for leak in row.get("leaks") or [])
+    return dict(totals, misses=misses, leaks=leaks)
 
 
 def run(schemes: Dict[str, Callable[[str], List[str]]]) -> Dict[str, object]:
-    report: Dict[str, object] = {"baseline": BASELINE, "schemes": {}}
+    packages = packages_with_nets()
+    report: Dict[str, object] = {"baseline": BASELINE,
+                                 "packages": [p.name for p in packages],
+                                 "schemes": {}}
     for name, scheme in schemes.items():
+        rows: Dict[str, Dict[str, object]] = {}
         try:
-            retrieval = evaluate_retrieval(scheme)
+            for package in packages:
+                rows[package.name] = evaluate_retrieval(scheme, package)
         except ImportError as error:
             report["schemes"][name] = {"unavailable": str(error)}
             continue
-        reference = evaluate_reference(scheme)
-        report["schemes"][name] = {"retrieval": retrieval, "reference": reference}
+        report["schemes"][name] = {"packages": rows,
+                                   "retrieval": _merge_totals(rows),
+                                   "reference": evaluate_reference(scheme)}
     return report
 
 
@@ -194,6 +233,17 @@ def regressions(report: Dict[str, object]) -> List[str]:
         raise SystemExit("baseline scheme unavailable; cannot judge candidates")
     base_retrieval = base["retrieval"]
     problems: List[str] = []
+    # The shipped scheme must still pass its own packages' nets: a corpus,
+    # index or scoring change that breaks the baseline is a regression too,
+    # not just a candidate that scores lower.
+    total = base_retrieval.get("total")
+    if total is not None and base_retrieval["hits"] < total:
+        problems.append(f"{BASELINE}: golden hits {base_retrieval['hits']} < "
+                        f"{total} (shipped scheme fails its own net)")
+    negatives = base_retrieval.get("negatives")
+    if negatives is not None and base_retrieval["rejected"] < negatives:
+        problems.append(f"{BASELINE}: traps rejected {base_retrieval['rejected']} < "
+                        f"{negatives} (a trap got answered)")
     for name, row in schemes.items():
         if name == BASELINE or "retrieval" not in row:
             continue
@@ -208,23 +258,38 @@ def regressions(report: Dict[str, object]) -> List[str]:
 
 
 def render(report: Dict[str, object]) -> str:
-    lines = ["scheme    golden     traps      F1     exact   note"]
+    lines = ["package       scheme    golden     traps      F1     exact   note"]
+    base_scheme = report["schemes"].get(report["baseline"]) or {}
     for name, row in report["schemes"].items():
         if "unavailable" in row:
-            lines.append(f"{name:<9} -          -          -      -       {row['unavailable']}")
+            lines.append(f"{'-':<13} {name:<9} -          -          -      -       "
+                         f"{row['unavailable']}")
             continue
-        retrieval, reference = row["retrieval"], row["reference"]
-        note = ""
+        reference = row["reference"]
+        for package, got in row["packages"].items():
+            note = "baseline" if name == report["baseline"] else ""
+            if "unavailable" in got:
+                lines.append(f"{package:<13} {name:<9} -          -          -      "
+                             f"-       {got['unavailable']}")
+                continue
+            lines.append(
+                f"{package:<13} {name:<9} {got['hits']:>3}/{got['total']:<3} "
+                f" {got['rejected']:>3}/{got['negatives']:<3} "
+                f" {reference['mean_f1']:>6.3f}  "
+                f"{reference['exact']:>3}/{reference['total']:<3}  {note}")
+        retrieval = row["retrieval"]
         if name == report["baseline"]:
-            note = "baseline"
-        else:
-            base = report["schemes"][report["baseline"]]["retrieval"]
-            delta = retrieval["hits"] - base["hits"]
+            note = "baseline total"
+        elif "retrieval" in base_scheme:
+            delta = retrieval["hits"] - base_scheme["retrieval"]["hits"]
             note = "same as baseline" if delta == 0 else f"{delta:+d} vs baseline"
+        else:
+            note = ""
         lines.append(
-            f"{name:<9} {retrieval['hits']:>3}/{retrieval['total']:<3} "
+            f"{'ALL':<13} {name:<9} {retrieval['hits']:>3}/{retrieval['total']:<3} "
             f" {retrieval['rejected']:>3}/{retrieval['negatives']:<3} "
-            f" {reference['mean_f1']:>6.3f}  {reference['exact']:>3}/{reference['total']:<3}  {note}")
+            f" {reference['mean_f1']:>6.3f}  "
+            f"{reference['exact']:>3}/{reference['total']:<3}  {note}")
     return "\n".join(lines)
 
 

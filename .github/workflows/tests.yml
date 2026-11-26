@@ -24,3 +24,5 @@ jobs:
         run: python -m unittest discover -s omega_mind/tests
       - name: card coverage (no row disappears silently)
         run: python tools/card_coverage.py
+      - name: retrieval nets (each package's golden questions still work)
+        run: python tools/eval_segmentation.py --scheme bigram --strict

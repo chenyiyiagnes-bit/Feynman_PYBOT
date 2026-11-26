@@ -182,7 +182,10 @@ class TestShippedPackages(unittest.TestCase):
         data = kb.dir.parent / "data"
         self.assertEqual(kb.learned_dir, data / "kb_learned")
         self.assertEqual(kb.assoc_path, data / "assoc" / "assoc_edges.jsonl")
-        self.assertEqual(kb.lexicon_dir, data / "lexicon")
+        # The term graph is the package's opt-in, exactly as in app.runtime:
+        # no shipped package asks for it, so a language switch must not turn
+        # it on just because a machine happened to build the graph.
+        self.assertIsNone(kb.lexicon_dir)
         self.assertEqual(kb.source_prefix, kb.dir.parent.name)
 
     def test_chinese_index_holds_no_english_rows(self):

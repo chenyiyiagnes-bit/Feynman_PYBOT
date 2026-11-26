@@ -1,0 +1,304 @@
+{
+  "schema": 1,
+  "language": "zh",
+  "golden": [
+    {
+      "query": "热水为什么会自己变凉",
+      "acceptable": [
+        "U0_RELAX"
+      ]
+    },
+    {
+      "query": "为什么端一杯满水走路反而稳",
+      "acceptable": [
+        "U0_DAMP"
+      ]
+    },
+    {
+      "query": "钱不会凭空多出来，那它会去哪",
+      "acceptable": [
+        "U0_FLUX"
+      ]
+    },
+    {
+      "query": "为什么有些事一开始不起眼，后来收不住",
+      "acceptable": [
+        "U0_FEEDBACK"
+      ]
+    },
+    {
+      "query": "什么是科学",
+      "acceptable": [
+        "persona-science-001"
+      ]
+    },
+    {
+      "query": "费曼是谁",
+      "acceptable": [
+        "self-001"
+      ]
+    },
+    {
+      "query": "费曼怎么看待权威",
+      "acceptable": [
+        "card-003"
+      ]
+    },
+    {
+      "query": "什么是阻尼",
+      "acceptable": [
+        "C_DAMP",
+        "U0_DAMP"
+      ]
+    },
+    {
+      "query": "熵是什么",
+      "acceptable": [
+        "flp-i-44",
+        "sm-005",
+        "thermo-entropy-disorder"
+      ]
+    },
+    {
+      "query": "什么是能量守恒",
+      "acceptable": [
+        "C_FLUX",
+        "flp-i-04"
+      ]
+    },
+    {
+      "query": "什么是扩散",
+      "acceptable": [
+        "C_DIFFUSE"
+      ]
+    },
+    {
+      "query": "重整化是什么",
+      "acceptable": [
+        "S_RG",
+        "qed-005"
+      ]
+    },
+    {
+      "query": "量子电动力学是讲什么的",
+      "acceptable": [
+        "qed-001"
+      ]
+    },
+    {
+      "query": "费曼图怎么读",
+      "acceptable": [
+        "qed-003"
+      ]
+    },
+    {
+      "query": "路径积分是什么意思",
+      "acceptable": [
+        "qed-002"
+      ]
+    },
+    {
+      "query": "电子磁矩为什么不是 2",
+      "acceptable": [
+        "qed-006"
+      ]
+    },
+    {
+      "query": "宇称不守恒是谁发现的",
+      "acceptable": [
+        "part-005"
+      ]
+    },
+    {
+      "query": "夸克为什么不能单独存在",
+      "acceptable": [
+        "part-003"
+      ]
+    },
+    {
+      "query": "部分子模型是什么",
+      "acceptable": [
+        "part-002"
+      ]
+    },
+    {
+      "query": "中微子是什么",
+      "acceptable": [
+        "part-006"
+      ]
+    },
+    {
+      "query": "库珀对是什么",
+      "acceptable": [
+        "cm-002"
+      ]
+    },
+    {
+      "query": "约瑟夫森效应是什么",
+      "acceptable": [
+        "cm-003"
+      ]
+    },
+    {
+      "query": "受激辐射是什么",
+      "acceptable": [
+        "opt-001"
+      ]
+    },
+    {
+      "query": "为什么彩虹总是七种颜色呢",
+      "acceptable": [
+        "opt-009",
+        "opt-010"
+      ]
+    },
+    {
+      "query": "天空为什么是蓝色的",
+      "acceptable": [
+        "opt-012"
+      ]
+    },
+    {
+      "query": "光为什么在水里拐弯",
+      "acceptable": [
+        "opt-011"
+      ]
+    },
+    {
+      "query": "透镜为什么能成像",
+      "acceptable": [
+        "opt-013"
+      ]
+    },
+    {
+      "query": "什么是像差",
+      "acceptable": [
+        "opt-013"
+      ]
+    },
+    {
+      "query": "同步辐射是什么",
+      "acceptable": [
+        "opt-014"
+      ]
+    },
+    {
+      "query": "为什么暗处看不出颜色",
+      "acceptable": [
+        "opt-015"
+      ]
+    },
+    {
+      "query": "蜜蜂为什么能看见紫外",
+      "acceptable": [
+        "opt-016"
+      ]
+    },
+    {
+      "query": "干涉是什么",
+      "acceptable": [
+        "opt-017"
+      ]
+    },
+    {
+      "query": "什么是干涉",
+      "acceptable": [
+        "opt-017"
+      ]
+    },
+    {
+      "query": "衍射是什么",
+      "acceptable": [
+        "opt-018"
+      ]
+    },
+    {
+      "query": "光栅是怎么分光的",
+      "acceptable": [
+        "opt-018"
+      ]
+    },
+    {
+      "query": "干涉和衍射有什么区别",
+      "acceptable": [
+        "opt-018",
+        "wave-interference-diffraction"
+      ]
+    },
+    {
+      "query": "偏振是什么",
+      "acceptable": [
+        "opt-019"
+      ]
+    },
+    {
+      "query": "布儒斯特角是什么",
+      "acceptable": [
+        "opt-019"
+      ]
+    },
+    {
+      "query": "单个光子怎么过偏振片",
+      "acceptable": [
+        "opt-004"
+      ]
+    },
+    {
+      "query": "极化是什么",
+      "acceptable": [
+        "opt-020"
+      ]
+    },
+    {
+      "query": "电介质极化是什么",
+      "acceptable": [
+        "opt-020"
+      ]
+    },
+    {
+      "query": "介电常数是什么",
+      "acceptable": [
+        "opt-020"
+      ]
+    },
+    {
+      "query": "真空极化是什么",
+      "acceptable": [
+        "qed-005",
+        "qed-007"
+      ]
+    },
+    {
+      "query": "什么是电介质",
+      "acceptable": [
+        "em-dielectric-conductor",
+        "opt-020"
+      ]
+    },
+    {
+      "query": "相变是什么",
+      "acceptable": [
+        "sm-003"
+      ]
+    },
+    {
+      "query": "引力波有能量吗",
+      "acceptable": [
+        "grav-002"
+      ]
+    },
+    {
+      "query": "量子计算是谁提出的",
+      "acceptable": [
+        "comp-002"
+      ]
+    }
+  ],
+  "negatives": [
+    "我昨天吃了什么",
+    "我们上次聊了什么",
+    "讲个笑话",
+    "为什么天气会变",
+    "为什么冰块浮在水上"
+  ]
+}
