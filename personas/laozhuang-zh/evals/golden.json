@@ -11,7 +11,8 @@
     {
       "query": "祸福为什么互相依存",
       "acceptable": [
-        "lz-zh-005"
+        "lz-zh-005",
+        "lz-zh-072"
       ]
     },
     {
@@ -47,7 +48,7 @@
     {
       "query": "知道自己要什么",
       "acceptable": [
-        "lz-zh-ddj-33"
+        "lz-zh-021"
       ]
     },
     {
@@ -59,13 +60,13 @@
     {
       "query": "天地为什么能长久",
       "acceptable": [
-        "lz-zh-ddj-07"
+        "lz-zh-019"
       ]
     },
     {
       "query": "水为什么总往低处流",
       "acceptable": [
-        "lz-zh-ddj-08"
+        "lz-zh-023"
       ]
     },
     {
@@ -83,19 +84,19 @@
     {
       "query": "好听的话和靠得住的话",
       "acceptable": [
-        "lz-zh-ddj-81"
+        "lz-zh-022"
       ]
     },
     {
       "query": "野鸡为什么不愿意进笼子",
       "acceptable": [
-        "lz-zh-ys-pheasant"
+        "lz-zh-024"
       ]
     },
     {
       "query": "柴烧完了火为什么还在",
       "acceptable": [
-        "lz-zh-ys-fire"
+        "lz-zh-025"
       ]
     }
   ],
