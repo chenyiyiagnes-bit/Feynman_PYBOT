@@ -619,12 +619,23 @@ class TestEnglishKnowledge(unittest.TestCase):
             self.assertFalse(_has_cjk_in_values(row), name)
             if name == "verified_facts.jsonl":
                 # Original English web quotes, not a translation of a
-                # Chinese card. Translated rows below still require provenance.
+                # Chinese card.
                 self.assertNotEqual(row.get("source_language"), "zh", name)
                 self.assertIsNone(row.get("translation_of"), name)
                 continue
-            self.assertEqual(row.get("translation_of"), row["id"], name)
-            self.assertEqual(row.get("source_language"), "zh", name)
+            support = row.get("support") or []
+            sourced = any(isinstance(item, dict) and item.get("source")
+                          for item in support)
+            if sourced:
+                # Rewritten from an English source. The old zh-translation
+                # marks are the wrong bloodline and must not remain.
+                self.assertIsNone(row.get("translation_of"), row["id"])
+                self.assertIsNone(row.get("source_language"), row["id"])
+            else:
+                # No English source was checked. Leave the old marks so the
+                # gap stays visible.
+                self.assertEqual(row.get("translation_of"), row["id"], name)
+                self.assertEqual(row.get("source_language"), "zh", name)
 
     def test_persona_science_answer_omits_internal_usage_note(self):
         # persona-science-001 carries a note telling the assistant when to
