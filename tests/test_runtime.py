@@ -83,9 +83,23 @@ class TestBuild(unittest.TestCase):
         self.assertTrue(result.source.startswith("feynman-zh"), result.source)
 
     def test_no_knowledge_dir_still_builds(self):
-        engine = build("laozhuang-zh", personas_root=PERSONAS, enable_bridge=False)
-        self.assertEqual(engine.kb.mode, "disabled")
-        self.assertTrue(engine.turn("你好", now=1000.0).reply)
+        # A bare package: persona.json and nothing else. Every shipped package
+        # now carries cards, so borrowing one would test nothing.
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bare = Path(tmp) / "bare-zh"
+            bare.mkdir()
+            persona = json.loads(
+                (PERSONAS / "laozhuang-zh" / "persona.json").read_text(encoding="utf-8"))
+            persona["id"] = "bare-zh"
+            persona.pop("knowledge", None)
+            (bare / "persona.json").write_text(
+                json.dumps(persona, ensure_ascii=False), encoding="utf-8")
+            engine = build("bare-zh", personas_root=Path(tmp), enable_bridge=False)
+            self.assertEqual(engine.kb.mode, "disabled")
+            self.assertTrue(engine.turn("你好", now=1000.0).reply)
 
 
 if __name__ == "__main__":
