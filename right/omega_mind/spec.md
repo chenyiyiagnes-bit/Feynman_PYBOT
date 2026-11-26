@@ -62,9 +62,10 @@ prefixes/endings 正常时照旧使用。directness 与 tempo 只作为下游提
   查询权重只统计语料里存在的词，标题词命中两个以上有少量加分；中文按意图补同义词
   （"浮在水上"→"浮力 漂浮"），英文用词级 token + 轻量词干。
   三条拒答护栏：英文闲聊、中英文个人经历问题、英文第三人称 why（除非点名费曼）。
-- 费曼「人生与艺术」卡包（`knowledge/feynman_life_art.jsonl` + `data/kb_en/feynman_life_art_en.jsonl`）：
+- 费曼「人生与艺术」卡包（`personas/feynman-zh/knowledge/feynman_life_art.jsonl` +
+  `personas/feynman-en/knowledge/feynman_life_art.jsonl`）：
   画画、花与科学、邦戈鼓/桑巴、不懂装懂、发现的乐趣、社会期待、开锁、失去阿琳，八张三语对齐卡。
-  中英 id 一一对应；英文层是译文摘要，不冒充费曼原话。
+  中英分属两个语言包，卡片按同一批主题一一对应；英文卡用英文表达，不是逐字译文回填。
   `lookup()` 返回 `score`、`margin`（与第二候选差距）、`considered`；
   `margin` 只在候选数 ≥2 时存在，候选数被压到 1 时没有可比对象。
   金标集 `tests/test_retrieval_quality.py`：65 个正例 + 10 个必拒陷阱，改权重先跑它。
@@ -112,10 +113,11 @@ prefixes/endings 正常时照旧使用。directness 与 tempo 只作为下游提
   边合法性、候选隔离、单句上限、来源不变、引擎真的追加、跨轮接续、为什么走一层、锚点只在问数量级时出声、
   换写只用确认过的类比且带失效点、同一张卡不重复换写、提问只用真标题且姿态/冷却/单一尾位生效、
   反思同卡换面不重复、有上限、无新面说原文、带主语的问题不进入反思、已说面随存档保存。
-- 费曼「数学与计算」卡包（`knowledge/feynman_math_comp.jsonl` + `data/kb_en/feynman_math_comp_en.jsonl`）：
+- 费曼「数学与计算」卡包（`personas/feynman-zh/knowledge/feynman_math_comp.jsonl` +
+  `personas/feynman-en/knowledge/feynman_math_comp.jsonl`）：
   路径积分小箭头、微积分直觉、自制记号、可逆计算与发热、量子模拟、纳米空间、车牌概率、心算立方根，
   八张三语对齐卡。字段只用加载器真正读取的 `title`/`text`/`tags`/`aliases`，不用
-  `topic`/`triggers`/`content`；中英 id 一一对应，英文层为译文摘要。
+  `topic`/`triggers`/`content`；中英两包按同一批主题一一对应，英文卡以英文表达。
   `tests/test_feynman_math_comp.py` 校验行数、manifest sha256、双语对齐、检索命中与引擎作答。
 - 软召回：分数落在 `SOFT_SCORE=0.24` 到 `0.30` 之间、且与第二候选差距 ≥`SOFT_MARGIN=0.02`
   （或没有第二候选）时，仍以 `feynman_kb_soft:<id>` 作答，`source` 前缀标明这是弱匹配。
@@ -167,9 +169,10 @@ prefixes/endings 正常时照旧使用。directness 与 tempo 只作为下游提
 
 - `engine.language ∈ {zh, en}`，随存档保存；CLI `--lang` / `/lang`，服务器 `/api/lang`，WS 消息可带 `lang`。
 - 回复语言必须与模式一致：中文模式要求回复含中文，英文模式要求回复不含中文，否则换兜底句。
-- 中文模式左脑 = feynman_kb（中文索引）→ 内置中文库；英文模式左脑 = feynman_kb（`data/kb_en`
-  译文索引）→ PyBot → 英文内置库。英文译文层按 `id` 覆盖 `title/text/...` 等回复字段，
-  中文卡仍是事实源；本来就英文的 `verified_facts` 原样使用，不做中文回译。
+- 中文模式左脑 = feynman_kb（`personas/feynman-zh`）→ 内置中文库；英文模式左脑 =
+  feynman_kb（`personas/feynman-en` 自己的卡片包）→ PyBot → 英文内置库。一个包一种语言：
+  英文卡按英文写就，不是覆盖在中文卡上的译文层；本来就英文的 `verified_facts` 原样使用，
+  不做中文回译。
   译文是机器翻译，不是费曼原话；引用原话只用 `verified_facts` 或原始英文片段。
   覆盖层检查 id/`translation_of` 对齐、字段类型、递归无中文；不做逐条人工语义校对。
   两边都不互相回退到中文，避免中英混排。PyBot 的中文输入只会落进 greeting，因此中文模式不调用它。

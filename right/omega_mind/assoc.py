@@ -13,7 +13,8 @@ one but isn't". This module stores that missing layer as explicit edges:
   and it never changes which card answered (the caller keeps its source).
 
 The data file lives with the engine, not in the public corpus: it links card
-ids and encodes judgement, the same way ``data/kb_en`` overlays translations.
+ids and encodes judgement; each package keeps its own file under
+``personas/<id>/data/assoc``.
 """
 
 from __future__ import annotations

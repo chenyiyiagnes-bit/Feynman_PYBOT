@@ -28,7 +28,7 @@ python3 -m omega_mind --profile         # 语料画像后退出
   WebSocket 消息里带 `{"lang": "en"}`。
 - 模式是**全局**的：整轮对话只用一种语言，不会中英混排。
 - 中文模式：左脑是费曼卡片 + 内置库，**不调用 PyBot**（它只会英文）。
-- 英文模式：左脑是同一批卡片的**英文译文层**（`data/kb_en/*.jsonl`，按 `id` 覆盖回复字段），
+- 英文模式：左脑是**英文包自己的卡片**（`personas/feynman-en/knowledge/*.jsonl`，独立索引），
   没命中卡片才落到 PyBot 或英文内置库；中文原文始终是事实源，译文层不改上游语料。
   原本就是英文的网页引文（`verified_facts`）保持原样，不做中文回译。
   译文是**翻译**，不是费曼原话；要引用原话时只用 `verified_facts` 或原始英文片段。
@@ -265,7 +265,7 @@ omega_mind/
   server.py       HTTP + WebSocket + 仪表盘（标准库）
   view.py         魔方只读投影
   cli.py          命令行
-  data/kb_en/     217 条英文译文覆盖层（按 id 对齐中文卡）
+  （英文卡片不在这里：它们是 `personas/feynman-en/knowledge/` 的独立卡片包）
   data/assoc/     99 条人工确认的联想边（98 条出声，1 条同域只归档）和每条尺度锚点
                   （该目录不入库，缺文件时相关测试跳过）
   tests/

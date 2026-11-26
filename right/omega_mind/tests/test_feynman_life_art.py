@@ -1,9 +1,8 @@
 """The life-and-art card pack, and the persona switches it depends on.
 
-The pack lives in the feynman-open knowledge directory (Chinese source of
-truth) plus the English overlay under ``omega_mind/data/kb_en``. These tests
-skip when the knowledge directory is not on this machine, like the other KB
-tests do.
+The Chinese pack lives in ``personas/feynman-zh/knowledge``; the English
+pack is its own package under ``personas/feynman-en/knowledge``. These tests
+skip when the package is not on this machine, like the other KB tests do.
 """
 
 from __future__ import annotations
