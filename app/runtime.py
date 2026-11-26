@@ -111,11 +111,20 @@ def build(target: Union[str, Path] = "feynman",
         persona=cfg,
         bridge=PyBotBridge.disabled(),
         kb=kb,
-        left_responder=responder,
         language=language or persona.language or "zh",
     )
     if clock is not None:
         kwargs["clock"] = clock
-    if state_path is not None:
-        kwargs["store_path"] = str(state_path)
-    return MindEngine(**kwargs)
+    state_file = Path(state_path).expanduser() if state_path is not None else None
+    if state_file is not None and state_file.is_file():
+        # Resume: MindEngine does not auto-load in __init__, and the loaded
+        # engine must keep the same kb/persona it was built with here.
+        engine = MindEngine.load(str(state_file), **kwargs)
+        engine.store_path = state_file
+        engine.auto_save = True
+    else:
+        engine = MindEngine(store_path=str(state_file) if state_file else None,
+                            **kwargs)
+    # load() predates the bridge, so attach the responder after the fact.
+    engine.left_responder = responder
+    return engine
