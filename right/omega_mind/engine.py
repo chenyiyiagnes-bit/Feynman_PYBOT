@@ -167,6 +167,7 @@ class MindEngine:
         clock: Callable[[], float] = time.time,
         bridge: Optional[PyBotBridge] = None,
         kb: Optional[FeynmanKB] = None,
+        left_responder: Optional[Any] = None,
         auto_save: bool = True,
         language: str = "zh",
     ):
@@ -176,6 +177,11 @@ class MindEngine:
         self.auto_save = auto_save and self.store_path is not None
         self.bridge = bridge or PyBotBridge()
         self.kb = kb or FeynmanKB()
+        # Optional corpus-callosum responder (bridge.LeftResponder). Kept
+        # duck-typed and default-None: the right brain must run without the
+        # left brain installed, and with None the turn path is unchanged.
+        # It is tried only when a Chinese card lookup finds nothing.
+        self.left_responder = left_responder
         if language not in LANGUAGES:
             raise ValueError(f"language must be one of {LANGUAGES}")
         self.language = language
@@ -277,9 +283,10 @@ class MindEngine:
 
         # The right brain has now reacted; let it choose how the left brain
         # should look for and compose facts. It never supplies facts itself.
+        cube_bias = self.cube_feedback.bias(self.cube)
         left_policy = left_brain.plan_for(
             self.state, self.persona, activations,
-            cube_bias=self.cube_feedback.bias(self.cube))
+            cube_bias=cube_bias)
         self.last_left_brain = left_policy.to_dict()
 
         self.relations.touch(user, now)
@@ -313,7 +320,7 @@ class MindEngine:
             if skeptic is not None:
                 base_reply, source = skeptic.reply, f"skepticism:{skeptic.rule}"
             else:
-                base_reply, source = self._base_reply(text, left_policy)
+                base_reply, source = self._base_reply(text, left_policy, cube_bias)
         else:
             source = "provided"
             if not _match_language(base_reply, self.language):
@@ -426,7 +433,34 @@ class MindEngine:
         self.kb.learn_card(text, origin="conversation-pending",
                            topic=self.kb.topic_for(text))
 
-    def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None):
+    def _left_reply(self, text: str, cube_bias: Optional[Any] = None):
+        """Ask the optional typesetter responder; None means "use the old path".
+
+        The responder is expected to fail closed already, but the engine does
+        not trust an add-on with the conversation: any exception here also
+        counts as "no answer", and the turn continues as if it were absent.
+        """
+        if self.left_responder is None:
+            return None
+        try:
+            result = self.left_responder.reply(
+                text, self.state.values, self.persona,
+                cube_depth=getattr(cube_bias, "depth", 0),
+                cube_verbosity=getattr(cube_bias, "verbosity", 0.0),
+                nonce=self.turn_index,
+                session_id=self.current_user,
+            )
+        except Exception:  # noqa: BLE001 - the add-on may never break a turn
+            return None
+        if result is None:
+            return None
+        body = getattr(result, "text", None)
+        if not body or not _match_language(body, "zh"):
+            return None
+        return body, "left:typesetter"
+
+    def _base_reply(self, text: str, policy: Optional[left_brain.LeftBrainPolicy] = None,
+                    cube_bias: Optional[Any] = None):
         """Left brain by language. Chinese and English never mix in one reply."""
         if policy is None:
             policy = left_brain.LeftBrainPolicy()
@@ -447,7 +481,14 @@ class MindEngine:
             self.last_retrieval = found.to_dict()
             reply, source = found.text, found.source
             if not _match_language(reply or "", "zh"):
-                reply, source = knowledge.answer(text)
+                # Corpus-callosum step: a card miss may still be answered by
+                # the typesetter, styled by what the right brain feels right
+                # now. Only then does the builtin fallback get its turn.
+                bridged = self._left_reply(text, cube_bias)
+                if bridged is not None:
+                    reply, source = bridged
+                else:
+                    reply, source = knowledge.answer(text)
         else:
             # The translated card overlay is the mind's English knowledge;
             # PyBot remains the fallback voice when no card matches.

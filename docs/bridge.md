@@ -57,8 +57,9 @@ vault 缺失、左脑依赖导入失败、排版器抛异常、排出来是空�
 ## 当前接入状态
 
 - [x] 映射层 + 人设加载 + 默认关闭的 responder（34 个测试）
-- [ ] 接进 `MindEngine.turn()`：中文路径 KB 卡片未命中时，依次尝试
-      qbot 排版器 → PyBot → 兜底；英文路径暂不接（左脑只处理中文语料）
+- [x] 接进 `MindEngine`：`left_responder=None` 为默认；中文路径顺序为
+      KB 卡片 → 左脑排版器（可选）→ 内置 knowledge → 兜底；英文路径不接
+      （左脑只处理中文语料）。变更说明见 `contracts/engine-left-bridge.md`。
 - [ ] 真实 vault 的端到端测试（需要本地 `QBOT_FEYNMAN_VAULT` 或合成 fixture）
 
 接入右脑时，`engine` 只多一个可选参数 `left_responder=None`；不开环境变量时

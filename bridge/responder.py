@@ -81,7 +81,16 @@ class LeftResponder:
 
     # -- public --------------------------------------------------------------
 
-    def params_for(self, state: Dict[str, float], persona: Persona,
+    @staticmethod
+    def _jargon_aversion(persona) -> bool:
+        """Accept both bridge.Persona (``switches`` dict) and the right
+        brain's PersonaConfig (flat ``jargon_aversion`` bool)."""
+        switches = getattr(persona, "switches", None)
+        if isinstance(switches, dict):
+            return bool(switches.get("jargon_aversion"))
+        return bool(getattr(persona, "jargon_aversion", False))
+
+    def params_for(self, state: Dict[str, float], persona,
                    cube_depth: float = 0.0,
                    cube_verbosity: float = 0.0) -> BridgeParams:
         return map_affect(
@@ -89,7 +98,7 @@ class LeftResponder:
             persona.baselines,
             cube_depth=cube_depth,
             cube_verbosity=cube_verbosity,
-            jargon_aversion=bool(persona.switches.get("jargon_aversion")),
+            jargon_aversion=self._jargon_aversion(persona),
         )
 
     def reply(self, text: str, state: Dict[str, float], persona: Persona,
