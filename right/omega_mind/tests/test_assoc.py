@@ -24,9 +24,23 @@ from omega_mind import assoc
 from omega_mind.feynman_kb import FeynmanKB
 
 
+REPO = Path(__file__).resolve().parents[3]
+PERSONA_EDGES = (REPO / "personas" / "feynman" / "data" / "assoc"
+                 / "assoc_edges.jsonl")
+
+
+def _edges_path() -> Path:
+    """Edges are local-only (gitignored); they may sit with the persona or
+    with the engine, whichever this machine has."""
+    for path in (PERSONA_EDGES, assoc.DEFAULT_PATH):
+        if path.exists():
+            return path
+    return PERSONA_EDGES
+
+
 def _edge_data_present() -> bool:
-    """data/assoc/ is local-only (gitignored); tests skip without it."""
-    return assoc.DEFAULT_PATH.exists() and bool(assoc.load().edges)
+    path = _edges_path()
+    return path.exists() and bool(assoc.load(path).edges)
 
 
 class FakeDoc:
@@ -216,7 +230,8 @@ class TestRuntimeLine(unittest.TestCase):
     def setUpClass(cls):
         if not _edge_data_present():
             raise unittest.SkipTest("data/assoc/assoc_edges.jsonl not present")
-        cls.kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
+        cls.kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"),
+                                     assoc_path=str(_edges_path()))
         if not cls.kb.available():
             raise unittest.SkipTest("feynman-open knowledge not on this machine")
 
@@ -257,7 +272,8 @@ class TestEngineSpeaks(unittest.TestCase):
         from omega_mind.pybot_bridge import PyBotBridge
         if not _edge_data_present():
             self.skipTest("data/assoc/assoc_edges.jsonl not present")
-        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
+        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"),
+                                     assoc_path=str(_edges_path()))
         if not kb.available():
             self.skipTest("feynman-open knowledge not on this machine")
         mind = MindEngine(
@@ -275,7 +291,8 @@ class TestEngineSpeaks(unittest.TestCase):
         from omega_mind.pybot_bridge import PyBotBridge
         if not _edge_data_present():
             self.skipTest("data/assoc/assoc_edges.jsonl not present")
-        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
+        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"),
+                                     assoc_path=str(_edges_path()))
         if not kb.available():
             self.skipTest("feynman-open knowledge not on this machine")
         mind = MindEngine(
@@ -315,7 +332,7 @@ class TestCandidateReview(unittest.TestCase):
         if not _edge_data_present():
             self.skipTest("data/assoc/assoc_edges.jsonl not present")
         review = self._load("assoc_review.json")["decisions"]
-        graph = assoc.load()
+        graph = assoc.load(_edges_path())
         have = {(min(e.a, e.b), max(e.a, e.b))
                 for e in graph.edges if e.origin == "human"}
         for row in review:
@@ -332,8 +349,9 @@ class TestCommittedEdges(unittest.TestCase):
     def setUpClass(cls):
         if not _edge_data_present():
             raise unittest.SkipTest("data/assoc/assoc_edges.jsonl not present")
-        cls.graph = assoc.load()
-        cls.kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"))
+        cls.graph = assoc.load(_edges_path())
+        cls.kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-assoc-"),
+                                     assoc_path=str(_edges_path()))
         if not cls.kb.available():
             raise unittest.SkipTest("feynman-open knowledge not on this machine")
         cls.titles = {doc.id: doc.title for doc in cls.kb.docs}

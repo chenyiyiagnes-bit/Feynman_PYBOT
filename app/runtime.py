@@ -85,9 +85,25 @@ def resolve_persona(target: Union[str, Path],
     raise PersonaError(f"no persona named {target!r} under {personas_root}")
 
 
+def state_base() -> Path:
+    return Path(os.getenv(STATE_DIR_ENV) or (Path.home() / ".feynman_pybot"))
+
+
 def default_state_path(persona_id: str) -> Path:
-    base = Path(os.getenv(STATE_DIR_ENV) or (Path.home() / ".feynman_pybot"))
-    return base / f"{persona_id}.mind_state.json"
+    return state_base() / f"{persona_id}.mind_state.json"
+
+
+def learned_dir_for(persona: Persona) -> Path:
+    """Learned overlay lives with the mind's state, one folder per persona.
+
+    Two personas never share what one of them was taught.
+    """
+    return state_base() / persona.id / "kb_learned"
+
+
+def assoc_path_for(persona: Persona) -> Path:
+    """Association edges are judgement about *this* persona's cards."""
+    return (persona.root / "data" / "assoc" / "assoc_edges.jsonl").resolve()
 
 
 def build(target: Union[str, Path] = "feynman",
@@ -100,8 +116,10 @@ def build(target: Union[str, Path] = "feynman",
     persona = load(resolve_persona(target, personas_root))
     cfg = to_config(persona)
     kb_dir = knowledge_dir(persona)
-    kb = (FeynmanKB(knowledge_dir=str(kb_dir)) if kb_dir is not None
-          else FeynmanKB.disabled())
+    kb = (FeynmanKB(knowledge_dir=str(kb_dir),
+                    learned_dir=str(learned_dir_for(persona)),
+                    assoc_path=str(assoc_path_for(persona)))
+          if kb_dir is not None else FeynmanKB.disabled())
     responder = None
     if enable_bridge is None:
         enable_bridge = os.getenv("OMEGA_LEFT_BRIDGE") == "1"

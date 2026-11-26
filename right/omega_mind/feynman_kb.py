@@ -418,6 +418,7 @@ class FeynmanKB:
     def __init__(self, knowledge_dir: Optional[str] = None, autoload: bool = True,
                  english_dir: Optional[str] = None,
                  learned_dir: Optional[str] = None,
+                 assoc_path: Optional[str] = None,
                  spreading: Optional[bool] = None):
         self.docs: List[Doc] = []
         self.docs_en: List[Doc] = []
@@ -433,6 +434,11 @@ class FeynmanKB:
         self.dir: Optional[Path] = None
         self.en_dir: Optional[Path] = None
         self.learned_dir: Optional[Path] = Path(learned_dir) if learned_dir else None
+        # Judgement about this mind's own cards belongs to the persona, not to
+        # the engine: two personas may share the engine and never borrow each
+        # other's associations. None keeps the engine default (single-persona
+        # CLI use).
+        self.assoc_path: Optional[Path] = Path(assoc_path) if assoc_path else None
         self.learned: Optional[LearnedStore] = None
         self.aliases: Dict[str, List[str]] = {}
         self._source_rows: List[Tuple[str, dict]] = []
@@ -983,7 +989,7 @@ class FeynmanKB:
 
     def _assoc_graph(self) -> Optional[assoc.AssocGraph]:
         if self._assoc is None:
-            self._assoc = assoc.load()
+            self._assoc = assoc.load(self.assoc_path)
         return self._assoc
 
     def _lookup(self, text: str, language: str = "zh",

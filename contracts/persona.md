@@ -22,6 +22,21 @@
 | `knowledge` | object | `kb_dirs`（相对本文件）、`corpus`（自备语料路径，可为 null）、`corpus_note`（可选，说明语料来源与许可） |
 | `license` | object | 人设内容与代码各自的许可证 |
 
+## 数据归属：一个目录就是一个心智
+
+硬骨架（`right/omega_mind`、`app/`、`bridge/`）只有一份；两个人设共用引擎，但
+**不共用任何软数据**。运行时按人设解析：
+
+| 数据 | 位置 | 进仓库 |
+|---|---|---|
+| 情感参数、外壳、方块覆盖 | `personas/<id>/persona.json` | 是 |
+| 知识卡 | `personas/<id>/knowledge/*.jsonl` | 是 |
+| 语料（喂左脑排版器的原文） | `knowledge.corpus` 指向的文件 | 否（版权） |
+| 联想边（卡片间的判断） | `personas/<id>/data/assoc/assoc_edges.jsonl` | 否，`.gitignore` 已覆盖 |
+| 学习覆盖（教给它的新卡片） | `$PYBOT_STATE_DIR/<id>/kb_learned/`，默认 `~/.feynman_pybot/<id>/kb_learned/` | 否（运行时状态） |
+
+引擎里没有指向某个人设的默认路径：换人设就换整个目录，不存在「老庄继承了费曼的联想」。
+
 ## 方块（cubie）
 
 ```json
