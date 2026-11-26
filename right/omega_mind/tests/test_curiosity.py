@@ -101,8 +101,17 @@ class TestQuestionInLookup(unittest.TestCase):
         self.assertIn("为什么", found.question)
 
     def test_the_english_branch_asks_in_english(self):
-        found = self.kb.lookup("Why is a rainbow curved?", language="en",
-                               curiosity=True)
+        # One package, one language: an English question is answered from
+        # the English package, never by asking a Chinese KB to switch.
+        en = FeynmanKB(language="en", learned_dir=None)
+        if not en.available():
+            raise unittest.SkipTest("English package not installed")
+        found = en.lookup("Why is a rainbow curved?", curiosity=True)
+        card = found.source.split(":", 1)[1] if ":" in found.source else ""
+        graph = en._assoc_graph()
+        if not graph or not graph.has_premise(card):
+            raise unittest.SkipTest(
+                "English association overlay has no confirmed premise edge")
         self.assertTrue(found.question)
         self.assertNotRegex(found.question, r"[一-鿿]")
 

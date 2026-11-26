@@ -763,13 +763,18 @@ class MindEngine:
         pattern = _REFLECT_EN if self.language == "en" else _REFLECT_ZH
         return bool(pattern.match(stripped))
 
-    def _inhibit_set(self, text: str = "") -> set:
+    def _inhibit_set(self, text: str = "",
+                     previous: Optional[str] = None) -> set:
         """Cards answered so recently that repeating them would circle.
 
         Re-asking the very same question is not circling: the user wants the
         same answer, so inhibition is suspended for an identical repeat.
+        ``previous`` is the query answered last; callers that answered
+        without going through ``turn`` (tests driving ``_base_reply``) still
+        get the same suspension.
         """
-        if self._last_query is not None and text.strip() == self._last_query.strip():
+        last = self._last_query if previous is None else previous
+        if last is not None and text.strip() == last.strip():
             return set()
         cutoff = self.turn_index - INHIBIT_TURNS
         return {cid for cid, turn in self._recent_cards.items() if turn > cutoff}
@@ -792,41 +797,11 @@ class MindEngine:
         """Left brain by language. Chinese and English never mix in one reply."""
         if policy is None:
             policy = left_brain.LeftBrainPolicy()
+        previous_query, self._last_query = self._last_query, text
         personal = self._personal_reply(text)
         if personal is not None:
             self.last_retrieval = {"dialogue_act": "memory_query"}
             return personal
-        packaged = self._uses_knowledge_package()
-        target = ""
-        if packaged:
-            resume = dialogue.resume_target(text, self.language)
-            if resume is not None:
-                doc = self._topics.resolve(self.current_user, resume, self.kb.by_id)
-                self.last_retrieval = {"dialogue_act": "resume_gap"}
-                if doc is not None and (not self.review_learning or self.kb.public_doc(doc)):
-                    if self.structured_evidence and evidence.structured_card(doc):
-                        plan, reason = evidence.compose(doc, "conclusion", policy.detail,
-                                                        self.persona.prefer_examples)
-                        if not plan:
-                            self.last_retrieval["decision"] = reason
-                            return dialogue.RESUME_GAP[self.language], f"clarification:{self.language}"
-                        self.last_retrieval["evidence_plan"] = plan
-                        reply = " ".join(part["text"] for part in plan)
-                    else:
-                        reply = doc.answer_for(policy.detail)
-                    self.last_retrieval.update(dialogue_act="resume", card_id=doc.id,
-                                               revision=dialogue.card_revision(doc))
-                    return reply, f"{self.kb.source_root}:{doc.id}"
-                return dialogue.RESUME_GAP[self.language], f"clarification:{self.language}"
-            social = knowledge.social_reply(text, self.language)
-            if social is not None:
-                self.last_retrieval = {"dialogue_act": "social"}
-                return social, "builtin_en" if self.language == "en" else "builtin_kb"
-            kind, target = self.kb.core.followup(text)
-            followup = self._contextual_reply(kind, target)
-            if followup is not None:
-                return followup
-
         # "I don't get it" is not a new question. Say the last card a second
         # way, through a confirmed analogy — and only once per card, because
         # a recast repeated is just the same explanation again.
@@ -837,7 +812,9 @@ class MindEngine:
                 if again is not None:
                     self._recast_seen.add(previous)
                     self.last_retrieval = {"source": again[1],
-                                           "recast": again[0]}
+                                           "recast": again[0],
+                                           "dialogue_act": "rephrase",
+                                           "card_id": previous}
                     # A recast is a reframe: the cube turns in the mind's
                     # hands so the next turn is seen from a different face.
                     # Nothing physical moves; only what counts as front.
@@ -902,6 +879,38 @@ class MindEngine:
                 self._why_seen.clear()
         else:
             self._why_seen.clear()
+
+        packaged = self._uses_knowledge_package()
+        target = ""
+        if packaged:
+            resume = dialogue.resume_target(text, self.language)
+            if resume is not None:
+                doc = self._topics.resolve(self.current_user, resume, self.kb.by_id)
+                self.last_retrieval = {"dialogue_act": "resume_gap"}
+                if doc is not None and (not self.review_learning or self.kb.public_doc(doc)):
+                    if self.structured_evidence and evidence.structured_card(doc):
+                        plan, reason = evidence.compose(doc, "conclusion", policy.detail,
+                                                        self.persona.prefer_examples)
+                        if not plan:
+                            self.last_retrieval["decision"] = reason
+                            return dialogue.RESUME_GAP[self.language], f"clarification:{self.language}"
+                        self.last_retrieval["evidence_plan"] = plan
+                        reply = " ".join(part["text"] for part in plan)
+                    else:
+                        reply = doc.answer_for(policy.detail)
+                    self.last_retrieval.update(dialogue_act="resume", card_id=doc.id,
+                                               revision=dialogue.card_revision(doc))
+                    return reply, f"{self.kb.source_root}:{doc.id}"
+                return dialogue.RESUME_GAP[self.language], f"clarification:{self.language}"
+            social = knowledge.social_reply(text, self.language)
+            if social is not None:
+                self.last_retrieval = {"dialogue_act": "social"}
+                return social, "builtin_en" if self.language == "en" else "builtin_kb"
+            kind, target = self.kb.core.followup(text)
+            followup = self._contextual_reply(kind, target)
+            if followup is not None:
+                return followup
+
         found = self.kb.lookup(
             text, language=self.language, min_score=None if packaged else policy.min_score,
             limit=3 if packaged else policy.limit,
@@ -914,7 +923,7 @@ class MindEngine:
             previous_card=self._continuity_card(),
             scale=packaged,
             curiosity=packaged and policy.posture == "explore",
-            inhibit=self._inhibit_set(text))
+            inhibit=self._inhibit_set(text, previous_query))
         self.last_retrieval = found.to_dict()
         reply, source = found.text, found.source
         if (target and self._dialogue_focus is not None
@@ -1018,6 +1027,10 @@ class MindEngine:
         focus = self._dialogue_focus
         if kind in ("ack", "followup_gap", "resume_gap", "memory_query", "memory_update"):
             return
+        if source.startswith("analogy:") and self.last_retrieval.get("card_id"):
+            # A recast is a rephrase of the card it reframed: keep that card
+            # in focus so "say that again" repeats the new wording.
+            source = f"{self.kb.source_root}:{self.last_retrieval['card_id']}"
         prefix, _, card_id = source.partition(":")
         own = self.kb.source_prefix
         doc = self.kb.by_id.get(card_id)

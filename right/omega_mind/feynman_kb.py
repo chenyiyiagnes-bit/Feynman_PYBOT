@@ -1314,6 +1314,10 @@ class FeynmanKB:
         if (language is not None and language != self.language) or (
                 self.language == "en" and _CJK.search(text)):
             return Lookup(None, f"{self.source_root}:no_match")
+        # A request in another language is a miss, not a translation: every
+        # later step (scale, question, association) must speak this
+        # package's language, not the caller's default of None.
+        language = self.language
         if public_only and evidence.hypothetical_measurement(text, self.language):
             return Lookup(None, f"{self.source_root}:no_match",
                           diagnostics={"decision": "hypothetical_measurement"})
@@ -1642,7 +1646,15 @@ class FeynmanKB:
             card_id, language=self.language, titles=titles,
             kinds=(edge_kind,), spoken=spoken, relevant=relevant)
         if match is not None:
-            return match.text, match.provenance()
+            # "Say it another way" must not be the same mechanism again: if
+            # that analogy was already spoken, fall through to the card's own
+            # example, and to the gap when there is none.
+            mechanism = (match.edge.mechanism_en if self.language == "en"
+                         else match.edge.mechanism)
+            if mechanism and any(mechanism in line for line in spoken):
+                match = None
+            else:
+                return match.text, match.provenance()
         if target:
             return None, None
         return next((p for p in passages if cue.search(p) and p not in spoken

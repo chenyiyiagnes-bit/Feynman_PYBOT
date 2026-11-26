@@ -514,7 +514,10 @@ class TestWhyFollowUp(unittest.TestCase):
         from omega_mind.pybot_bridge import PyBotBridge
         if not _edge_data_present():
             self.skipTest("data/assoc/assoc_edges.jsonl not present")
-        kb = FeynmanKB(learned_dir=tempfile.mkdtemp(prefix="omega-why-"))
+        # One package, one language: an English mind needs the English
+        # package, not English answers borrowed from the Chinese one.
+        kb = FeynmanKB(language=language,
+                       learned_dir=tempfile.mkdtemp(prefix="omega-why-"))
         if not kb.available():
             self.skipTest("feynman-open knowledge not on this machine")
         return MindEngine(
@@ -533,10 +536,11 @@ class TestWhyFollowUp(unittest.TestCase):
 
     def test_the_hop_uses_the_english_branch_too(self):
         mind = self._mind("en")
+        root = mind.kb.source_root
         first = mind.turn("Why is a rainbow curved?", now=1000.0)
-        self.assertEqual(first.source, "feynman_kb_en:opt-009")
+        self.assertEqual(first.source, root + ":opt-009")
         why = mind.turn("Why?", now=1001.0)
-        self.assertEqual(why.source, "feynman_kb_en:opt-002")
+        self.assertEqual(why.source, root + ":opt-002")
         self.assertNotRegex(why.reply, r"[一-鿿]")
 
     def test_an_unrelated_turn_breaks_the_chain(self):

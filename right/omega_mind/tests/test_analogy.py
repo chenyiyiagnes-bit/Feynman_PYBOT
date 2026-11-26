@@ -55,10 +55,15 @@ class TestRecastSource(unittest.TestCase):
 
 class TestRecastInTheEngine(unittest.TestCase):
     def _mind(self, language="zh"):
+        # One package, one language: the English mind reads the English
+        # package's own cards and its own edges.
+        kb = FeynmanKB(language=language, learned_dir=None)
+        if not kb.available():
+            raise unittest.SkipTest("feynman-open knowledge not on this machine")
         return MindEngine(
             persona=get_persona("generic"), store_path=None,
             clock=lambda: 1000.0, bridge=PyBotBridge.disabled(),
-            kb=real_kb(), auto_save=False, language=language)
+            kb=kb, auto_save=False, language=language)
 
     def test_after_an_answer_a_bare_confusion_recasts_it(self):
         mind = self._mind()
@@ -90,7 +95,7 @@ class TestRecastInTheEngine(unittest.TestCase):
     def test_english_confusion_recasts_in_english(self):
         mind = self._mind(language="en")
         first = mind.turn("Why is a rainbow curved?", now=1000.0)
-        if not first.source.startswith("feynman_kb_en"):
+        if not first.source.startswith(mind.kb.source_root + ":"):
             self.skipTest("English card not available")
         second = mind.turn("I don't get it", now=1001.0)
         if second.source.startswith("analogy:"):

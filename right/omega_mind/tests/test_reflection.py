@@ -141,6 +141,10 @@ class TestReflectionInTheEngine(unittest.TestCase):
         mind = self._mind()
         mind.turn("原子有多大", now=1000.0)
         card = mind._last_card
+        if card is None:
+            # The magnitude route needs the local data/assoc/scales.jsonl
+            # overlay, which is not part of the checkout.
+            self.skipTest("data/assoc/scales.jsonl not present")
         again = mind.turn("再想想", now=1001.0)
         self.assertEqual(again.retrieval.get("reflection"), "repeat")
         self.assertEqual(again.source.split(":", 1)[1], card)

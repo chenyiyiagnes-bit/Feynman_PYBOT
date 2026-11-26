@@ -107,8 +107,13 @@ class TestScaleAnswers(unittest.TestCase):
         self.assertIsNone(found.scale)
 
     def test_the_english_branch_never_speaks_chinese(self):
-        found = self.kb.lookup("How fast is light?", language="en", scale=True)
-        self.assertEqual(found.source, "feynman_kb_en:flp-ii-18")
+        # One package, one language: English answers come from the English
+        # package, never from a second index bolted onto the Chinese one.
+        en = FeynmanKB(language="en", learned_dir=tempfile.mkdtemp(prefix="omega-scale-en-"))
+        if not en.available():
+            self.skipTest("English package not installed")
+        found = en.lookup("How fast is light?", scale=True)
+        self.assertEqual(found.source, en.source_root + ":flp-ii-18")
         self.assertNotRegex(found.scale, r"[一-鿿]")
 
     def test_every_anchor_card_exists_and_cites_a_lecture(self):

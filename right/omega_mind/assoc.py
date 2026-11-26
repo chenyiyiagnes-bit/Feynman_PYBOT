@@ -163,7 +163,7 @@ def mapping_text(edge: Edge, language: str = "zh",
     if language == "en" and edge.mapping_en:
         return invert_mapping(edge.mapping_en, sep=", ") if invert \
             else edge.mapping_en
-    pairs = [(left, right) for left, right in edge.mapping]
+    pairs = _mapping_pairs(edge.mapping)
     if invert:
         pairs = [(right, left) for left, right in pairs]
     sep = ", " if language == "en" else "、"
@@ -489,10 +489,8 @@ def _render(edge: Edge, card_id: str, other: str, kind: str,
             continuity: bool = False) -> Optional[str]:
     mechanism = _text(edge, "mechanism", language)
     difference = _text(edge, "difference", language)
-    mapping = _text(edge, "mapping", language)
+    mapping = mapping_text(edge, language, invert=card_id != edge.a)
     condition = _text(edge, "condition", language)
-    if card_id != edge.a:
-        mapping = invert_mapping(mapping, sep=", " if language == "en" else "、")
     if language == "en":
         if not mechanism or (kind in ("same_mechanism", "same_equation",
                                       "boundary", "tension")
