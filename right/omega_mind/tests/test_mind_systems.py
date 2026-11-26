@@ -553,6 +553,11 @@ class TestEnglishKnowledge(unittest.TestCase):
         zh_ids = {doc.id for doc in self.zh.docs} - learned
         en_ids = {doc.id for doc in self.en.docs}
         self.assertEqual(en_ids, zh_ids)
+        # The English row carries the Chinese card's type, so a biography
+        # stays a biography after the filename no longer decides the kind.
+        self.assertEqual({doc.id: doc.kind for doc in self.en.docs},
+                         {doc.id: doc.kind for doc in self.zh.docs
+                          if doc.id in en_ids})
         zh_facts = _jsonl_rows(Path(self.zh.dir) / "verified_facts.jsonl")
         en_facts = _jsonl_rows(Path(self.en.dir) / "verified_facts.jsonl")
         self.assertEqual([row["id"] for row in en_facts],
