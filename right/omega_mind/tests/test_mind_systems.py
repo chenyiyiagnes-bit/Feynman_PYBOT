@@ -520,6 +520,14 @@ if __name__ == "__main__":
     unittest.main()
 
 
+def _jsonl_rows(path: Path) -> list:
+    rows = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            rows.append(json.loads(line))
+    return rows
+
+
 def _has_cjk_in_values(value) -> bool:
     if isinstance(value, str):
         return any("\u4e00" <= ch <= "\u9fff" for ch in value)
@@ -539,27 +547,24 @@ class TestEnglishKnowledge(unittest.TestCase):
     def test_english_package_covers_every_prose_row(self):
         # One package per language: the English package is its own corpus,
         # not an overlay on the Chinese one. Every Chinese prose row has one
-        # English row, by id.
+        # English row, by id, including the nine web quotes.
         learned = {doc.id for doc in self.zh.docs
                    if doc.id.startswith("learned-")}
         zh_ids = {doc.id for doc in self.zh.docs} - learned
         en_ids = {doc.id for doc in self.en.docs}
-        # Known gap: the English package ships no verified_facts.jsonl, so
-        # the web-quote rows have no translation yet. Answering in English is
-        # unaffected (those rows are quotes from third-party pages, not
-        # teachings), but the gap is pinned here: translating them shrinks
-        # the set, adding an untranslated row fails this test.
-        facts_file = Path(self.zh.dir) / "verified_facts.jsonl"
-        untranslated = set()
-        if facts_file.is_file():
-            untranslated = {
-                row["id"] for row in
-                (json.loads(line) for line in
-                 facts_file.read_text(encoding="utf-8").splitlines() if line.strip())
-                if row.get("id")
-            }
-        self.assertEqual(en_ids, zh_ids - untranslated)
-        self.assertEqual(zh_ids - en_ids, untranslated)
+        self.assertEqual(en_ids, zh_ids)
+        zh_facts = _jsonl_rows(Path(self.zh.dir) / "verified_facts.jsonl")
+        en_facts = _jsonl_rows(Path(self.en.dir) / "verified_facts.jsonl")
+        self.assertEqual([row["id"] for row in en_facts],
+                         [row["id"] for row in zh_facts])
+        self.assertEqual(len(en_facts), 9)
+        # The quotes were already English on the Chinese package. The English
+        # package keeps that wording; it does not back-translate.
+        for zh_row, en_row in zip(zh_facts, en_facts):
+            for field in ("title", "text", "quote", "source", "source_url"):
+                self.assertEqual(en_row[field], zh_row[field], zh_row["id"])
+            self.assertIn(en_row["id"], en_ids)
+            self.assertFalse(_has_cjk_in_values(en_row), en_row["id"])
         self.assertIn(":en:", self.en.mode)
         self.assertEqual(self.en.teachable_units(language="en"),
                          [doc for doc in self.en.docs if doc.unit is not None])
@@ -606,9 +611,15 @@ class TestEnglishKnowledge(unittest.TestCase):
         self.assertGreaterEqual(len(rows), 200)
         for name, row in rows:
             self.assertTrue(row.get("id"), name)
+            self.assertFalse(_has_cjk_in_values(row), name)
+            if name == "verified_facts.jsonl":
+                # Original English web quotes, not a translation of a
+                # Chinese card. Translated rows below still require provenance.
+                self.assertNotEqual(row.get("source_language"), "zh", name)
+                self.assertIsNone(row.get("translation_of"), name)
+                continue
             self.assertEqual(row.get("translation_of"), row["id"], name)
             self.assertEqual(row.get("source_language"), "zh", name)
-            self.assertFalse(_has_cjk_in_values(row), name)
 
     def test_persona_science_answer_omits_internal_usage_note(self):
         # persona-science-001 carries a note telling the assistant when to
