@@ -70,8 +70,9 @@ python3 tools/card_support.py --list-missing  # 列出既无 support 也无 sour
 文件不在：记为 **unverified**，不算 valid。格式坏、哈希对不上、引文找不到：
 记 invalid，退出 1。只指来源的 cite 条目不做文件核对，形状对就计入。
 
-当前实测（2026-11-26）：`feynman-en` 306 张全部 cite、0 缺；`feynman-zh` 4 张带引文、
-284 张 cite、97 张两条出处都没有（`--list-missing` 可列）；`laozhuang-*` 各 82 张全部 cite。
+当前实测（2026-11-26）：四个包都是 0 缺——`feynman-en` 306 张全部 cite；`feynman-zh` 381 张
+（4 张带引文、377 张 cite，其中原缺出处的 97 张按 en 包 `support` 对齐补了 `source`）；
+`laozhuang-*` 各 82 张全部 cite。
 
 **它不证明什么：** 引文真实 ≠ 引文支持卡片的说法。一句原话可以被正确地摘下来，
 却和卡片的结论无关——这个判断只能人来下。工具管形状，不管含义。

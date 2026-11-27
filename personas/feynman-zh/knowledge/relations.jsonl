@@ -1,60 +1,60 @@
-{"id": "rel-001", "type": "relation_word", "word": "妈", "class": "母亲"}
-{"id": "rel-002", "type": "relation_word", "word": "妈妈", "class": "母亲"}
-{"id": "rel-003", "type": "relation_word", "word": "母亲", "class": "母亲"}
-{"id": "rel-004", "type": "relation_word", "word": "娘", "class": "母亲"}
-{"id": "rel-005", "type": "relation_word", "word": "爸", "class": "父亲"}
-{"id": "rel-006", "type": "relation_word", "word": "爸爸", "class": "父亲"}
-{"id": "rel-007", "type": "relation_word", "word": "父亲", "class": "父亲"}
-{"id": "rel-008", "type": "relation_word", "word": "妻子", "class": "配偶"}
-{"id": "rel-009", "type": "relation_word", "word": "老婆", "class": "配偶"}
-{"id": "rel-010", "type": "relation_word", "word": "太太", "class": "配偶"}
-{"id": "rel-011", "type": "relation_word", "word": "前妻", "class": "配偶"}
-{"id": "rel-012", "type": "relation_word", "word": "丈夫", "class": "配偶"}
-{"id": "rel-013", "type": "relation_word", "word": "爱人", "class": "配偶"}
-{"id": "rel-014", "type": "relation_word", "word": "未婚妻", "class": "配偶"}
-{"id": "rel-015", "type": "relation_word", "word": "未婚夫", "class": "配偶"}
-{"id": "rel-016", "type": "relation_word", "word": "恋人", "class": "恋人"}
-{"id": "rel-017", "type": "relation_word", "word": "女朋友", "class": "恋人"}
-{"id": "rel-018", "type": "relation_word", "word": "男朋友", "class": "恋人"}
-{"id": "rel-019", "type": "relation_word", "word": "情人", "class": "恋人"}
-{"id": "rel-020", "type": "relation_word", "word": "情侣", "class": "恋人"}
-{"id": "rel-021", "type": "relation_word", "word": "阿姨", "class": "阿姨"}
-{"id": "rel-022", "type": "relation_word", "word": "姨妈", "class": "阿姨"}
-{"id": "rel-023", "type": "relation_word", "word": "姑妈", "class": "阿姨"}
-{"id": "rel-024", "type": "relation_word", "word": "姑姑", "class": "阿姨"}
-{"id": "rel-025", "type": "relation_word", "word": "婶", "class": "阿姨"}
-{"id": "rel-026", "type": "relation_word", "word": "舅妈", "class": "阿姨"}
-{"id": "rel-027", "type": "relation_word", "word": "舅母", "class": "阿姨"}
-{"id": "rel-028", "type": "relation_word", "word": "伯母", "class": "阿姨"}
-{"id": "rel-029", "type": "relation_word", "word": "叔叔", "class": "叔叔"}
-{"id": "rel-030", "type": "relation_word", "word": "伯父", "class": "叔叔"}
-{"id": "rel-031", "type": "relation_word", "word": "舅舅", "class": "叔叔"}
-{"id": "rel-032", "type": "relation_word", "word": "姨父", "class": "叔叔"}
-{"id": "rel-033", "type": "relation_word", "word": "姑父", "class": "叔叔"}
-{"id": "rel-034", "type": "relation_word", "word": "姐姐", "class": "姐姐"}
-{"id": "rel-035", "type": "relation_word", "word": "妹妹", "class": "妹妹"}
-{"id": "rel-036", "type": "relation_word", "word": "表姐", "class": "姐姐"}
-{"id": "rel-037", "type": "relation_word", "word": "表妹", "class": "妹妹"}
-{"id": "rel-038", "type": "relation_word", "word": "哥哥", "class": "哥哥"}
-{"id": "rel-039", "type": "relation_word", "word": "弟弟", "class": "弟弟"}
-{"id": "rel-040", "type": "relation_word", "word": "表哥", "class": "哥哥"}
-{"id": "rel-041", "type": "relation_word", "word": "表弟", "class": "弟弟"}
-{"id": "rel-042", "type": "relation_word", "word": "爷爷", "class": "爷爷"}
-{"id": "rel-043", "type": "relation_word", "word": "奶奶", "class": "奶奶"}
-{"id": "rel-044", "type": "relation_word", "word": "外婆", "class": "外婆"}
-{"id": "rel-045", "type": "relation_word", "word": "姥姥", "class": "外婆"}
-{"id": "rel-046", "type": "relation_word", "word": "外公", "class": "爷爷"}
-{"id": "rel-047", "type": "relation_word", "word": "儿子", "class": "儿子"}
-{"id": "rel-048", "type": "relation_word", "word": "女儿", "class": "女儿"}
-{"id": "rel-049", "type": "relation_word", "word": "孩子", "class": "子女"}
-{"id": "rel-050", "type": "relation_word", "word": "朋友", "class": "朋友"}
-{"id": "rel-051", "type": "relation_word", "word": "好友", "class": "朋友"}
-{"id": "rel-052", "type": "relation_word", "word": "挚友", "class": "朋友"}
-{"id": "rel-053", "type": "relation_word", "word": "同学", "class": "同学"}
-{"id": "rel-054", "type": "relation_word", "word": "同事", "class": "同事"}
-{"id": "rel-055", "type": "relation_word", "word": "老师", "class": "老师"}
-{"id": "rel-056", "type": "relation_word", "word": "学生", "class": "学生"}
-{"id": "rel-057", "type": "relation_word", "word": "邻居", "class": "邻居"}
-{"id": "rel-058", "type": "relation_word", "word": "搭档", "class": "搭档"}
-{"id": "rel-059", "type": "relation_word", "word": "师父", "class": "师父"}
-{"id": "rel-060", "type": "relation_word", "word": "徒弟", "class": "徒弟"}
+{"id": "rel-001", "type": "relation_word", "word": "妈", "class": "母亲", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-002", "type": "relation_word", "word": "妈妈", "class": "母亲", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-003", "type": "relation_word", "word": "母亲", "class": "母亲", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-004", "type": "relation_word", "word": "娘", "class": "母亲", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-005", "type": "relation_word", "word": "爸", "class": "父亲", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-006", "type": "relation_word", "word": "爸爸", "class": "父亲", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-007", "type": "relation_word", "word": "父亲", "class": "父亲", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-008", "type": "relation_word", "word": "妻子", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-009", "type": "relation_word", "word": "老婆", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-010", "type": "relation_word", "word": "太太", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-011", "type": "relation_word", "word": "前妻", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-012", "type": "relation_word", "word": "丈夫", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-013", "type": "relation_word", "word": "爱人", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-014", "type": "relation_word", "word": "未婚妻", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-015", "type": "relation_word", "word": "未婚夫", "class": "配偶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-016", "type": "relation_word", "word": "恋人", "class": "恋人", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-017", "type": "relation_word", "word": "女朋友", "class": "恋人", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-018", "type": "relation_word", "word": "男朋友", "class": "恋人", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-019", "type": "relation_word", "word": "情人", "class": "恋人", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-020", "type": "relation_word", "word": "情侣", "class": "恋人", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-021", "type": "relation_word", "word": "阿姨", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-022", "type": "relation_word", "word": "姨妈", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-023", "type": "relation_word", "word": "姑妈", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-024", "type": "relation_word", "word": "姑姑", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-025", "type": "relation_word", "word": "婶", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-026", "type": "relation_word", "word": "舅妈", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-027", "type": "relation_word", "word": "舅母", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-028", "type": "relation_word", "word": "伯母", "class": "阿姨", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-029", "type": "relation_word", "word": "叔叔", "class": "叔叔", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-030", "type": "relation_word", "word": "伯父", "class": "叔叔", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-031", "type": "relation_word", "word": "舅舅", "class": "叔叔", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-032", "type": "relation_word", "word": "姨父", "class": "叔叔", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-033", "type": "relation_word", "word": "姑父", "class": "叔叔", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-034", "type": "relation_word", "word": "姐姐", "class": "姐姐", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-035", "type": "relation_word", "word": "妹妹", "class": "妹妹", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-036", "type": "relation_word", "word": "表姐", "class": "姐姐", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-037", "type": "relation_word", "word": "表妹", "class": "妹妹", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-038", "type": "relation_word", "word": "哥哥", "class": "哥哥", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-039", "type": "relation_word", "word": "弟弟", "class": "弟弟", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-040", "type": "relation_word", "word": "表哥", "class": "哥哥", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-041", "type": "relation_word", "word": "表弟", "class": "弟弟", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-042", "type": "relation_word", "word": "爷爷", "class": "爷爷", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-043", "type": "relation_word", "word": "奶奶", "class": "奶奶", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-044", "type": "relation_word", "word": "外婆", "class": "外婆", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-045", "type": "relation_word", "word": "姥姥", "class": "外婆", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-046", "type": "relation_word", "word": "外公", "class": "爷爷", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-047", "type": "relation_word", "word": "儿子", "class": "儿子", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-048", "type": "relation_word", "word": "女儿", "class": "女儿", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-049", "type": "relation_word", "word": "孩子", "class": "子女", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-050", "type": "relation_word", "word": "朋友", "class": "朋友", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-051", "type": "relation_word", "word": "好友", "class": "朋友", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-052", "type": "relation_word", "word": "挚友", "class": "朋友", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-053", "type": "relation_word", "word": "同学", "class": "同学", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-054", "type": "relation_word", "word": "同事", "class": "同事", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-055", "type": "relation_word", "word": "老师", "class": "老师", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-056", "type": "relation_word", "word": "学生", "class": "学生", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-057", "type": "relation_word", "word": "邻居", "class": "邻居", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-058", "type": "relation_word", "word": "搭档", "class": "搭档", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-059", "type": "relation_word", "word": "师父", "class": "师父", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
+{"id": "rel-060", "type": "relation_word", "word": "徒弟", "class": "徒弟", "source": "本项目整理的关系称谓词表（按亲属/社会关系分类）"}
