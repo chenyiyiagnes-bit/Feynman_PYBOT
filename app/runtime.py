@@ -42,6 +42,8 @@ from omega_mind.pybot_bridge import PyBotBridge  # noqa: E402
 
 from bridge import LeftResponder, Persona, PersonaError, load  # noqa: E402
 
+from . import style_audit  # noqa: E402
+
 DEFAULT_PERSONAS = ROOT / "personas"
 
 #: The state helpers are defined once in ``omega_mind.paths`` so the CLI can
@@ -152,4 +154,8 @@ def build(target: Union[str, Path],
                             **kwargs)
     # load() predates the bridge, so attach the responder after the fact.
     engine.left_responder = responder
+    if style_audit.enabled():
+        # Log-only: measures each reply against the package's own band and
+        # writes a JSONL line under the state directory. Never blocks.
+        style_audit.install(engine, persona.id, package_language, kb)
     return engine
