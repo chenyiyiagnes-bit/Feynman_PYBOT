@@ -551,21 +551,29 @@ class TestEnglishKnowledge(unittest.TestCase):
         learned = {doc.id for doc in self.zh.docs
                    if doc.id.startswith("learned-")}
         zh_ids = {doc.id for doc in self.zh.docs} - learned
-        en_ids = {doc.id for doc in self.en.docs}
+        # quote-* rows are verbatim citations added on the English side only.
+        # They are not a second copy of a Chinese card, and they do not
+        # replace one.
+        quote_ids = {doc.id for doc in self.en.docs
+                     if doc.id.startswith("quote-")}
+        en_ids = {doc.id for doc in self.en.docs} - quote_ids
         self.assertEqual(en_ids, zh_ids)
+        self.assertTrue(quote_ids)
         # The English row carries the Chinese card's type, so a biography
         # stays a biography after the filename no longer decides the kind.
-        self.assertEqual({doc.id: doc.kind for doc in self.en.docs},
+        self.assertEqual({doc.id: doc.kind for doc in self.en.docs
+                          if doc.id not in quote_ids},
                          {doc.id: doc.kind for doc in self.zh.docs
                           if doc.id in en_ids})
         zh_facts = _jsonl_rows(Path(self.zh.dir) / "verified_facts.jsonl")
         en_facts = _jsonl_rows(Path(self.en.dir) / "verified_facts.jsonl")
-        self.assertEqual([row["id"] for row in en_facts],
+        en_web = [row for row in en_facts if row["id"].startswith("web-")]
+        self.assertEqual([row["id"] for row in en_web],
                          [row["id"] for row in zh_facts])
-        self.assertEqual(len(en_facts), 9)
-        # The quotes were already English on the Chinese package. The English
-        # package keeps that wording; it does not back-translate.
-        for zh_row, en_row in zip(zh_facts, en_facts):
+        self.assertEqual(len(en_web), 9)
+        # The nine page excerpts were already English on the Chinese package.
+        # The English package keeps that wording; it does not back-translate.
+        for zh_row, en_row in zip(zh_facts, en_web):
             for field in ("title", "text", "quote", "source", "source_url"):
                 self.assertEqual(en_row[field], zh_row[field], zh_row["id"])
             self.assertIn(en_row["id"], en_ids)
@@ -618,11 +626,21 @@ class TestEnglishKnowledge(unittest.TestCase):
             self.assertTrue(row.get("id"), name)
             self.assertFalse(_has_cjk_in_values(row), name)
             if name == "verified_facts.jsonl":
-                # Original English web quotes, not a translation of a
-                # Chinese card.
+                # Not a translation of a Chinese card. fetched_page is a
+                # stored page excerpt. verbatim is a sentence checked
+                # against his English. Neither is a teaching-card rewrite.
                 self.assertNotEqual(row.get("source_language"), "zh", name)
                 self.assertIsNone(row.get("translation_of"), name)
+                wording = row.get("wording")
+                self.assertIn(wording, ("fetched_page", "verbatim"), row["id"])
+                if wording == "verbatim":
+                    self.assertTrue(row["id"].startswith("quote-"), row["id"])
+                    self.assertEqual(row.get("text"), row.get("quote"), row["id"])
+                    self.assertTrue(row.get("source"), row["id"])
+                else:
+                    self.assertTrue(row["id"].startswith("web-"), row["id"])
                 continue
+            self.assertEqual(row.get("wording"), "rewrite", row["id"])
             layer = row.get("layer", "base")
             self.assertIn(layer, ("base", "learned"), row["id"])
             support = row.get("support") or []
