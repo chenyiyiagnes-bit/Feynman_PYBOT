@@ -24,6 +24,8 @@ personas/laozhuang-en/   老庄 · 英文
 - 两包之间**不共享任何软数据**：知识卡、联想边、学习覆盖、语料全部按包隔离。
 - 骨架（`right/` `app/` `bridge/` `left/`）里不允许出现指向某个人设的默认路径；
   默认值用 `Path(__file__).resolve().parents[N]` 或环境变量。
+- 骨架/血肉的分界与三条推论写在 `contracts/persona.md`；卡片出处统一由
+  `right/omega_mind/provenance.py` 读（新卡写 `support`，顶层 `source` 读取时归一化）。
 
 ## 2. 现在做到哪了
 
@@ -37,7 +39,8 @@ personas/laozhuang-en/   老庄 · 英文
 - 派生状态（`kb_learned`/`assoc`/`lexicon`）落在包自己的 `data/` 下。
 - 也就是说 F1–F3 已关闭（`01abd0d`）。`right/pi-refactor`（worktree
   `projects/PYBOT-right`，`ad33eb9`）是一版拆分模块的实现，**未合并**，留作参考。
-- `feynman-zh` 381 行、载入 306 张（其余 75 行是 `people`/`relations`/`taste_discriminants`，
+- 卡片数量的快照（2026-11-26；当前值用 `python3 tools/card_coverage.py` 查）：
+  `feynman-zh` 381 行、载入 306 张（其余 75 行是 `people`/`relations`/`taste_discriminants`，
   按设计不检索）；`feynman-en` 306 张（英文卡在包内，不在引擎目录）。
 - `laozhuang-zh` 82 张卡，`laozhuang-en` 82 张卡（`lz-en-NNN` ↔ `lz-zh-NNN` 一一对应）。
   两包的 26 个 cubie、baselines/taus/triggers 已按新结构迁入，`validate_persona`

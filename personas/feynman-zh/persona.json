@@ -33,7 +33,10 @@
       "，你说呢？",
       "，对不对？",
       "——就这么简单。"
-    ]
+    ],
+    "abstain_zh": "嗯……这个问题我得再翻翻记忆库。",
+    "followup_gap_zh": "我手头就这些资料。你想先弄清哪一步？",
+    "hedge_zh": "这个我把握不算大，先说最贴近的一个。"
   },
   "switches": {
     "correction_as_curiosity": true,

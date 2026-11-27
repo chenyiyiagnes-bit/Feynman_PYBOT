@@ -15,7 +15,9 @@ A *quote* also carries the span, hashed, so the text can be re-checked:
     ]
 
 The Chinese packages put the same claim in a top-level ``source`` string;
-that counts as a one-entry cite, not as a missing block.
+that counts as a one-entry cite, not as a missing block. The three shapes
+are read by ``omega_mind.provenance``, the one place that knows them; the
+canonical form for new cards is ``support``.
 
     python3 tools/card_support.py                 # check every package
     python3 tools/card_support.py --strict        # also fail on cards without support
@@ -48,7 +50,7 @@ for _extra in (ROOT, ROOT / "right"):
     if str(_extra) not in sys.path:
         sys.path.insert(0, str(_extra))
 
-from omega_mind import feynman_kb  # noqa: E402
+from omega_mind import feynman_kb, provenance  # noqa: E402
 
 
 def _sha(text: str) -> str:
@@ -69,16 +71,6 @@ def _resolve_source(path_text: str, bases: List[Path]) -> Optional[Path]:
         if path.is_file():
             return path
     return None
-
-
-def _is_cite(source: object) -> bool:
-    """A top-level source: a non-empty string, or a book/chapter mapping."""
-    if isinstance(source, str):
-        return bool(source.strip())
-    if isinstance(source, dict):
-        return bool(source) and any(
-            isinstance(v, str) and v.strip() for v in source.values())
-    return False
 
 
 def _check_entry(entry: object, bases: List[Path]) -> Dict[str, str]:
@@ -148,21 +140,19 @@ def check(root: Optional[Path] = None,
                 if row.get("translation_of") or row.get("source_language") not in (
                         None, "", language):
                     package_row["translation_markers"] += 1
-                support = row.get("support")
-                if support is None:
-                    source = row.get("source")
-                    if _is_cite(source):
-                        package_row["cited"] += 1
-                        continue
-                    package_row["missing"] += 1
-                    package_row["missing_ids"].append(block)
+                support = provenance.entries(row)
+                if not support:
+                    if provenance.declared(row):
+                        package_row["with_support"] += 1
+                        package_row["invalid"].append(
+                            {"card": block,
+                             "problem": "'support' must be a non-empty list"})
+                    else:
+                        package_row["missing"] += 1
+                        package_row["missing_ids"].append(block)
                     continue
-                package_row["with_support"] += 1
-                if not isinstance(support, list) or not support:
-                    package_row["invalid"].append(
-                        {"card": block,
-                         "problem": "'support' must be a non-empty list"})
-                    continue
+                if provenance.declared(row):
+                    package_row["with_support"] += 1
                 statuses = [_check_entry(entry, bases) for entry in support]
                 bad = [s for s in statuses if s["status"] == "invalid"]
                 if bad:
@@ -214,8 +204,7 @@ def pilot(package: Path, questions: Path, limit: int) -> list[dict]:
                   for cid in acceptable if cid in kb.by_id)
     physics = {"physics_guardrail", "physics_card", "lecture_card", "physics_edge", "teachable_unit"}
     ordered = sorted((doc for doc in kb.docs if doc.id in counts and doc.kind in physics
-                      and not doc.row.get("support")
-                     and not _is_cite(doc.row.get("source"))),
+                      and not provenance.cited(doc.row)),
                      key=lambda doc: (-counts[doc.id], doc.id))
     return [{"id": doc.id, "title": doc.title, "revision": card_revision(doc),
              "query_count": counts[doc.id], "current_source": doc.row.get("source"),

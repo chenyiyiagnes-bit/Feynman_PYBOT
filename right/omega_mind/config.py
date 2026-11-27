@@ -66,6 +66,18 @@ class PersonaConfig:
         ".", " — right?", ".", " — that's the point.",
     ])
 
+    # Lines said when the mind cannot answer, or cannot go further. These
+    # are persona data, not engine constants: a package overrides them under
+    # `voice.abstain_zh`, `voice.followup_gap_zh`, `voice.hedge_zh` (and the
+    # `_en` counterparts). The defaults below are neutral, not Feynman's.
+    abstain: str = "嗯……这个问题我得再翻翻记忆库。"
+    abstain_en: str = "I'm not confident about that one."
+    followup_gap: str = "我手头就这些资料。你想先弄清哪一步？"
+    followup_gap_en: str = (
+        "That's as far as my sources go. Which step should we look at again?")
+    hedge: str = "这个我把握不算大，先说最贴近的一个。"
+    hedge_en: str = "I'm not fully certain here; this is the closest I have."
+
     # Feynman-style switches.
     correction_as_curiosity: bool = False
     jargon_aversion: bool = False
@@ -142,9 +154,19 @@ def persona_from_data(data: Mapping) -> PersonaConfig:
         ("ending_particles", "endings_zh"),
         ("catchphrase_prefixes_en", "prefixes_en"),
         ("ending_particles_en", "endings_en"),
+        ("abstain", "abstain_zh"),
+        ("abstain_en", "abstain_en"),
+        ("followup_gap", "followup_gap_zh"),
+        ("followup_gap_en", "followup_gap_en"),
+        ("hedge", "hedge_zh"),
+        ("hedge_en", "hedge_en"),
     ):
         values = voice.get(key)
-        if values:
+        if not values:
+            continue
+        if isinstance(values, str):
+            setattr(cfg, attr, values)
+        else:
             setattr(cfg, attr, list(values))
     switches = data.get("switches") or {}
     cfg.correction_as_curiosity = bool(switches.get("correction_as_curiosity", False))

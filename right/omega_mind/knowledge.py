@@ -33,6 +33,7 @@ _FACTS: List[Tuple[str, str]] = [
 ]
 
 _FALLBACK = "嗯……这个问题我得再翻翻记忆库。"
+_FALLBACK_EN = "I'm not confident about that one."
 
 
 _NAME = re.compile(r"^(?:你好[，,]?\s*)?我叫([一-鿿A-Za-z·]{2,8})[。.!！]*$")
@@ -61,15 +62,19 @@ def social_reply(text: str, language: str) -> Optional[str]:
     return None
 
 
-def answer_en(text: str) -> Tuple[str, str]:
-    """English builtin: greeting, name, and an explicit fallback."""
+def answer_en(text: str, fallback: Optional[str] = None) -> Tuple[str, str]:
+    """English builtin: greeting, name, and an explicit fallback.
+
+    ``fallback`` lets the caller supply the persona's own abstention line;
+    the module default is neutral.
+    """
     social = social_reply(text, "en")
     if social is not None:
         return social, "builtin_en"
-    return "I'm not confident about that one.", "fallback_en"
+    return fallback or _FALLBACK_EN, "fallback_en"
 
 
-def answer(text: str) -> Tuple[str, str]:
+def answer(text: str, fallback: Optional[str] = None) -> Tuple[str, str]:
     """Return (reply, source)."""
     social = social_reply(text, "zh")
     if social is not None:
@@ -77,4 +82,4 @@ def answer(text: str) -> Tuple[str, str]:
     for pattern, reply in _FACTS:
         if re.search(pattern, text):
             return reply, "builtin_kb"
-    return _FALLBACK, "fallback"
+    return fallback or _FALLBACK, "fallback"

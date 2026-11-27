@@ -32,7 +32,10 @@
       ", see?",
       ", right?",
       " — that's all there is to it."
-    ]
+    ],
+    "abstain_en": "I'm not confident about that one.",
+    "followup_gap_en": "That's as far as my sources go. Which step should we look at again?",
+    "hedge_en": "I'm not fully certain here; this is the closest I have."
   },
   "switches": {
     "correction_as_curiosity": true,

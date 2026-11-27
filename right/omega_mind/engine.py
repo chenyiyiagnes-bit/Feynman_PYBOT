@@ -109,22 +109,11 @@ _PROACTIVE = {
 }
 
 LANGUAGES = ("zh", "en")
-_FALLBACK = {
-    "zh": "嗯……这个问题我得再翻翻记忆库。",
-    "en": "I'm not confident about that one.",
-}
-_FOLLOWUP_GAP = {
-    "zh": "我手头就这些资料。你想先弄清哪一步？",
-    "en": "That's as far as my sources go. Which step should we look at again?",
-}
 _ACK = {"zh": "嗯。", "en": "Got it."}
 
-# A guarded turn says so when two cards are almost tied. This is a style
-# sentence, not a fact: it only comments on the retrieval margin.
-_HEDGE = {
-    "zh": "这个我把握不算大，先说最贴近的一个。",
-    "en": "I'm not fully certain here; this is the closest I have.",
-}
+# Abstention, follow-up-gap and hedge lines live in PersonaConfig (voice
+# data), not here: they are the persona's own words. `Engine._voice` picks
+# the right language variant.
 _HEDGE_MARGIN = 0.06
 
 # Proactive interference: when a new subject arrives while most of the cube
@@ -386,6 +375,15 @@ class MindEngine:
 
     # -- main loop ---------------------------------------------------------
 
+    def _voice(self, attr: str) -> str:
+        """A spoken line from the persona, in the mind's language.
+
+        ``abstain``/``followup_gap``/``hedge`` are voice data; the English
+        variants carry the ``_en`` suffix.
+        """
+        name = attr if self.language == "zh" else attr + "_en"
+        return str(getattr(self.persona, name, "") or "")
+
     def turn(
         self,
         text: str,
@@ -518,7 +516,7 @@ class MindEngine:
         else:
             source = "provided"
             if not _match_language(base_reply, self.language):
-                base_reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
+                base_reply, source = self._voice("abstain"), f"fallback:{self.language}"
 
         style_state = (AffectState.from_persona(self.persona, now)
                        if self.posture_mode == "fixed" else self.state)
@@ -712,7 +710,7 @@ class MindEngine:
         if (self.left_responder is None or not self._uses_knowledge_package()
                 or prefix not in (own, own + "_soft") or not card_id
                 or card_id == "no_match" or self.last_retrieval.get("source") != source
-                or act == "repeat" or text.endswith(_HEDGE[self.language])):
+                or act == "repeat" or text.endswith(self._voice("hedge"))):
             return None
         allowed = evidence.candidates(text, self.language)
         if not allowed:
@@ -940,19 +938,21 @@ class MindEngine:
                          "My sources give different answers. Which conditions do you mean?"),
                         f"clarification:{self.language}")
             if packaged:
-                return _FALLBACK[self.language], f"fallback:{self.language}"
+                return self._voice("abstain"), f"fallback:{self.language}"
             # Keep the standalone prototype's fallback tools for callers
             # without a persona knowledge package.
             if self.language == "zh":
                 bridged = self._left_reply(text, cube_bias)
-                reply, source = bridged if bridged is not None else knowledge.answer(text)
+                reply, source = (bridged if bridged is not None else
+                                 knowledge.answer(text, self._voice("abstain")))
             else:
 
                 reply, source = self.bridge.reply(text)
                 if not _match_language(reply or "", "en"):
-                    reply, source = knowledge.answer_en(text)
+                    reply, source = knowledge.answer_en(
+                        text, self._voice("abstain"))
         if not reply or not _match_language(reply, self.language):
-            reply, source = _FALLBACK[self.language], f"fallback:{self.language}"
+            reply, source = self._voice("abstain"), f"fallback:{self.language}"
         # A guarded mind flags a near-tie instead of pretending to be sure.
         # Proactive interference widens the line: a new subject arriving while
         # the cube is still loaded from the last one gets the same hedge even
@@ -972,7 +972,7 @@ class MindEngine:
                 and (hedge_applies(margin, policy.posture, interference)
                      or (policy.posture == "careful"
                          and margin is not None and margin < _HEDGE_MARGIN))):
-            reply = reply + _HEDGE[self.language]
+            reply = reply + self._voice("hedge")
             self.last_retrieval["hedge"] = True
             self._last_hedge_turn = self.turn_index
         self._note_card(source)
@@ -1010,7 +1010,7 @@ class MindEngine:
             if target:
                 return None
             self.last_retrieval = {"dialogue_act": "followup_gap", "card_id": focus.card_id}
-            return _FOLLOWUP_GAP[self.language], f"fallback:{self.language}"
+            return self._voice("followup_gap"), f"fallback:{self.language}"
         self.last_retrieval = {
             "dialogue_act": kind, "source": focus.source,
             "card_id": focus.card_id, "revision": dialogue.card_revision(card),

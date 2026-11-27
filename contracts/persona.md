@@ -13,7 +13,7 @@
 | `language` | `"zh"` \| `"en"` | 本包的语言。一个包只有一种语言 |
 | `baselines` | object | 7 维基线：dopamine/cortisol/valence/arousal/affinity/defensiveness/energy；valence ∈ [-1,1]，其余 [0,1] |
 | `taus` | object | 每维的指数衰减时间常数（秒） |
-| `voice` | object | 只放本包语言的 `prefixes_<lang>/endings_<lang>` |
+| `voice` | object | 只放本包语言的 `prefixes_<lang>/endings_<lang>`，以及答不上来时的台词 `abstain_<lang>`、追问走不下去时的 `followup_gap_<lang>`、把握不大时的 `hedge_<lang>`；不写则用引擎的中性默认句 |
 | `switches` | object | `correction_as_curiosity` / `jargon_aversion` / `politeness` |
 | `disable_cubies` | array | 关掉的方块名（如费曼关掉 `corner_shame`） |
 | `override_triggers` | object | 方块名 → 额外正则列表（覆盖默认触发器） |
@@ -53,6 +53,26 @@ personas/laozhuang-en/   老庄 · 英文
 | 学习覆盖（教给它的新卡片） | `$PYBOT_STATE_DIR/<id>/kb_learned/`，默认 `~/.pybot/<id>/kb_learned/`（旧目录 `~/.feynman_pybot` 仍存在且新目录未建时沿用旧目录） | 否（运行时状态） |
 
 引擎里没有指向某个人设的默认路径：换人设就换整个目录，不存在「老庄继承了费曼的联想」。
+
+## 骨架与血肉：一条可以检查的分界线
+
+判断一样东西该写进引擎（骨架）还是写进包（血肉），只问一句：**换掉人设之后，
+它还应不应该成立？**
+
+- **骨架**：对话循环、检索算法、风格测量、加载规则、协议、评测工具、默认阈值。
+  它们对所有包一样，错了是整体出错，能用规则断言。
+- **血肉**：卡片正文、`voice` 台词、方块取值、`baselines`/`taus`、别名与出处、
+  语料。它们只属于一个包，错了只坏一个包，好坏靠金标集和盲评判断。
+- **衍生血肉**：lexicon、联想边、风格带数值、账本。由卡片算出来，可重建，
+  不入库；入骨架的只是重建程序。
+
+三条推论：
+
+1. 凡是能从血肉算出来的数字，不要写进文档当事实——文档写命令，数字让工具现算。
+2. 只有骨架能保证的性质（英文前缀的空格、跨语言拒答、出处形状），不要指望某个
+   包的数据碰巧写对；反过来，某个包的说话习惯也不要硬编码进引擎。
+3. 同一份事实只有一个真源。卡片出处统一走 `omega_mind/provenance.py`：新卡写
+   `support`，旧的顶层 `source` 在读取时归一化，不再各工具各认一套。
 
 ## 方块（cubie）
 

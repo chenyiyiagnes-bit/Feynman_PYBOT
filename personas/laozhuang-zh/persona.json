@@ -31,7 +31,10 @@
     "endings_zh": [
       "。",
       "……"
-    ]
+    ],
+    "abstain_zh": "这个我说不准，容我想一想。",
+    "followup_gap_zh": "我手上只有这些；你想先从哪一处看起？",
+    "hedge_zh": "我把握不大，且说最贴近的一层。"
   },
   "switches": {
     "correction_as_curiosity": true,
