@@ -589,7 +589,7 @@ class MindEngine:
         # Remember where this answer came from, so the next turn's aside can
         # continue the thought. Only a card counts; small talk breaks the
         # thread on purpose.
-        if source.startswith(("feynman_kb:", "feynman_kb_en:")):
+        if source.startswith("feynman_kb:"):
             self._last_card = source.split(":", 1)[1]
         else:
             self._last_card = None

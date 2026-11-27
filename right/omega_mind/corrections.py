@@ -9,6 +9,13 @@ active when it happened, so a fix can be checked rather than believed.
 The log is one JSON object per line under the state directory (never in git):
     {"kind": "segmentation", "query": "...", "produced": [...],
      "expected": [...], "source": "词表", "lexicon": "0a1b...", "ts": "..."}
+
+This is a manual utility: nothing in the pipeline calls ``record()`` on its
+own. When a cut or an answer is wrong, someone records it by hand (or from a
+script they write); ``summary()``/``unresolved()``/``replay()`` then work on
+whatever has accumulated. Hooking it to an automatic producer is deliberately
+left open — an automatic "wrong answer" signal would need a source of truth
+this repo does not have.
 """
 
 from __future__ import annotations

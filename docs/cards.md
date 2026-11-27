@@ -23,6 +23,12 @@ python3 tools/card_coverage.py --check-ledger data/card_ledger.json
 出现 `bad-json` 或 `unaccounted`（工具数出来的卡和 KB 里的卡对不上）就以 1 退出。
 「有原因地跳过」不算失败——`people.jsonl` 本来就不该被检索；没有原因地消失才算。
 
+**`people`/`relations`/`taste_discriminants` 三类的去向（2026-11-26 定）：**保留在包内当
+资料库，不转成可检索卡。它们记录的是人和关系（重名、称谓、亲疏）与口味鉴别，没有
+「问一句 → 答一段」的正文形态，硬塞进检索只会拿人名和亲属关系去抢答物理问题。
+`feynman-zh` 的 75 条不再检索行全部来自这三类；将来若要让人设利用它们，应该做成
+生成措辞时的约束层（比如决定叫不叫 nickname），而不是第四种卡。
+
 `--write-ledger` 给每张卡记下 `block_id`（`包:文件:卡 id`）和整行内容的
 `text_sha256`。以后用 `--check-ledger` 就能发现「这张卡被改过」「这张卡不见了」
 「新加了卡」——改卡本身不是错，改了却没意识到才是。
@@ -30,9 +36,11 @@ python3 tools/card_coverage.py --check-ledger data/card_ledger.json
 **它不证明什么：** 卡能被加载 ≠ 卡答得对。那要看 `tools/eval_segmentation.py`
 和 golden 集。
 
-## 2. 出处：`support` 块
+## 2. 出处：三种写法，一种要求
 
-卡片可以带可选字段 `support`，记录这条判断是从哪句话来的：
+卡片要说明「这条判断是从哪来的」，允许三种写法，工具都认：
+
+**a. 带引文的 `support` 条目**──原文能逐字摘下来时用它：
 
 ```json
 "support": [
@@ -45,16 +53,25 @@ python3 tools/card_coverage.py --check-ledger data/card_ledger.json
 ]
 ```
 
+**b. 只指来源的 `support` 条目**──改写过的卡引不出原句，只写 `{"source": "FLP I-1-1"}`
+就算 **cite**（有出处，无引文），不算缺 support。
+
+**c. 卡片顶层的 `source`**──中文包和两本老庄包用的是这种：`"source": "《费曼物理学讲义》第一卷"`，
+或 `"source": {"book": "道德经", "chapter": "第一章"}`。同样是出处，计入 cite。
+
 ```sh
 python3 tools/card_support.py                 # 校验已有 support 块
-python3 tools/card_support.py --strict        # 没写 support 的卡也算失败
-python3 tools/card_support.py --list-missing  # 列出还没写的卡
+python3 tools/card_support.py --strict        # 一条出处都没有的卡也算失败
+python3 tools/card_support.py --list-missing  # 列出既无 support 也无 source 的卡
 ```
 
-`source_file` 是**本机**的原文文件，不入库（语料红线）；相对路径先按包目录、
+对带引文的条目：`source_file` 是**本机**的原文文件，不入库（语料红线）；相对路径先按包目录、
 再按仓库根找。文件在：引文必须逐字出现（空白不计），`quote_sha256` 必须对上；
 文件不在：记为 **unverified**，不算 valid。格式坏、哈希对不上、引文找不到：
-记 invalid，退出 1。
+记 invalid，退出 1。只指来源的 cite 条目不做文件核对，形状对就计入。
+
+当前实测（2026-11-26）：`feynman-en` 306 张全部 cite、0 缺；`feynman-zh` 4 张带引文、
+284 张 cite、97 张两条出处都没有（`--list-missing` 可列）；`laozhuang-*` 各 82 张全部 cite。
 
 **它不证明什么：** 引文真实 ≠ 引文支持卡片的说法。一句原话可以被正确地摘下来，
 却和卡片的结论无关——这个判断只能人来下。工具管形状，不管含义。

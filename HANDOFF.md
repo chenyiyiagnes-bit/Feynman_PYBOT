@@ -37,8 +37,9 @@ personas/laozhuang-en/   老庄 · 英文
 - 派生状态（`kb_learned`/`assoc`/`lexicon`）落在包自己的 `data/` 下。
 - 也就是说 F1–F3 已关闭（`01abd0d`）。`right/pi-refactor`（worktree
   `projects/PYBOT-right`，`ad33eb9`）是一版拆分模块的实现，**未合并**，留作参考。
-- `feynman-zh` 302 张卡，`feynman-en` 293 张（英文卡在包内，不在引擎目录）。
-- `laozhuang-zh` 29 张卡，`laozhuang-en` 18 张卡（`lz-en-NNN` ↔ `lz-zh-NNN` 一一对应）。
+- `feynman-zh` 381 行、载入 306 张（其余 75 行是 `people`/`relations`/`taste_discriminants`，
+  按设计不检索）；`feynman-en` 306 张（英文卡在包内，不在引擎目录）。
+- `laozhuang-zh` 82 张卡，`laozhuang-en` 82 张卡（`lz-en-NNN` ↔ `lz-zh-NNN` 一一对应）。
   两包的 26 个 cubie、baselines/taus/triggers 已按新结构迁入，`validate_persona`
   零警告；`laozhuang-en` 的 voice 仍是占位（D2）。
 - 语料、`readings/`、`corpus/` 只在本机，不入库；`tests/test_laozhuang_package.py`
@@ -117,7 +118,7 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 | # | 任务 | 验收标准 | 依赖 |
 |---|---|---|---|
 | C1 | 词条晋升流程 | **已完成** `68ca31c`：候选＝高 npmi 跨卡相邻词对；晋升须在人工切分集上 F1 提升 ≥ `MIN_F1_GAIN`（0.0005，暂定，可用 `--retry` 重评）且不丢 exact；决定记入 `data/lexicon/promotions.jsonl`，重建保留晋升 | B1、A4 |
-| C2 | 人工修正日志 | **已完成** `386e182`：`omega_mind/corrections.py` 记录切错/答错（含出处、词表版本、时间），可统计、可回放 | B1 |
+| C2 | 人工修正日志 | **已完成** `386e182`：`omega_mind/corrections.py` 记录切错/答错（含出处、词表版本、时间），可统计、可回放。**注意：`record()` 目前没有自动调用方，是手工工具**——修一条就手动 `record` 一次，没有上游自动写入 | B1 |
 | C3 | 词表版本化 | **已完成** `d8f7dd3`：整批写入 `versions/<内容哈希>/`，`tools/lexicon_versions.py` 整文件回滚；编码过期时闸门自动失效 | B1 |
 
 ### D. 内容与包
@@ -129,7 +130,7 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 | D3 | 文言语料随包发布 | **已决定：不随包发布**，与费曼包一致——仓库只放卡片，语料自备；已写进 README/TASK，`tests/test_laozhuang_package.py` 守着 | 所有者确认 |
 | D4 | `tools/build_assoc.py` | **已完成** `5296c9c`：由卡片重建 `origin="cooccur"` 候选边，扇出封顶，重建逐字节一致 | B1（可复用 PMI） |
 | D5 | 通知协作者目录改名 | Gemini / Astra 的脚本不再引用 `personas/feynman`、`personas/laozhuang` | — |
-| D6 | `feynman-en` 疑似整包中文回译 | 核查发现：293 张英文卡**全部**带 `translation_of`/`source_language: zh`，抽查 `core-001` 是中文卡逐句英译，且缺 `move`/`evidence_*` 字段。违反「英文只能用费曼原话，禁止中文回译」。需要确认是否整包重做，或保留为可用的英文回声层并在 README 标注来源 | — |
+| D6 | `feynman-en` 疑似整包中文回译 | **已标签化**：306 张里 293 条 `wording: "rewrite"`、9 条 `fetched_page`、4 条 `verbatim`（逐字引文卡）。改写层仍不是逐条费曼原话，`right/omega_mind/README.md` 已按此标注来源；整包重做与否仍未定 | — |
 
 ### E. 更远
 

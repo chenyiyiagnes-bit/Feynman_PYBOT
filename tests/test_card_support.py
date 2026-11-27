@@ -104,6 +104,36 @@ class TestCardSupport(unittest.TestCase):
         report = card_support.check(root=self.root)
         self.assertEqual(len(report["packages"]["tiny-zh"]["invalid"]), 1)
 
+    def test_a_cite_without_a_quote_is_counted_not_rejected(self):
+        # A rewrite cannot quote its source; naming it is still provenance.
+        write_package(self.root, "tiny-zh", [card(
+            "a", [{"source": "FLP I-1-1"}])])
+        package = card_support.check(root=self.root)["packages"]["tiny-zh"]
+        self.assertEqual(package["invalid"], [])
+        self.assertEqual(package["cited"], 1)
+        self.assertEqual(card_support.main(["--root", str(self.root)]), 0)
+
+    def test_a_top_level_source_is_provenance_too(self):
+        # The Chinese packages carry `source` on the card; that is the same
+        # claim as a one-entry cite block, not a missing block.
+        row = card("a")
+        row["source"] = "《费曼物理学讲义》第一卷"
+        write_package(self.root, "tiny-zh", [row])
+        package = card_support.check(root=self.root)["packages"]["tiny-zh"]
+        self.assertEqual(package["missing"], 0)
+        self.assertEqual(package["cited"], 1)
+        self.assertEqual(card_support.main(
+            ["--root", str(self.root), "--strict"]), 0)
+
+    def test_a_structured_source_is_provenance_too(self):
+        # laozhuang cards name a book and chapter, not a URL.
+        row = card("a")
+        row["source"] = {"book": "道德经", "chapter": "第一章"}
+        write_package(self.root, "tiny-zh", [row])
+        package = card_support.check(root=self.root)["packages"]["tiny-zh"]
+        self.assertEqual(package["missing"], 0)
+        self.assertEqual(package["cited"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

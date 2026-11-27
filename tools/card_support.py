@@ -1,6 +1,11 @@
-"""Check the optional ``support`` block: where a card's claim comes from.
+"""Check where a card's claim comes from: the ``support`` block or ``source``.
 
-A card may record its evidence as a list of quotes:
+A card records provenance in one of two shapes. A *cite* names the source
+without quoting it — the only honest option for a rewrite:
+
+    "support": [{"source": "FLP I-1-1"}]
+
+A *quote* also carries the span, hashed, so the text can be re-checked:
 
     "support": [
       {"source": "FLP I-1-1",
@@ -8,6 +13,9 @@ A card may record its evidence as a list of quotes:
        "source_file": "reference/flp-i.txt",
        "quote_sha256": "<sha256 of the quote, utf-8>"}
     ]
+
+The Chinese packages put the same claim in a top-level ``source`` string;
+that counts as a one-entry cite, not as a missing block.
 
     python3 tools/card_support.py                 # check every package
     python3 tools/card_support.py --strict        # also fail on cards without support
@@ -63,14 +71,26 @@ def _resolve_source(path_text: str, bases: List[Path]) -> Optional[Path]:
     return None
 
 
+def _is_cite(source: object) -> bool:
+    """A top-level source: a non-empty string, or a book/chapter mapping."""
+    if isinstance(source, str):
+        return bool(source.strip())
+    if isinstance(source, dict):
+        return bool(source) and any(
+            isinstance(v, str) and v.strip() for v in source.values())
+    return False
+
+
 def _check_entry(entry: object, bases: List[Path]) -> Dict[str, str]:
-    """('valid'|'unverified'|'invalid', problem) for one support entry."""
+    """('valid'|'unverified'|'cite'|'invalid', problem) for one entry."""
     if not isinstance(entry, dict):
         return {"status": "invalid", "problem": "support entry is not an object"}
     source = entry.get("source")
     quote = entry.get("quote")
     if not isinstance(source, str) or not source.strip():
         return {"status": "invalid", "problem": "missing 'source'"}
+    if quote is None:
+        return {"status": "cite", "problem": ""}
     if not isinstance(quote, str) or not quote.strip():
         return {"status": "invalid", "problem": "missing 'quote'"}
     recorded = entry.get("quote_sha256")
@@ -108,8 +128,9 @@ def check(root: Optional[Path] = None,
         if not knowledge.is_dir():
             continue
         package_row = {"cards": 0, "with_support": 0, "valid": 0,
-                       "unverified": 0, "missing": 0, "invalid": [],
-                       "missing_ids": [], "reviewed": 0, "translation_markers": 0}
+                       "unverified": 0, "cited": 0, "missing": 0,
+                       "invalid": [], "missing_ids": [], "reviewed": 0,
+                       "translation_markers": 0}
         for file in sorted(knowledge.glob("*.jsonl")):
             if file.name in feynman_kb.SKIP_FILES:
                 continue
@@ -129,6 +150,10 @@ def check(root: Optional[Path] = None,
                     package_row["translation_markers"] += 1
                 support = row.get("support")
                 if support is None:
+                    source = row.get("source")
+                    if _is_cite(source):
+                        package_row["cited"] += 1
+                        continue
                     package_row["missing"] += 1
                     package_row["missing_ids"].append(block)
                     continue
@@ -145,6 +170,8 @@ def check(root: Optional[Path] = None,
                         {"card": block, "problem": bad[0]["problem"]})
                 elif any(s["status"] == "unverified" for s in statuses):
                     package_row["unverified"] += 1
+                elif all(s["status"] == "cite" for s in statuses):
+                    package_row["cited"] += 1
                 else:
                     package_row["valid"] += 1
                     if all(entry.get("reviewed_by") and entry.get("quote_sha256")
@@ -160,6 +187,7 @@ def render(report: dict, list_missing: bool = False) -> str:
         lines.append(
             f"{name:<16} cards {row['cards']:>4}  supported {row['with_support']:>4}"
             f"  valid {row['valid']:>4}  unverified {row['unverified']:>4}"
+            f"  cited {row['cited']:>4}"
             f"  missing {row['missing']:>4}  invalid {len(row['invalid'])}"
             f"  reviewed {row['reviewed']}  translation markers {row['translation_markers']}")
         for problem in row["invalid"][:20]:
@@ -186,7 +214,8 @@ def pilot(package: Path, questions: Path, limit: int) -> list[dict]:
                   for cid in acceptable if cid in kb.by_id)
     physics = {"physics_guardrail", "physics_card", "lecture_card", "physics_edge", "teachable_unit"}
     ordered = sorted((doc for doc in kb.docs if doc.id in counts and doc.kind in physics
-                      and not doc.row.get("support")),
+                      and not doc.row.get("support")
+                     and not _is_cite(doc.row.get("source"))),
                      key=lambda doc: (-counts[doc.id], doc.id))
     return [{"id": doc.id, "title": doc.title, "revision": card_revision(doc),
              "query_count": counts[doc.id], "current_source": doc.row.get("source"),

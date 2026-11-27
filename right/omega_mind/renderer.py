@@ -76,8 +76,8 @@ class Renderer:
         body = self._strip_trailing(base)
         recent = self._recent.setdefault(language, deque(maxlen=50))
 
-        reply = self._with_ending((prefix or "") + body, endings, turn,
-                                  language)
+        reply = self._with_ending(self._join_prefix(prefix, body, language),
+                                  endings, turn, language)
         if reply in recent:
             reply = self._dedupe(prefix, body, endings, language,
                                  playful=not careful,
@@ -108,6 +108,21 @@ class Renderer:
     def _expire(self, turn: int) -> None:
         while self._prefix_history and turn - self._prefix_history[0][0] >= _COOLDOWN_TURNS:
             self._prefix_history.popleft()
+
+    @staticmethod
+    def _join_prefix(prefix: Optional[str], body: str,
+                     language: str = "zh") -> str:
+        """Attach an opener so it never eats the first word.
+
+        English openers ("Look,", "Hmm.") end in punctuation with no trailing
+        space in the persona config, so they need one; Chinese openers
+        ("等一下，") do not take a space at all.
+        """
+        if not prefix:
+            return body
+        if language == "en" and not prefix[-1].isspace():
+            return prefix + " " + body
+        return prefix + body
 
     @staticmethod
     def _strip_trailing(text: str) -> str:
@@ -164,13 +179,14 @@ class Renderer:
         unique_endings = list(dict.fromkeys(endings)) or (
             ["."] if language == "en" else ["。"])
         variants: List[str] = []
+        with_prefix = self._join_prefix(prefix, body, language)
         for e in unique_endings:
-            variants.append(f"{prefix or ''}{body}{e}")
+            variants.append(f"{with_prefix}{e}")
         for e in unique_endings:
             variants.append(f"{body}{e}")
         if playful:
             for tag in (tags or _DEFAULT_TAGS.get(language, _DEFAULT_TAGS["zh"])):
-                variants.append(f"{prefix or ''}{body}{tag}")
+                variants.append(f"{with_prefix}{tag}")
         for candidate in variants:
             if candidate not in recent:
                 return candidate
