@@ -27,9 +27,9 @@
       "sha256": "3c547d6b2a15a6f36fe00c86fad35965132c3bd9456866792ffc7f2680516b42"
     },
     "verified_facts.jsonl": {
-      "rows": 9,
+      "rows": 13,
       "withheld_private_rows": 0,
-      "sha256": "2d7ff4347d034a31e18addf50818dbf7b61ab4ff33d0ddc7fc2e8f432d75334f"
+      "sha256": "2979f41f495d0b1e99ac94ec57d752a1f6ed88cde11cad13751f5577064ba069"
     },
     "people.jsonl": {
       "rows": 5,
