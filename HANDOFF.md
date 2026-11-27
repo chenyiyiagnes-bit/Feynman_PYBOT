@@ -133,7 +133,18 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 | D3 | 文言语料随包发布 | **已决定：不随包发布**，与费曼包一致——仓库只放卡片，语料自备；已写进 README/TASK，`tests/test_laozhuang_package.py` 守着 | 所有者确认 |
 | D4 | `tools/build_assoc.py` | **已完成** `5296c9c`：由卡片重建 `origin="cooccur"` 候选边，扇出封顶，重建逐字节一致 | B1（可复用 PMI） |
 | D5 | 通知协作者目录改名 | Gemini / Astra 的脚本不再引用 `personas/feynman`、`personas/laozhuang` | — |
-| D6 | `feynman-en` 疑似整包中文回译 | **已标签化**：306 张里 293 条 `wording: "rewrite"`、9 条 `fetched_page`、4 条 `verbatim`（逐字引文卡）。改写层仍不是逐条费曼原话，`right/omega_mind/README.md` 已按此标注来源；整包重做与否仍未定 | — |
+| D6 | `feynman-en` 疑似整包中文回译 | **已标签化，已定不做整包重做**（2026-11-26）：每张卡带 `wording` 标签（`verbatim`/`fetched_page`/`rewrite`），分布不写死，用 `grep -c` 或工具现数。事实/物理类卡片按批次升级为费曼英文原话（`wording: "verbatim"` + `support` 给到章节页），每批过 `card_support`；人设语气卡保持 `rewrite`（它本来就该是项目措辞，不是原话）。**退掉改写层的判据**：事实类卡片 verbatim + fetched_page 覆盖过半数即可停手；未过半数前两条线并行，不整体推倒。细则见下 | — |
+
+D6 执行细则：
+
+- 批次按知识卡文件走（一个章节或一个主题一批），每批二十到三十条，改完立刻跑
+  `python3 tools/card_support.py`，红的不合批。
+- 升级只认费曼原话：英文句必须能在原著正文里找到，出处写到章节（FLP 卷一/卷二
+  第几章、哪本书哪篇演讲），不拿中文卡回译充数。
+- 语气类卡片（口癖、态度、拒答风格）保留 `rewrite`；它们进 `voice` 或语气卡，
+  不必也不应该伪装成引文。
+- 覆盖过半时把这一段连同判据重写一遍，改成「改写层已退工程量 X%」，再决定是否
+  把剩余 rewrite 逐条重写。
 
 ### E. 更远
 
