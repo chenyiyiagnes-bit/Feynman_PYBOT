@@ -10,6 +10,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -548,6 +549,83 @@ class TestSleepMerge(unittest.TestCase):
         merged = store.sleep_merge()
         self.assertLessEqual(len(merged), 5)
         self.assertGreater(len(merged), 0)
+
+
+class TestColdShelf(unittest.TestCase):
+    OLD = "分形就像海岸线，放大一寸还是锯齿，尺子越短量出的长度越长。"
+    YOUNG = "湍流就像摇晃一杯加奶的咖啡，漩涡套着漩涡往下滚。"
+    USED = "惰性气体就像一屋子懒人，谁也不愿先站起来握手。"
+    ALIASED = "磁场就像看不见的传送带，带电粒子一上去就被带着拐弯。"
+
+    def _seed(self, store: LearnedStore, text: str, days: int) -> dict:
+        row = card_row(text, topic="physics")
+        self.assertIsNotNone(row)
+        row["learned_at"] = (date.today() - timedelta(days=days)).isoformat()
+        store._append({"kind": "card", "row": row})
+        store.load()
+        return row
+
+    def _store(self) -> LearnedStore:
+        return LearnedStore(Path(temp_dir()))
+
+    def test_a_never_used_old_card_is_cold(self):
+        store = self._store()
+        row = self._seed(store, self.OLD, days=90)
+        cold = store.cold()
+        self.assertEqual([item["id"] for item in cold], [row["id"]])
+        self.assertGreaterEqual(cold[0]["days"], 89)
+        self.assertEqual(cold[0]["topic"], "physics")
+        again = LearnedStore(store.dir)
+        self.assertEqual([item["id"] for item in again.cold()], [row["id"]])
+
+    def test_a_reached_card_is_not_cold(self):
+        store = self._store()
+        row = self._seed(store, self.USED, days=90)
+        store.record_hit(row["id"])
+        self.assertEqual(store.cold(), [])
+
+    def test_praise_or_an_alias_warms_a_card(self):
+        store = self._store()
+        praised = self._seed(store, self.USED, days=90)
+        aliased = self._seed(store, self.ALIASED, days=90)
+        store.record_praise(praised["id"])
+        store.add_alias(aliased["id"], "看不见的传送带")
+        self.assertEqual(store.cold(), [])
+
+    def test_a_young_card_is_not_cold(self):
+        store = self._store()
+        self._seed(store, self.YOUNG, days=3)
+        self.assertEqual(store.cold(), [])
+
+    def test_curate_files_a_candidate_and_archives_nothing(self):
+        from omega_mind import review
+
+        store = self._store()
+        row = self._seed(store, self.OLD, days=90)
+        queued = store.curate()
+        self.assertEqual(len(queued), 1)
+        candidates = review.read(store)["candidates"]
+        self.assertEqual(candidates[queued[0]]["kind"], "cold")
+        self.assertEqual(candidates[queued[0]]["card_id"], row["id"])
+        self.assertEqual([c["id"] for c in store.cards], [row["id"]])
+        self.assertEqual(review.read(store)["decisions"], [])
+        self.assertEqual(review.active(review.read(store)), [])
+
+    def test_curate_is_idempotent_across_nights(self):
+        from omega_mind import review
+
+        store = self._store()
+        self._seed(store, self.OLD, days=90)
+        first = store.curate()
+        second = store.curate()
+        self.assertEqual(first, second)
+        self.assertEqual(len(review.read(store)["candidates"]), 1)
+
+    def test_curate_is_capped_per_night(self):
+        store = self._store()
+        for i in range(learner.MAX_COLD_PER_NIGHT + 3):
+            self._seed(store, f"{self.OLD[:-1]}，第{i}号变体。", days=90 + i)
+        self.assertEqual(len(store.curate()), learner.MAX_COLD_PER_NIGHT)
 
 
 class TestEventLog(unittest.TestCase):

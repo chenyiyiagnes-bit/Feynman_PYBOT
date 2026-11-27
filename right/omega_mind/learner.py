@@ -83,6 +83,13 @@ MIN_MERGE_UTILITY_GAP = 1.0
 # new physics metaphors cannot wipe art out of memory.
 TOPIC_FLOOR_CAP = 5
 
+# A card nobody reached in this long — never hit, never praised, no alias —
+# is cold. Cold is a report, not a verdict: the nightly pass only files it in
+# the review journal for a human. Capacity eviction stays the only archive
+# that happens without a person looking at the card.
+STALE_DAYS = 60
+MAX_COLD_PER_NIGHT = 5
+
 
 def normalize(text: str) -> str:
     """Case-, width- and punctuation-insensitive form used for dedupe."""
@@ -634,6 +641,52 @@ class LearnedStore:
             self._enforce_capacity()
             self._write_cards()
         return merged
+
+    def cold(self, days: int = STALE_DAYS) -> List[Dict[str, Any]]:
+        """Cards nobody ever reached, learned at least ``days`` ago.
+
+        A card is warm if anything touched it: a hit, a praise, an alias, or
+        this session's grace. Cold just means the shelf has never needed it.
+        """
+        today = date.today()
+        out: List[Dict[str, Any]] = []
+        for card in self.cards:
+            cid = str(card.get("id"))
+            if cid in self._fresh:
+                continue
+            counts = self.stats.get(cid, {})
+            if counts.get("hits") or counts.get("praise"):
+                continue
+            if self.aliases.get(cid):
+                continue
+            raw = card.get("learned_at")
+            try:
+                learned = date.fromisoformat(raw)
+            except (TypeError, ValueError):
+                continue
+            age = (today - learned).days
+            if age < days:
+                continue
+            out.append({"id": cid, "text": card.get("text"),
+                        "topic": self.topic_of(card), "days": age})
+        out.sort(key=lambda item: -item["days"])
+        return out
+
+    def curate(self, days: int = STALE_DAYS,
+               limit: int = MAX_COLD_PER_NIGHT) -> List[str]:
+        """File cold cards in the review journal; archive none of them."""
+        from . import review
+
+        queued: List[str] = []
+        for item in self.cold(days)[:limit]:
+            identity = review.queue_candidate(self, "cold", {
+                "card_id": item["id"],
+                "text": item["text"],
+                "topic": item["topic"],
+            })
+            if identity:
+                queued.append(identity)
+        return queued
 
     def archive_card(self, card_id: str, reason: str = "manual") -> bool:
         card = next((c for c in self.cards if c.get("id") == card_id), None)

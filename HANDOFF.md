@@ -126,6 +126,9 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 
 | C4 | 逐轮复盘（每轮当场记账） | **已完成**：`omega_mind/reviewer.py` 在 `engine.turn()` 结束后当场判这一轮——`abstain`（兜底/无匹配）、`unverified_followup`（追问没接住）、`weak`（弱命中、分数低于下限、近似并列）。判定只追加一行到 `<state>/<id>/kb_learned/turn_gaps.jsonl`（按行数截断，旧行先丢），**记录不等于晋升**；同一问题第二次出现才在 `review.py` 排一个 `gap` 候选，候选仍需人工裁决。`tools/turn_gaps.py` 跨包导出这张表（`--json` 出挖掘队列，`--promote` 补排队）。数量用 `grep`/跑工具现数，不写死 | C2 |
 
+| C5 | 冷卡巡检（只上报、不删） | **已完成**：`learner.cold()` 列出"从没被用到过"的旧卡——零命中、零称赞、无别名、入库超过 `STALE_DAYS`（60 天）；`learner.curate()` 每夜最多 `MAX_COLD_PER_NIGHT`（5）张排进 `review.py` 候选（`kind="cold"`，载荷只含 card_id/文案/主题，跨夜幂等）。**夜里这一遍不归档任何卡**：自动归档只剩容量回收一条路，其余都得人看过。`engine.dream()` 在 sleep_merge 之后调用，结果记入事件日志 `cold` 字段 | C2、C4 |
+| C6 | 画像审计视图 | **已完成**：每用户画像本已存在（`memory.py` 的 `semantic` 按 `kind:user` 存，带原话、轮次、撤回记录）；补的是可读性——`tools/profile.py` 只读打印某份存档里记住了每个人什么、每条的出处原话和轮次，撤回的标 `(withdrawn)`；`--json` 出 JSONL。**只读不改、不推断**：改事实只能在对话里说（「我不再住在…」），原话跟着事实走 | — |
+
 ### D. 内容与包
 
 | # | 任务 | 验收标准 | 依赖 |

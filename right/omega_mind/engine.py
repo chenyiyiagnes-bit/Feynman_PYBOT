@@ -1191,10 +1191,14 @@ class MindEngine:
             # same topic are absorbed into the more useful one. Merge first,
             # then capacity — merging frees slots rather than creating them.
             sleep_merge: List[Dict[str, Any]] = []
+            cold: List[str] = []
             if self.kb.available() and self.kb.learned is not None:
                 sleep_merge = self.kb.learned.sleep_merge()
                 if sleep_merge:
                     self.kb.reload_learned()
+                # Cold cards are filed for a human, never archived here:
+                # capacity eviction is the only automatic archive.
+                cold = self.kb.learned.curate()
             # Self-audit: repeat-missed questions can mint a gap card or lend
             # an alias to the card they nearly reached, but only after the
             # golden questions still pass. Stress makes the pass read-only.
@@ -1221,6 +1225,7 @@ class MindEngine:
                              "dream": dream.to_dict(),
                              "cube_restore": cube_report,
                              "sleep_merge": sleep_merge,
+                             "cold": cold,
                              "audit": audit})
             if self.auto_save:
                 self.save()
