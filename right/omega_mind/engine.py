@@ -11,7 +11,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from . import dialogue, evidence, knowledge, left_brain, reflect, resonance, review, skepticism
+from . import (dialogue, evidence, knowledge, left_brain, reflect, resonance,
+               review, reviewer, skepticism)
 from .appraisal import Activation, AppraisalEngine
 from .challenge import ChallengeSession
 from .config import PersonaConfig, get_persona
@@ -584,6 +585,26 @@ class MindEngine:
             "text": text,
             **result.to_dict(),
         })
+        # Judge the turn now, while it is still here. A turn that survives to
+        # a dream is audited there; one that does not is only lost if nobody
+        # wrote it down. Recording never promotes: the second sighting of a
+        # question queues a review candidate, and that still waits for a human.
+        if self.kb.available() and self.kb.learned is not None:
+            verdict = reviewer.judge(source, result.retrieval,
+                                     FeynmanKB.MIN_SCORE, FeynmanKB.SOFT_MARGIN)
+            if verdict is not None:
+                near = (result.retrieval.get("alternatives") or [None])[0]
+                row = reviewer.record(self.kb.learned, {
+                    "text": text,
+                    "language": self.language,
+                    "turn": self.turn_index,
+                    "user": user,
+                    "reason": verdict["reason"],
+                    "source": source,
+                    "near": near[0] if near else None,
+                })
+                if row["count"] == reviewer.REPEAT_TO_QUEUE:
+                    reviewer.queue_repeats(self.kb.learned)
         # Remember where this answer came from, so the next turn's aside can
         # continue the thought. Only a card counts; small talk breaks the
         # thread on purpose.

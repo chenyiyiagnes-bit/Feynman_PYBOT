@@ -124,6 +124,8 @@ cd .. && python3 -m unittest tests.test_repo_hygiene            # 提交前必�
 | C2 | 人工修正日志 | **已完成** `386e182`：`omega_mind/corrections.py` 记录切错/答错（含出处、词表版本、时间），可统计、可回放。**注意：`record()` 目前没有自动调用方，是手工工具**——修一条就手动 `record` 一次，没有上游自动写入 | B1 |
 | C3 | 词表版本化 | **已完成** `d8f7dd3`：整批写入 `versions/<内容哈希>/`，`tools/lexicon_versions.py` 整文件回滚；编码过期时闸门自动失效 | B1 |
 
+| C4 | 逐轮复盘（每轮当场记账） | **已完成**：`omega_mind/reviewer.py` 在 `engine.turn()` 结束后当场判这一轮——`abstain`（兜底/无匹配）、`unverified_followup`（追问没接住）、`weak`（弱命中、分数低于下限、近似并列）。判定只追加一行到 `<state>/<id>/kb_learned/turn_gaps.jsonl`（按行数截断，旧行先丢），**记录不等于晋升**；同一问题第二次出现才在 `review.py` 排一个 `gap` 候选，候选仍需人工裁决。`tools/turn_gaps.py` 跨包导出这张表（`--json` 出挖掘队列，`--promote` 补排队）。数量用 `grep`/跑工具现数，不写死 | C2 |
+
 ### D. 内容与包
 
 | # | 任务 | 验收标准 | 依赖 |
